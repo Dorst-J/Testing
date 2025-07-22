@@ -1,4 +1,27 @@
-*{
-    background-color: aqua;
-    text-decoration-color: black;
-}
+    * {
+    font-family: Arial, Helvetica, sans-serif;
+    box-sizing: border-box;
+    font-size: 75px;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    padding: 0 20px;
+  }
+
+  .button-box {
+    padding: 20px 40px;
+    background-color: rgb(113, 190, 219);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    flex: 1;
+    margin: 0 10px;
+    text-align: center;
+  }
+
+  .button-box:hover {
+    background-color: #ccc;
+  }
