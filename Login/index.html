@@ -32,18 +32,28 @@
        data-logo_alignment="left">
   </div>
 
-  <script>
+<script>
     function handleCredentialResponse(response) {
-      const tokenData = parseJwt(response.credential);
+      console.log("Google credential received.");
 
-      // (Optional) You can log or store this user info
-      console.log("Signed in user:", tokenData);
+      // Try parsing the token (optional)
+      try {
+        const tokenData = parseJwt(response.credential);
+        console.log("Signed in user:", tokenData);
 
-      // Redirect after successful login
-      window.location.href = "/Main/index.html";
+        // Store login state
+        sessionStorage.setItem("loggedIn", "true");
+
+        // ✅ Redirect to your main page — check folder spelling!
+        window.location.href = "/Main/index.html";
+
+      } catch (error) {
+        console.error("Login failed:", error);
+        alert("Something went wrong. Try again.");
+      }
     }
 
-    // Helper to decode JWT (ID token)
+    // Helper to decode JWT
     function parseJwt(token) {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
