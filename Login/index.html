@@ -2,49 +2,48 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Google Sign-In Demo</title>
+  <title>Login with Google</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    #main-content { display: none; }
-    img { border-radius: 50%; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 100px;
+    }
   </style>
 </head>
 <body>
-  <h2>Sign in with Google</h2>
+
+  <h2>Sign in with Google to continue</h2>
 
   <!-- Google Sign-In button -->
   <div id="g_id_onload"
        data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
        data-callback="handleCredentialResponse"
-       data-auto_prompt="true">
+       data-auto_prompt="false">
   </div>
 
   <div class="g_id_signin"
        data-type="standard"
+       data-size="large"
        data-theme="outline"
-       data-size="large"></div>
-
-  <!-- Your main app (hidden until sign-in) -->
-  <div id="main-content">
-    <h3>You're signed in!</h3>
-    <p><strong>Name:</strong> <span id="user-name"></span></p>
-    <p><strong>Email:</strong> <span id="user-email"></span></p>
-    <img id="profile-pic" width="100" />
+       data-text="sign_in_with"
+       data-shape="rectangular"
+       data-logo_alignment="left">
   </div>
 
   <script>
     function handleCredentialResponse(response) {
-      const data = parseJwt(response.credential);
-      document.getElementById('user-name').textContent = data.name;
-      document.getElementById('user-email').textContent = data.email;
-      document.getElementById('profile-pic').src = data.picture;
+      const tokenData = parseJwt(response.credential);
 
-      document.querySelector('.g_id_signin').style.display = 'none';
-      document.getElementById('main-content').style.display = 'block';
+      // (Optional) You can log or store this user info
+      console.log("Signed in user:", tokenData);
 
-      console.log('User info:', data);
+      // Redirect after successful login
+      window.location.href = "./Main/index.html";
     }
 
+    // Helper to decode JWT (ID token)
     function parseJwt(token) {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -54,6 +53,6 @@
       return JSON.parse(jsonPayload);
     }
   </script>
-</body>
 
+</body>
 </html>
