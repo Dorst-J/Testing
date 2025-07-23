@@ -1,4 +1,60 @@
 <!DOCTYPE html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login with Google</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 100px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Sign in with Google to continue</h2>
+
+  <!-- Google Sign-In button -->
+  <div id="g_id_onload"
+       data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse"
+       data-auto_prompt="false">
+  </div>
+
+  <div class="g_id_signin"
+       data-type="standard"
+       data-size="large"
+       data-theme="outline"
+       data-text="sign_in_with"
+       data-shape="rectangular"
+       data-logo_alignment="left">
+  </div>
+
+  <script>
+    function handleCredentialResponse(response) {
+      const tokenData = parseJwt(response.credential);
+
+      // (Optional) You can log or store this user info
+      console.log("Signed in user:", tokenData);
+
+      // Redirect after successful login
+      window.location.href = "https://thedatatab.com/index.html";
+    }
+
+    // Helper to decode JWT (ID token)
+    function parseJwt(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join(''));
+      return JSON.parse(jsonPayload);
+    }
+  </script>
+
+</body>
+
 <link href="./style/style.css" type="text/css" rel="stylesheet">
 <html>
 <title>Seller</title>
