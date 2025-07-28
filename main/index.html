@@ -7,17 +7,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <!-- Row 1 -->
 <div class="row">
-  <button class="button-box" id="One"> Game<br>One</button>
+  <button class="button-box" id="One" onclick="openCenteredPopup()"> Game<br>One</button>
   <button class="button-box" id="Two">Game<br>Two</button>
   <button class="button-box" id="Three">Game<br>Three</button>
 </div>
 
 <!-- Row 2 -->
 <div class="row">
-  <button class="button-box" id="Four" onclick="togglePopup()">Game<br>Four</button>
+  <button class="button-box" id="Four">Game<br>Four</button>
   <button class="button-box" id="Five">Game<br>Five</button>
   <button class="button-box" id="Six">Game<br>Six</button>
 </div>
+
+<script>
+function openCenteredPopup() {
+  const width = 600;
+  const height = 400;
+
+  // Calculate the center of the screen
+  const left = (window.screen.width / 2) - (width / 2);
+  const top = (window.screen.height / 2) - (height / 2);
+
+  // Open the new popup in the center
+  window.open('popup.html', 'centeredPopup', `width=${width},height=${height},left=${left},top=${top}`);
+}
+</script>
 
 <head>
   <meta charset="UTF-8">
@@ -48,7 +62,6 @@
 
 <script>
   let isOpen = false;
-
   function togglePopup() {
     const popup = document.getElementById('popupWindow');
     const button = document.getElementById('toggleBtn');
