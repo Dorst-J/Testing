@@ -26,4 +26,6 @@
   .button-box:hover {
     background-color: #8fee8f;
   }
-  
+ .corner-toggle{
+  font-size: 80px
+ }
