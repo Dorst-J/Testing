@@ -20,6 +20,13 @@
 </div>
 
 <script>
+function openCenteredPopup() {
+  const width = 600;
+  const height = 400;
+
+  // Calculate the center of the screen
+  const left = (window.screen.width / 2) - (width / 2);
+  const top = (window.screen.height / 2) - (height / 2);
   function openCenteredPopup() {
     document.getElementById('centeredPopup').style.display = 'block';
   }
@@ -27,6 +34,7 @@
   function closeCenteredPopup() {
     document.getElementById('centeredPopup').style.display = 'none';
   }
+}
 </script>
 
 <head>
