@@ -32,6 +32,7 @@
     border: none;
     border-radius: 10px;
     font-size: 10px;
+    text-align: center;
   }
   .sell:hover{
     background-color: #8fee8f;
@@ -42,10 +43,14 @@
     border: none;
     border-radius: 10px;
     font-size: 10px;
+    text-align: center;
   }
   .winner:hover{
     background-color: #8fee8f;
   }
  .corner-toggle{
   font-size: 200px;
+ }
+ .center-popup{
+  text-align: center;
  }
