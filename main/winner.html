@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <meta charset="UTF-8">
-  <title>Money Input with Instructions</title>
+    <meta charset="UTF-8">
+  <title>winner</title>
   <style>
     body {
       font-family: sans-serif;
@@ -24,7 +24,7 @@
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 280px;
+      width: 300px;
     }
 
     .calculator h2 {
@@ -134,14 +134,18 @@
 
   <div class="instructions" id="instructionsBox">
     <h3>Instructions</h3>
-    <p><!-- You can replace this with your own instructions --></p>
-    <p><em>Placeholder instructions will appear here after pressing Enter.</em></p>
+    <div id="instructionText">
+      <!-- Placeholder for dynamic instructions -->
+    </div>
   </div>
 </div>
 
 <script>
   const inputField = document.getElementById("moneyInput");
   const instructionsBox = document.getElementById("instructionsBox");
+  const instructionText = document.getElementById("instructionText");
+
+  const threshold = 50; // Change this to your desired threshold value
 
   function press(value) {
     inputField.value += value;
@@ -152,21 +156,35 @@
   }
 
   function showInstructions() {
-    if (inputField.value.trim() !== "") {
+    const money = parseFloat(inputField.value);
+    if (!isNaN(money)) {
       instructionsBox.style.display = "block";
+      if (money > threshold) {
+        instructionText.innerHTML = `
+          <p><strong>High amount detected:</strong> Please follow these instructions for large entries.</p>
+          <p><em>[Custom high-value instructions go here]</em></p>
+        `;
+      } else {
+        instructionText.innerHTML = `
+          <p><strong>Standard process:</strong> Follow the usual procedure.</p>
+          <p><em>[Custom normal instructions go here]</em></p>
+        `;
+      }
+    } else {
+      alert("Please enter a valid number.");
     }
   }
 
   function rollBack() {
     inputField.value = "";
     instructionsBox.style.display = "none";
-    window.location.href = "./sell.html"; // Replace with your actual selling page
+    window.location.href = "./sell.html"; // Replace with your selling page
   }
 
   function returnToMain() {
     inputField.value = "";
     instructionsBox.style.display = "none";
-    window.location.href = "./mainscreen.html"; // Replace with your actual main page
+    window.location.href = "./mainscreen.html"; // Replace with your main page
   }
 </script>
 
