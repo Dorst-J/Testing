@@ -18,6 +18,7 @@
       bottom: 40px;
       left: 50%;
       transform: translateX(-50%);
+      display: none; /* Hidden by default */
     }
 
     select {
@@ -47,20 +48,25 @@
   </div>
 
   <!-- Dropdown Menu at Bottom Center -->
-  <div class="dropdown-container">
+  <div class="dropdown-container" id="dropdownContainer">
     <select onchange="navigateToPage(this)">
       <option selected disabled>Choose a page</option>
-      <option value="./mainscreen.html">Main Screen</option>
-      <option value="./closescreen.html">Close Screen</option>
-      <option value="./sell.html">Sell Screen</option>
+      <option value="mainscreen.html">Main Screen</option>
+      <option value="about.html">About Page</option>
+      <option value="contact.html">Contact Page</option>
     </select>
   </div>
 
   <script>
+    let isSignedIn = false;
+
     function handleCredentialResponse(response) {
       const tokenData = parseJwt(response.credential);
       console.log("Signed in user:", tokenData);
-      window.location.href = "./mainscreen.html";
+      isSignedIn = true;
+
+      // Show the dropdown menu once signed in
+      document.getElementById("dropdownContainer").style.display = "block";
     }
 
     function parseJwt(token) {
@@ -73,6 +79,12 @@
     }
 
     function navigateToPage(selectElement) {
+      if (!isSignedIn) {
+        alert("Please sign in with Google first.");
+        selectElement.selectedIndex = 0; // Reset selection
+        return;
+      }
+
       const page = selectElement.value;
       if (page) {
         window.location.href = page;
