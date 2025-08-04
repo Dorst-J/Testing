@@ -56,8 +56,9 @@
  }
  .img{
   text-align: center;
-  max-width: 1000px;
-  max-height: 150px;
-  margin: 50px;
+  width: 1000px;
+  height: 150px;
+  object-fit: fill;
+  margin: 10px;
   padding: 10px;
  }
