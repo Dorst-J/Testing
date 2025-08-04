@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Out</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 100px;
+      background-color: #f0f2f5;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      display: inline-block;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .message {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+    .button {
+      background-color: #007bff;
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="message">Are you sure you want to sign out?</div>
+    <button class="button" onclick="signOut()">Sign Out</button>
+  </div>
+
+  <script>
+    function signOut() {
+      // Example for token-based sign out
+      localStorage.removeItem('authToken'); // Remove auth token (if stored locally)
+
+      // Optionally call an API to end the session server-side
+      // fetch('/api/logout', { method: 'POST', credentials: 'include' });
+
+      // Redirect to login page or homepage
+      window.location.href = './index.html';
+    }
+  </script>
+</body>
+</html>
