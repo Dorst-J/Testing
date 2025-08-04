@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+      <meta charset="UTF-8" />
+  <title>Calculator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .calculator {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 360px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      font-size: 1em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 10px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .calculate-btn { background-color: #007bff; color: white; }
+    .clear-btn { background-color: #ffc107; }
+    .return-btn { background-color: #dc3545; color: white; }
+
+    .results {
+      margin-top: 20px;
+      font-size: 1.2em;
+      text-align: center;
+    }
+
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .numpad button {
+      font-size: 1.2em;
+      background-color: #e0e0e0;
+    }
+
+    .numpad .backspace {
+      background-color: #ff8888;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="calculator">
+  <h2>Pull Tab Ticket Calculator</h2>
+
+  <div class="input-group">
+    <label for="moneyInput">Money Inserted ($):</label>
+    <input type="text" id="moneyInput" onclick="setActiveInput('moneyInput')" readonly>
+  </div>
+
+  <div class="input-group">
+    <label for="ticketPrice">Price per Ticket ($):</label>
+    <input type="text" id="ticketPrice" onclick="setActiveInput('ticketPrice')" readonly>
+  </div>
+
+  <div class="numpad">
+    <button onclick="press('7')">7</button>
+    <button onclick="press('8')">8</button>
+    <button onclick="press('9')">9</button>
+    <button onclick="press('4')">4</button>
+    <button onclick="press('5')">5</button>
+    <button onclick="press('6')">6</button>
+    <button onclick="press('1')">1</button>
+    <button onclick="press('2')">2</button>
+    <button onclick="press('3')">3</button>
+    <button onclick="press('0')">0</button>
+    <button onclick="press('.')">.</button>
+    <button class="backspace" onclick="backspace()">←</button>
+  </div>
+
+  <div class="button-group">
+    <button class="calculate-btn" onclick="calculateTickets()">Calculate Tickets</button>
+    <button class="clear-btn" onclick="clearFields()">Clear</button>
+    <button class="return-btn" onclick="goToMainPage()">Return</button>
+  </div>
+
+  <div class="results" id="results" style="display:none;">
+    <strong>Number of Tickets to give:</strong> <span id="ticketCount"></span>
+  </div>
+</div>
+
+<script>
+  let activeInput = null;
+
+  function setActiveInput(id) {
+    activeInput = document.getElementById(id);
+  }
+
+  function press(val) {
+    if (activeInput) {
+      activeInput.value += val;
+    }
+  }
+
+  function backspace() {
+    if (activeInput) {
+      activeInput.value = activeInput.value.slice(0, -1);
+    }
+  }
+
+  function calculateTickets() {
+    const money = parseFloat(document.getElementById('moneyInput').value);
+    const price = parseFloat(document.getElementById('ticketPrice').value);
+
+    if (isNaN(money) || isNaN(price) || price <= 0) {
+      alert("Please enter valid numbers. Ticket price must be more than zero.");
+      return;
+    }
+
+    const tickets = Math.floor(money / price);
+    document.getElementById('ticketCount').textContent = tickets;
+    document.getElementById('results').style.display = 'block';
+  }
+
+  function clearFields() {
+    document.getElementById('moneyInput').value = '';
+    document.getElementById('ticketPrice').value = '';
+    document.getElementById('results').style.display = 'none';
+    activeInput = null;
+  }
+
+  function goToMainPage() {
+    window.location.href = "./WillyMcCoys.html"; // Replace with your actual main page URL or file
+  }
+</script>
+
+</body>
+</html>
