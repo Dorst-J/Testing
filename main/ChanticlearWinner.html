@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta charset="UTF-8">
+  <title>winner</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 50px;
+    }
+
+    .container {
+      display: flex;
+      gap: 30px;
+    }
+
+    .calculator {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 300px;
+    }
+
+    .calculator h2 {
+      text-align: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      font-size: 1.5em;
+      padding: 10px;
+      margin-top: 15px;
+      margin-bottom: 20px;
+      text-align: right;
+    }
+
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .numpad button {
+      font-size: 1.2em;
+      padding: 15px;
+      background: #e0e0e0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .numpad .enter {
+      grid-column: span 3;
+      background: #28a745;
+      color: white;
+    }
+
+    .numpad .backspace {
+      background: #ff6666;
+    }
+
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .actions button {
+      padding: 12px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .rollback-btn {
+      background-color: #ffc107;
+    }
+
+    .return-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .instructions {
+      width: 300px;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: none;
+    }
+
+    .instructions h3 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="calculator">
+    <h2>Enter Money</h2>
+    <input type="text" id="moneyInput" readonly placeholder="0.00">
+
+    <div class="numpad">
+      <button onclick="press('7')">7</button>
+      <button onclick="press('8')">8</button>
+      <button onclick="press('9')">9</button>
+      <button onclick="press('4')">4</button>
+      <button onclick="press('5')">5</button>
+      <button onclick="press('6')">6</button>
+      <button onclick="press('1')">1</button>
+      <button onclick="press('2')">2</button>
+      <button onclick="press('3')">3</button>
+      <button onclick="press('0')">0</button>
+      <button onclick="press('.')">.</button>
+      <button class="backspace" onclick="backspace()">←</button>
+      <button class="enter" onclick="showInstructions()">Enter</button>
+    </div>
+
+    <div class="actions">
+      <button class="rollback-btn" onclick="rollBack()">Roll Money Back In</button>
+      <button class="return-btn" onclick="returnToMain()">Return to Main Page</button>
+    </div>
+  </div>
+
+  <div class="instructions" id="instructionsBox">
+    <h3>Instructions</h3>
+    <div id="instructionText">
+      <!-- Placeholder for dynamic instructions -->
+    </div>
+  </div>
+</div>
+
+<script>
+  const inputField = document.getElementById("moneyInput");
+  const instructionsBox = document.getElementById("instructionsBox");
+  const instructionText = document.getElementById("instructionText");
+
+  const threshold = 50; // Change this to your desired threshold value
+
+  function press(value) {
+    inputField.value += value;
+  }
+
+  function backspace() {
+    inputField.value = inputField.value.slice(0, -1);
+  }
+
+  function showInstructions() {
+    const money = parseFloat(inputField.value);
+    if (!isNaN(money)) {
+      instructionsBox.style.display = "block";
+      if (money > threshold) {
+        instructionText.innerHTML = `
+          <p><strong>High amount detected:</strong> Please follow these instructions for large entries.</p>
+          <p><em>[Custom high-value instructions go here]</em></p>
+        `;
+      } else {
+        instructionText.innerHTML = `
+          <p><strong>Standard process:</strong> Follow the usual procedure.</p>
+          <p><em>[Custom normal instructions go here]</em></p>
+        `;
+      }
+    } else {
+      alert("Please enter a valid number.");
+    }
+  }
+
+  function rollBack() {
+    inputField.value = "";
+    instructionsBox.style.display = "none";
+    window.location.href = "./ChanticlearSell.html"; // Replace with your selling page
+  }
+
+  function returnToMain() {
+    inputField.value = "";
+    instructionsBox.style.display = "none";
+    window.location.href = "./Chanticlear.html"; // Replace with your main page
+  }
+</script>
+
+</body>
+</html>

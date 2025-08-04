@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<link href="./style/style.css" type="text/css" rel="stylesheet">
+<html>
+<title>Seller</title>
+<head><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<header style="text-align: center;"><h1>Chanticlear</h1></header>
+<div style="text-align: center;">
+  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT--VA4EqlSGRnJT2g-qTsEDpUXRmvu3OK2Nw&s">
+</div>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Row 1 -->
+<div class="row">
+  <button class="button-box" id="One" onclick="openCenterPopup()"> Game<br>One</button>
+  <button class="button-box" id="Two" onclick="openCenterPopup()">Game<br>Two</button>
+  <button class="button-box" id="Three" onclick="openCenterPopup()">Game<br>Three</button>
+</div>
+
+<!-- Row 2 -->
+<div class="row">
+  <button class="button-box" id="Four" onclick="openCenterPopup()">Game<br>Four</button>
+  <button class="button-box" id="Five" onclick="openCenterPopup()">Game<br>Five</button>
+  <button class="button-box" id="Six" onclick="openCenterPopup()">Game<br>Six</button>
+</div>
+
+<!-- Centered Popup Window (initially hidden) -->
+<div id="popupCenterWindow" style="display: none; position: fixed; top: 50%; left: 50%; 
+  transform: translate(-50%, -50%); width: 400px; height: 300px; 
+  background: #ffffff; border: 2px solid #666; padding: 20px; z-index: 1001;">
+  <Button class="sell" id="sell" onclick="window.location.href='./McDuffsSell.html'">Sell Pull Tabs</Button>
+  <Button class="winner" id="winner" onclick="window.location.href='./McDuffsWinner.html'">Winning Pull Tabs</Button>
+
+  <button class="center-popup" id=" center-popup" onclick="closeCenterPopup()">Close</button>
+</div>
+
+<head>
+  <meta charset="UTF-8">
+  <style>
+    .corner-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 50px;
+      cursor: pointer;
+      text-decoration: none;
+      color: black;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toggle Button -->
+<a href="#" class="corner-toggle" id="toggleBtn" onclick="togglePopup()">☰</a>
+
+<!-- Popup Window (initially hidden) -->
+<div id="popupWindow" style="display: none; position: fixed; top: 50px; right: 10px; width: 350px; height: 250px; background: #f0f0f0; border: 2px solid #ccc; padding: 20px; z-index: 999;">
+  <a href="./ChanticlearClosescreen.html">Close Game</a>
+  <br><br>
+  <a href="./ChanticlearOpenscreen.html">Open Game</a>
+</div>
+
+<script>
+  let isOpen = false;
+
+  function togglePopup() {
+    const popup = document.getElementById('popupWindow');
+    const button = document.getElementById('toggleBtn');
+
+    if (isOpen) {
+      popup.style.display = 'none';
+      button.textContent = '☰'; // Open icon
+    } else {
+      popup.style.display = 'block';
+      button.textContent = '✖'; // Close icon
+    }
+
+    isOpen = !isOpen;
+  }
+
+  function openCenterPopup() {
+    document.getElementById('popupCenterWindow').style.display = 'block';
+  }
+
+  function closeCenterPopup() {
+    document.getElementById('popupCenterWindow').style.display = 'none';
+  }
+</script>
+
+</body>
+</html>
