@@ -1,0 +1,135 @@
+<!--Drop down menu-->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Login with Google</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 100px;
+      margin: 0;
+    }
+
+    .dropdown-container {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none; /* Hidden by default */
+    }
+
+    select {
+      font-size: 16px;
+      padding: 8px 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Sign in with Google to continue</h2>
+
+  <!-- Google Sign-In button -->
+  <div id="g_id_onload"
+       data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse"
+       data-auto_prompt="false">
+  </div>
+
+  <div class="g_id_signin"
+       data-type="standard"
+       data-size="large"
+       data-theme="outline"
+       data-text="sign_in_with"
+       data-shape="rectangular"
+       data-logo_alignment="left">
+  </div>
+
+  <!-- Dropdown Menu at Bottom Center -->
+  <div class="dropdown-container" id="dropdownContainer">
+    <select id="pageDropdown" onchange="navigateToPage(this)">
+      <option selected disabled>Choose a page</option>
+      <!-- Pages will be populated dynamically -->
+    </select>
+  </div>
+
+  <script>
+    let isSignedIn = false;
+
+    // Define page access based on email
+    const userAccess = {
+      "admin@example.com": ["McDuffs", "Northwoods", "Chanticlear", "WillyMcCoys"],
+      "staff@example.com": ["McDuffs", "Northwoods"],
+      "viewer@example.com": ["Chanticlear"],
+      // Add more users here...
+    };
+
+    const pageLinks = {
+      "McDuffs": "./McDuffs.html",
+      "Northwoods": "./Northwoods.html",
+      "Chanticlear": "./Chanticlear.html",
+      "WillyMcCoys": "./WillyMcCoys.html"
+    };
+
+    function handleCredentialResponse(response) {
+      const tokenData = parseJwt(response.credential);
+      console.log("Signed in user:", tokenData);
+      isSignedIn = true;
+
+      const userEmail = tokenData.email;
+      const allowedPages = userAccess[userEmail];
+
+      if (!allowedPages) {
+        alert("You do not have access to any pages.");
+        return;
+      }
+
+      populateDropdown(allowedPages);
+
+      // Show the dropdown
+      document.getElementById("dropdownContainer").style.display = "block";
+    }
+
+    function parseJwt(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join(''));
+      return JSON.parse(jsonPayload);
+    }
+
+    function populateDropdown(pages) {
+      const dropdown = document.getElementById("pageDropdown");
+
+      // Clear previous options except the default
+      dropdown.length = 1;
+
+      pages.forEach(pageName => {
+        const option = document.createElement("option");
+        option.value = pageLinks[pageName];
+        option.textContent = pageName;
+        dropdown.appendChild(option);
+      });
+    }
+
+    function navigateToPage(selectElement) {
+      if (!isSignedIn) {
+        alert("Please sign in with Google first.");
+        selectElement.selectedIndex = 0;
+        return;
+      }
+
+      const page = selectElement.value;
+      if (page) {
+        window.location.href = page;
+      }
+    }
+  </script>
+
+</body>
+</html>
