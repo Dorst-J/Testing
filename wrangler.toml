@@ -1,0 +1,6 @@
+name = "testing"
+type = "javascript"
+compatibility_date = "2025-08-07"
+
+[site]
+bucket = "./main"
