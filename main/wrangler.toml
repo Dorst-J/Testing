@@ -1,9 +1,0 @@
-name = "my-worker"
-type = "javascript"  # or "webpack", "rust", "esmodule", etc.
-
-account_id = "your_account_id"
-workers_dev = true
-compatibility_date = "2025-08-07"
-
-[triggers]
-# Optional for cron jobs, etc.
