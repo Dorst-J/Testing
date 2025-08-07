@@ -2,7 +2,7 @@
   "name": "worker-test",
   "compatibility_date": "2025-04-01",
   "assets": {
-    "directory": "./my-worker/index.js"
+    "directory": "./dist"
     
   }
 }
