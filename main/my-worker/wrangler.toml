@@ -1,0 +1,6 @@
+name = "dropdown-email-worker"
+main = "worker.js"
+compatibility_date = "2025-08-11"
+
+[[email]]
+binding = "SEND_EMAIL"
