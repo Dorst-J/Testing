@@ -34,8 +34,14 @@
   <div id="log"></div>
 
   <script>
+  window.addEventListener('DOMContentLoaded', () => {
     const entries = JSON.parse(localStorage.getItem('willyformResponses')) || [];
     const logContainer = document.getElementById('log');
+
+    if (!logContainer) {
+      console.error('Log container not found!');
+      return;
+    }
 
     if (entries.length === 0) {
       logContainer.innerText = 'No submissions yet.';
@@ -52,7 +58,9 @@
         logContainer.appendChild(div);
       });
     }
-  </script>
+  });
+</script>
+
 
   <button onclick="window.location.href='./WillyMcCoys.html'">🏠 Return to Home</button>
 </body>
