@@ -32,13 +32,13 @@
     };
 
     // Get existing entries or start fresh
-    const existing = JSON.parse(localStorage.getItem('formResponses')) || [];
+    const existing = JSON.parse(localStorage.getItem('willyformResponses')) || [];
 
     // Add new entry to the beginning
     existing.unshift(newEntry);
 
     // Save back to localStorage
-    localStorage.setItem('formResponses', JSON.stringify(existing));
+    localStorage.setItem('willyformResponses', JSON.stringify(existing));
 
     // Redirect to sign-in page
     window.location.href = './index.html';
