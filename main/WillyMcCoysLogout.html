@@ -19,25 +19,30 @@
     <button type="submit">Sign Out</button>
   </form>
 
-  <script>
-    document.getElementById('signOutForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+<script>
+  document.getElementById('signOutForm').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-      const formData = new FormData(e.target);
-      const newEntry = {
-        reason: formData.get('reason'),
-        feedback: formData.get('feedback'),
-        suggestions: formData.get('suggestions'),
-        timestamp: new Date().toISOString()
-      };
+    const formData = new FormData(e.target);
+    const newEntry = {
+      reason: formData.get('reason'),
+      feedback: formData.get('feedback'),
+      suggestions: formData.get('suggestions'),
+      timestamp: new Date().toISOString()
+    };
 
-      const existing = JSON.parse(localStorage.getItem('willyformResponses')) || [];
-      existing.unshift(newEntry);
-      localStorage.setItem('willyformResponses', JSON.stringify(existing));
+    // ✅ Use the correct key here
+    const existing = JSON.parse(localStorage.getItem('willyformResponses')) || [];
+    existing.unshift(newEntry);
+    localStorage.setItem('willyformResponses', JSON.stringify(existing));
 
-      window.location.href = './index.html'; // Or wherever you want to redirect
-    });
-  </script>
+    // Optional: short delay before redirect
+    setTimeout(() => {
+      window.location.href = './index.html'; // or your sign-in page
+    }, 100);
+  });
+</script>
+
 
 </body>
 </html>
