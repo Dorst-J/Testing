@@ -8,7 +8,7 @@ export default {
         .join("\n")}`;
 
       await env.SEND_EMAIL.send({
-        from: "jenna.dorst@gmail.com", // must be a routed domain
+        from: "northwoods@thedatatab.com", // must be a routed domain
         to: "sedorst17@gmail.com",       // forwarded to your real email
         subject: "Dropdown Choices Submitted",
         text: body
