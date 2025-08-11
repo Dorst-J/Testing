@@ -8,5 +8,8 @@
     "deploy": "wrangler publish",
     "build": "wrangler build"
   },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  },
   "license": "MIT"
 }
