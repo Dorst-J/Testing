@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>McDuffs Shift Handoff</title>
+  <style>
+    .entry {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 15px;
+      background-color: #f9f9f9;
+    }
+    .timestamp {
+      font-size: 0.9em;
+      color: #555;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #0078D4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    button:hover {
+      background-color: #005A9E;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sign-Out Submission Log</h1>
+  <div id="log"></div>
+
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const entries = JSON.parse(localStorage.getItem('McDuffsFormResponses')) || [];
+    const logContainer = document.getElementById('log');
+
+    if (!logContainer) {
+      console.error('Log container not found!');
+      return;
+    }
+
+    if (entries.length === 0) {
+      logContainer.innerText = 'No submissions yet.';
+    } else {
+      entries.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `
+          <div class="timestamp"><strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
+          <p><strong>Reason:</strong> ${entry.reason}</p>
+          <p><strong>Feedback:</strong> ${entry.feedback}</p>
+          <p><strong>Suggestions:</strong> ${entry.suggestions}</p>
+        `;
+        logContainer.appendChild(div);
+      });
+    }
+  });
+</script>
+
+
+  <button onclick="window.location.href='./McDuffs.html'">🏠 Return to Home</button>
+</body>
+</html>
