@@ -20,27 +20,22 @@
   </form>
 
 <script>
-  // Get page identifier from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const pageId = urlParams.get('page') || 'default';
+document.getElementById('signOutForm').addEventListener('submit', function(e) {
+  e.preventDefault();
 
-  document.getElementById('signOutForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+  const formData = new FormData(e.target);
+  const newEntry = {
+    reason: formData.get('reason'),
+    feedback: formData.get('feedback'),
+    suggestions: formData.get('suggestions'),
+    timestamp: new Date().toISOString()
+  };
 
-    const formData = new FormData(e.target);
-    const newEntry = {
-      reason: formData.get('reason'),
-      feedback: formData.get('feedback'),
-      suggestions: formData.get('suggestions'),
-      timestamp: new Date().toISOString()
-    };
+  const existing = JSON.parse(localStorage.getItem('formResponses')) || [];
+  existing.unshift(newEntry);
+  localStorage.setItem('formResponses', JSON.stringify(existing));
 
-    const storageKey = `formResponses_${pageId}`;
-    const existing = JSON.parse(localStorage.getItem(storageKey)) || [];
-    existing.unshift(newEntry);
-    localStorage.setItem(storageKey, JSON.stringify(existing));
-
-    window.location.href = './index.html';
+  window.location.href = './index.html';
   });
 </script>
 

@@ -21,26 +21,24 @@
   <div id="log"></div>
 
 <script>
-  const pageId = 'northwoods'; // Change to 'prairie' for the other page
-  const storageKey = `formResponses_${pageId}`;
-  const entries = JSON.parse(localStorage.getItem(storageKey)) || [];
+const entries = JSON.parse(localStorage.getItem('formResponses')) || [];
 
-  const logContainer = document.getElementById('log');
-  if (entries.length === 0) {
-    logContainer.innerText = 'No submissions yet.';
-  } else {
-    entries.forEach(entry => {
-      const div = document.createElement('div');
-      div.className = 'entry';
-      div.innerHTML = `
-        <div class="timestamp"><strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
-        <p><strong>Reason:</strong> ${entry.reason}</p>
-        <p><strong>Feedback:</strong> ${entry.feedback}</p>
-        <p><strong>Suggestions:</strong> ${entry.suggestions}</p>
-      `;
-      logContainer.appendChild(div);
-    });
-  }
+const logContainer = document.getElementById('log');
+if (entries.length === 0) {
+  logContainer.innerText = 'No submissions yet.';
+} else {
+  entries.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = `
+      <div class="timestamp"><strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
+      <p><strong>Reason:</strong> ${entry.reason}</p>
+      <p><strong>Feedback:</strong> ${entry.feedback}</p>
+      <p><strong>Suggestions:</strong> ${entry.suggestions}</p>
+    `;
+    logContainer.appendChild(div);
+  });
+}
 </script>
   <button onclick="window.location.href='./Northwoods.html'">🏠 Return to Home</button>
   <style>
