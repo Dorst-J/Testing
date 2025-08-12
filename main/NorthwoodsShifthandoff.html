@@ -39,6 +39,8 @@ if (entries.length === 0) {
     logContainer.appendChild(div);
   });
 }
+// Mark log as "viewed" now
+  localStorage.setItem('northwoodsLastViewed', new Date().toISOString());
 </script>
   <button onclick="window.location.href='./Northwoods.html'">🏠 Return to Home</button>
   <style>
