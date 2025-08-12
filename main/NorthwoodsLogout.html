@@ -19,7 +19,11 @@
     <button type="submit">Sign Out</button>
   </form>
 
-  <script>
+<script>
+  // Get page identifier from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const pageId = urlParams.get('page') || 'default';
+
   document.getElementById('signOutForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -31,16 +35,11 @@
       timestamp: new Date().toISOString()
     };
 
-    // Get existing entries or start fresh
-    const existing = JSON.parse(localStorage.getItem('formResponses')) || [];
-
-    // Add new entry to the beginning
+    const storageKey = `formResponses_${pageId}`;
+    const existing = JSON.parse(localStorage.getItem(storageKey)) || [];
     existing.unshift(newEntry);
+    localStorage.setItem(storageKey, JSON.stringify(existing));
 
-    // Save back to localStorage
-    localStorage.setItem('formResponses', JSON.stringify(existing));
-
-    // Redirect to sign-in page
     window.location.href = './index.html';
   });
 </script>
