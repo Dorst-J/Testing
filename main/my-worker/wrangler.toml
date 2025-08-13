@@ -2,18 +2,11 @@ name = "dropdown-email-worker"
 main = "worker.js"
 compatibility_date = "2025-08-11"
 type = "javascript"
-
 account_id = "85221db225a51b1c70076848e8c20111"
-
 workers_dev = true
 
-  # Add this to your wrangler.jsonc
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "5bd61eadf85c44368af7a10f792989c1",
-      
-      # Optional: preview_id used when running `wrangler dev` for local dev
-      "preview_id": "<ID_OF_PREVIEW_KV_NAMESPACE_FOR_LOCAL_DEVELOPMENT>"
-    }
-  ]
+# KV Namespace
+[[kv_namespaces]]
+binding = "KV"
+id = "5bd61eadf85c44368af7a10f792989c1"
+# preview_id = "<ID_OF_PREVIEW_KV_NAMESPACE_FOR_LOCAL_DEVELOPMENT>"
