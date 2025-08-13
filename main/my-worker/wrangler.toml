@@ -7,6 +7,6 @@ workers_dev = true
 
 # KV Namespace
 [[kv_namespaces]]
-binding = "KV"
+binding = "SIGNINS"
 id = "5bd61eadf85c44368af7a10f792989c1"
 # preview_id = "<ID_OF_PREVIEW_KV_NAMESPACE_FOR_LOCAL_DEVELOPMENT>"
