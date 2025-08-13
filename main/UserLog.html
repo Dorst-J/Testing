@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sign In Log</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { padding: 10px; border: 1px solid #ccc; }
+    th { background: #4CAF50; color: white; }
+  </style>
+</head>
+<body>
+  <a href="sign-in.html">Back to Sign In</a>
+  <h2>Sign In Log</h2>
+  <table id="logTable">
+    <thead>
+      <tr><th>Name</th><th>Time</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API_URL = "https://YOUR-WORKER-URL"; // change to your worker URL
+
+    async function loadLog() {
+      const res = await fetch(`${API_URL}/log`);
+      const logs = await res.json();
+      const tbody = document.querySelector("#logTable tbody");
+
+      tbody.innerHTML = "";
+      if (logs.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='2'>No sign-ins yet</td></tr>";
+      } else {
+        logs.forEach(log => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${log.name}</td><td>${log.time}</td>`;
+          tbody.appendChild(row);
+        });
+      }
+    }
+
+    loadLog();
+  </script>
+</body>
+</html>
+
+

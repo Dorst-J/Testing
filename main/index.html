@@ -12,15 +12,13 @@
       padding-top: 100px;
       margin: 0;
     }
-
     .dropdown-container {
       position: fixed;
       bottom: 40px;
       left: 50%;
       transform: translateX(-50%);
-      display: none; /* Hidden by default */
+      display: none;
     }
-
     select {
       font-size: 16px;
       padding: 8px 12px;
@@ -59,12 +57,16 @@
   </div>
 
   <script>
+    const API_URL = "https://YOUR-WORKER-URL"; // replace with your Cloudflare Worker URL
     let isSignedIn = false;
 
     function handleCredentialResponse(response) {
       const tokenData = parseJwt(response.credential);
       console.log("Signed in user:", tokenData);
       isSignedIn = true;
+
+      // Send sign-in info to Cloudflare Worker log
+      logSignIn(tokenData.name || tokenData.email);
 
       // Show the dropdown menu once signed in
       document.getElementById("dropdownContainer").style.display = "block";
@@ -79,13 +81,28 @@
       return JSON.parse(jsonPayload);
     }
 
+    async function logSignIn(name) {
+      try {
+        const res = await fetch(`${API_URL}/signin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          console.error("Log sign-in failed:", data.error);
+        }
+      } catch (err) {
+        console.error("Error logging sign-in:", err);
+      }
+    }
+
     function navigateToPage(selectElement) {
       if (!isSignedIn) {
         alert("Please sign in with Google first.");
-        selectElement.selectedIndex = 0; // Reset selection
+        selectElement.selectedIndex = 0;
         return;
       }
-
       const page = selectElement.value;
       if (page) {
         window.location.href = page;

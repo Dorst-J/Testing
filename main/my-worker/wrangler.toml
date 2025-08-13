@@ -7,5 +7,6 @@ account_id = "85221db225a51b1c70076848e8c20111"
 
 workers_dev = true
 
-[[email]]
-binding = "SEND_EMAIL"
+[[kv_namespaces]]
+binding = "SIGNINS"
+id = "your_kv_id_here"
