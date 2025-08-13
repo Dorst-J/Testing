@@ -5,8 +5,6 @@ type = "javascript"
 account_id = "85221db225a51b1c70076848e8c20111"
 workers_dev = true
 
-# KV Namespace
 [[kv_namespaces]]
 binding = "KV"
 id = "5bd61eadf85c44368af7a10f792989c1"
-# preview_id = "<ID_OF_PREVIEW_KV_NAMESPACE_FOR_LOCAL_DEVELOPMENT>"
