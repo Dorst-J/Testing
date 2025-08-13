@@ -90,6 +90,35 @@
   function closeCenterPopup() {
     document.getElementById('popupCenterWindow').style.display = 'none';
   }
+
+    const LOG_KEY = 'willyFormResponses';
+const LAST_VIEWED_KEY = 'WillyLastViewed';
+
+const entries = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+const lastViewed = localStorage.getItem(LAST_VIEWED_KEY);
+
+if (entries.length > 0) {
+  const newestTimestamp = entries[0].timestamp;
+  if (!lastViewed || newestTimestamp > lastViewed) {
+    // Show a visible alert in the top corner
+    const notif = document.createElement('div');
+    notif.textContent = '🔔 New Shift Handoff Entry!';
+    notif.style.position = 'fixed';
+    notif.style.top = '10px';
+    notif.style.left = '50%';
+    notif.style.transform = 'translateX(-50%)';
+    notif.style.backgroundColor = 'red';
+    notif.style.color = 'white';
+    notif.style.padding = '10px 20px';
+    notif.style.borderRadius = '5px';
+    notif.style.zIndex = '2000';
+    notif.style.fontSize = '18px';
+    document.body.appendChild(notif);
+
+    // Optional: make it disappear after 10 seconds
+    setTimeout(() => notif.remove(), 10000);
+  }
+}
 </script>
 
 </body>
