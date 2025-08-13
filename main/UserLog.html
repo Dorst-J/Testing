@@ -21,7 +21,7 @@
   </table>
 
   <script>
-    const API_URL = "https://signin-log-worker.workers.dev"; // change to your worker URL
+    const API_URL = "https://signin-log-worker.workers.dev/log"; // change to your worker URL
 
     async function loadLog() {
       const res = await fetch(`${API_URL}/log`);
