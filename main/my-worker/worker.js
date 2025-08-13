@@ -51,3 +51,13 @@ function corsHeaders(origin) {
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
+
+fetch("https://signin-log-worker.workers.dev/signin", {
+  method: "POST",
+  headers: {"Content-Type":"application/json"},
+  body: JSON.stringify({ name: "Console Test" })
+}).then(r=>r.json()).then(console.log);
+fetch("https://signin-log-worker.workers.dev/log")
+  .then(r=>r.json())
+  .then(console.log);
+
