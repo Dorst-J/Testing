@@ -1,42 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Sign In Log</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign-In Log</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; background: white; }
-    th, td { padding: 10px; border: 1px solid #ccc; }
-    th { background: #4CAF50; color: white; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 24px; }
+    h2 { margin: 0 0 12px; }
+    #status { margin: 8px 0 16px; font-size: 14px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    th, td { padding: 10px; border: 1px solid #ddd; }
+    th { background: #4CAF50; color: #fff; text-align: left; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    .meta { font-size: 12px; color: #666; margin-top: 6px; }
   </style>
 </head>
 <body>
-  <a href="./Northwoods.html">Northwoods</a>
-  <h2>Sign In Log</h2>
-  <table id="logTable">
+  <h2>Sign-In Log</h2>
+  <div id="status">Loading…</div>
+  <button onclick="loadLog()">Refresh</button>
+  <div class="meta">Reading from: <code id="api"></code></div>
+
+  <table id="logTable" style="margin-top: 12px;">
     <thead>
-      <tr><th>Name</th><th>Time</th></tr>
+      <tr><th>Name</th><th>Time (UTC)</th></tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
-    const API_URL = "https://signin-log-worker.workers.dev"; // change to your worker URL
+    const API_URL = "https://signin-log-worker.workers.dev";
+    document.getElementById('api').textContent = API_URL;
 
     async function loadLog() {
-      const res = await fetch(`${API_URL}/log`);
-      const logs = await res.json();
-      const tbody = document.querySelector("#logTable tbody");
-
-      tbody.innerHTML = "";
-      if (logs.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='2'>No sign-ins yet</td></tr>";
-      } else {
-        logs.forEach(log => {
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${log.name}</td><td>${log.time}</td>`;
-          tbody.appendChild(row);
-        });
+      const status = document.getElementById('status');
+      const tbody = document.querySelector('#logTable tbody');
+      status.textContent = 'Loading…';
+      try {
+        const res = await fetch(`${API_URL}/log`, { method: 'GET' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const logs = await res.json();
+        tbody.innerHTML = '';
+        if (!Array.isArray(logs) || logs.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='2'>No sign-ins yet</td></tr>";
+        } else {
+          logs.forEach(item => {
+            const tr = document.createElement('tr');
+            const name = (item && item.name) ? item.name : 'Unknown User';
+            const t = (item && item.time) ? item.time : '';
+            tr.innerHTML = `<td>${name}</td><td>${t}</td>`;
+            tbody.appendChild(tr);
+          });
+        }
+        status.textContent = `Loaded ${Array.isArray(logs) ? logs.length : 0} row(s).`;
+      } catch (err) {
+        status.textContent = `Failed to load log: ${err.message}`;
+        console.error(err);
       }
     }
 
