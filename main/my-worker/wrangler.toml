@@ -9,4 +9,4 @@ workers_dev = true
 
 [[kv_namespaces]]
 binding = "SIGNINS"
-id = "your_kv_id_here"
+id = "5bd61eadf85c44368af7a10f792989c1"
