@@ -1,5 +1,5 @@
 {
-  "name": "dropdown-email-worker",
+  "name": "signin-log-worker",
   "version": "1.0.0",
   "description": "Cloudflare Worker that sends email from dropdown form submission",
   "main": "worker.js",

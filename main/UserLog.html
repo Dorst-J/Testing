@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <a href="sign-in.html">Back to Sign In</a>
+  <a href="./Northwoods.html">Northwoods</a>
   <h2>Sign In Log</h2>
   <table id="logTable">
     <thead>
@@ -21,7 +21,7 @@
   </table>
 
   <script>
-    const API_URL = "https://YOUR-WORKER-URL"; // change to your worker URL
+    const API_URL = "https://signin-log-worker.workers.dev"; // change to your worker URL
 
     async function loadLog() {
       const res = await fetch(`${API_URL}/log`);
