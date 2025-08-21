@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Login with Google</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 100px;
+      margin: 0;
+    }
+    .dropdown-container {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+    }
+    select {
+      font-size: 16px;
+      padding: 8px 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Sign in with Google to continue</h2>
+
+  <!-- Google Sign-In button -->
+  <div id="g_id_onload"
+       data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse"
+       data-auto_prompt="false">
+  </div>
+
+  <div class="g_id_signin"
+       data-type="standard"
+       data-size="large"
+       data-theme="outline"
+       data-text="sign_in_with"
+       data-shape="rectangular"
+       data-logo_alignment="left">
+  </div>
+
+  <!-- Dropdown Menu at Bottom Center -->
+  <div class="dropdown-container" id="dropdownContainer">
+    <select onchange="navigateToPage(this)">
+      <option selected disabled>Choose a page</option>
+      <option value="./McDuffs.html">McDuffs</option>
+      <option value="./Northwoods.html">Northwoods</option>
+      <option value="./Chanticlear.html">Chanticlear</option>
+      <option value="./WillyMcCoys.html">Willy McCoys</option>
+    </select>
+  </div>
+
+  <script>
+    const API_URL = "https://thedatatab.jenna-dorst.workers.dev"; // replace with your Cloudflare Worker URL
+    let isSignedIn = false;
+
+    function handleCredentialResponse(response) {
+      const tokenData = parseJwt(response.credential);
+      console.log("Signed in user:", tokenData);
+      isSignedIn = true;
+
+      // Send sign-in info to Cloudflare Worker log
+      logSignIn(tokenData.name || tokenData.email);
+
+      // Show the dropdown menu once signed in
+      document.getElementById("dropdownContainer").style.display = "block";
+    }
+
+    function parseJwt(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join(''));
+      return JSON.parse(jsonPayload);
+    }
+
+    async function logSignIn(name) {
+      try {
+        const res = await fetch(`${API_URL}/signin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          console.error("Log sign-in failed:", data.error);
+        }
+      } catch (err) {
+        console.error("Error logging sign-in:", err);
+      }
+    }
+
+    function navigateToPage(selectElement) {
+      if (!isSignedIn) {
+        alert("Please sign in with Google first.");
+        selectElement.selectedIndex = 0;
+        return;
+      }
+      const page = selectElement.value;
+      if (page) {
+        window.location.href = page;
+      }
+    }
+  </script>
+
+</body>
+</html>
