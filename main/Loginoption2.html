@@ -39,8 +39,8 @@
   <script>
     // Access control: map emails to their allowed page
     const userAccess = {
-      "user1@example.com": ["./McDuffs.html"],
-      "user2@example.com": "./Chanticlear.html",
+      "sedorst17@gmail.com": ["./Northwoods.html" , "./NorthwoodsLogout.html" , "./NorthwoodsClosescreen.html" , "./NorthwoodsOpenscreen.html" , "./NorthwoodsSell.html" , "./NorthwoodsShifthandoff.html" , "./NorthwoodsWinner.html" , "./UserLog.html"],
+      "Jenna.dorst@gmail.com": ["./McDuffs.html" , "./McDuffsLogout.html" , "./McDuffsClosescreen.html" , "./McDuffsOpenScreen.html" , "./McDuffsSell.html" , "./McDuffsShifthandoff.html" , "./McDuffsWinner.html"],
       "admin@example.com": "./adminDashboard.html"
       // Add more users as needed
     };
@@ -52,13 +52,14 @@
 
       const targetPage = userAccess[email];
 
-      if (targetPage) {
-        // Redirect to user's assigned page
-        window.location.href = targetPage;
-      } else {
-        // Show alert if user isn't in access list
-        alert("You are not authorized to access this site.");
-      }
+      if (Array.isArray(targetPage)) {
+  window.location.href = targetPage[0]; // first page in the array
+} else if (typeof targetPage === "string") {
+  window.location.href = targetPage;
+} else {
+  alert("You are not authorized to access this site.");
+}
+
     }
 
     function parseJwt(token) {
