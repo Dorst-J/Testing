@@ -7,6 +7,6 @@ workers_dev = true
 
 # KV Namespace
 [[kv_namespaces]]
-binding = "SIGNINS"
-id = "5bd61eadf85c44368af7a10f792989c1"
-preview_id = "5bd61eadf85c44368af7a10f792989c1" # same as id if no separate preview namespace
+binding = "SIGNIN-LOGS"
+id = "21170895129f4be28c3f40ca676dc1ea"
+preview_id = "21170895129f4be28c3f40ca676dc1ea" # same as id if no separate preview namespace
