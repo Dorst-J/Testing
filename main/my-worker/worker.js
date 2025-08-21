@@ -75,7 +75,7 @@ export default {
 
 function corsHeaders() {
   return {
-    "Access-Control-Allow-Origin": "*", // safer: "https://thedatatab.com"
+    "Access-Control-Allow-Origin": "https://thedatatab.com", // safer: "https://thedatatab.com"
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
