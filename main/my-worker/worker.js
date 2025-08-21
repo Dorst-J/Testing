@@ -1,6 +1,22 @@
+function handleOptions(request) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",  // or your site: "https://thedatatab.com"
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    // Handle preflight CORS
+    if (request.method === "OPTIONS") {
+      return handleOptions(request);
+    }
 
     // --- POST /signin ---
     if (request.method === "POST" && url.pathname === "/signin") {
@@ -9,23 +25,22 @@ export default {
         if (!name) {
           return new Response(
             JSON.stringify({ success: false, error: "Missing name" }),
-            { headers: { "Content-Type": "application/json" }, status: 400 }
+            { headers: corsHeaders(), status: 400 }
           );
         }
 
         const timestamp = Date.now();
         const logEntry = { name, timestamp };
 
-        // Store in KV with a unique key
         await env.SIGNIN_LOGS.put(`log-${timestamp}`, JSON.stringify(logEntry));
 
         return new Response(JSON.stringify({ success: true }), {
-          headers: { "Content-Type": "application/json" },
+          headers: corsHeaders(),
         });
       } catch (err) {
         return new Response(
           JSON.stringify({ success: false, error: err.message }),
-          { headers: { "Content-Type": "application/json" }, status: 500 }
+          { headers: corsHeaders(), status: 500 }
         );
       }
     }
@@ -41,21 +56,27 @@ export default {
           if (entry) logs.push(JSON.parse(entry));
         }
 
-        // Sort newest first
         logs.sort((a, b) => b.timestamp - a.timestamp);
 
         return new Response(JSON.stringify(logs), {
-          headers: { "Content-Type": "application/json" },
+          headers: corsHeaders(),
         });
       } catch (err) {
         return new Response(
           JSON.stringify({ success: false, error: err.message }),
-          { headers: { "Content-Type": "application/json" }, status: 500 }
+          { headers: corsHeaders(), status: 500 }
         );
       }
     }
 
-    // Default route
-    return new Response("Not found", { status: 404 });
+    return new Response("Not found", { status: 404, headers: corsHeaders() });
   },
 };
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*", // safer: "https://thedatatab.com"
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
