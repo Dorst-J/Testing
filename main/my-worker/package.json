@@ -1,7 +1,7 @@
 {
-  "name": "signin-log-worker",
+  "name": "dropdown-email-worker",
   "version": "1.0.0",
-  "description": "Cloudflare Worker that sends email from dropdown form submission",
+  "description": "Cloudflare Worker that makes a log",
   "main": "worker.js",
   "scripts": {
     "start": "wrangler dev",
@@ -9,7 +9,7 @@
     "build": "wrangler build"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0"
+    "wrangler": "^4.32.0"
   },
   "license": "MIT"
 }
