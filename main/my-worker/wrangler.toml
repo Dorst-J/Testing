@@ -1,5 +1,5 @@
 name = "dropdown-email-worker"
-main = "main/worker.js"
+main = "worker.js"
 compatibility_date = "2025-08-11"
 type = "javascript"
 account_id = "85221db225a51b1c70076848e8c20111"
