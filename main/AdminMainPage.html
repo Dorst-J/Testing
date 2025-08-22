@@ -1,31 +1,40 @@
 <!DOCTYPE html>
-<html>
-    <link href="./style/style.css" type="text/css" rel="stylesheet">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
     <title>Admin Home Page</title>
-    <head>
+    <link href="./style/adminstyle.css" type="text/css" rel="stylesheet">
+</head>
+<body>
+    <header>
         <h1>Admin Home Page</h1>
-        <h2>Here are the shift handoffs,            Here are the Game Standings<br>main pages, and login log links</h2>
-    </head>
-    <br>
-    <body id="Logs">
-        <a href="./Chanticlear.html">Chanticlear Main Page</a>
-        <br>
-        <a href="./ChanticlearShifthandoff.html">Chanticlear Shift Handoffs</a>
-        <br>
-        <a href="./McDuffs.html">McDuffs Main Page</a>
-        <br>
-        <a href="./McDuffsShifthandoff.html">McDuffs Shift Handoffs</a>
-        <br>
-        <a href="./Northwoods.html">Northwoods Main Page</a>
-        <br>
-        <a href="./NorthwoodsShifthandoff.html">Northwoods Shift Handoffs</a>
-        <br>
-        <a href="./WillyMcCoys.html">Willy McCoys Main Page</a>
-        <br>
-        <a href="./WillyMcCoysShifthandoff.html">Willy McCoys Shift Handoffs</a>
-        <br>
-        <a href="./UserLog.html">Sign-In Logs</a>
-        <br>
-    </body>
+        <h2>Shift Handoffs & Game Standings</h2>
+        <p>Main pages and login log links below</p>
+    </header>
+
+    <main class="container">
+        <section class="column logs">
+            <h3>Logs & Pages</h3>
+            <ul>
+                <li><a href="./Chanticlear.html">Chanticlear Main Page</a></li>
+                <li><a href="./ChanticlearShifthandoff.html">Chanticlear Shift Handoffs</a></li>
+                <li><a href="./McDuffs.html">McDuffs Main Page</a></li>
+                <li><a href="./McDuffsShifthandoff.html">McDuffs Shift Handoffs</a></li>
+                <li><a href="./Northwoods.html">Northwoods Main Page</a></li>
+                <li><a href="./NorthwoodsShifthandoff.html">Northwoods Shift Handoffs</a></li>
+                <li><a href="./WillyMcCoys.html">Willy McCoys Main Page</a></li>
+                <li><a href="./WillyMcCoysShifthandoff.html">Willy McCoys Shift Handoffs</a></li>
+                <li><a href="./UserLog.html">Sign-In Logs</a></li>
+            </ul>
+        </section>
+
+        <section class="column standings">
+            <h3>Game Standings</h3>
+            <!-- You can dynamically inject standings here or link to a standings page -->
+            <p>Coming soon: live standings and score updates.</p>
+        </section>
+    </main>
+</body>
+
 
 </html>
