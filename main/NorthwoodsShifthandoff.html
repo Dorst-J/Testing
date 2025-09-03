@@ -32,11 +32,10 @@ if (entries.length === 0) {
     div.className = 'entry';
     div.innerHTML = `
       <div class="timestamp"><strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
-      <p><strong>Weight of Box 1:</strong> ${entry.WeightBox1}  <strong>Cash of Box 1:</strong> ${entry.WeightBox1}</p>
-      <p><strong>Weight of Box 2:</strong> ${entry.WeightBox2}</p>
-      <p><strong>Cash of Box 2:</strong> ${entry.WeightBox2}</p>
-      <p><strong>Weight of Box 3:</strong> ${entry.WeightBox3}</p>
-      <p><strong>Cash of Box 3:</strong> ${entry.WeightBox3}</p>
+      <p><strong>Weight of Box 1:</strong> ${entry.WeightBox1}  <strong>Cash of Box 1:</strong> ${entry.WeightBox1}  <strong>Tickets Left in Box 1:</strong> ${entry.LeftBox1}  <strong>Tickets Sold From Box 1:</strong> ${entry.SoldBox1}  <strong>Winning Tickets From Box 1:</strong> ${entry.WinnerBox1}</p>
+      <p><strong>Weight of Box 2:</strong> ${entry.WeightBox2}  <strong>Cash of Box 2:</strong> ${entry.WeightBox2}  <strong>Tickets Left in Box 2:</strong> ${entry.LeftBox2}  <strong>Tickets Sold From Box 2:</strong> ${entry.SoldBox2}  <strong>Winning Tickets From Box 2:</strong> ${entry.WinnerBox2}</p>
+      <p><strong>Weight of Box 3:</strong> ${entry.WeightBox3}  <strong>Cash of Box 3:</strong> ${entry.WeightBox3}  <strong>Tickets Left in Box 3:</strong> ${entry.LeftBox3}  <strong>Tickets Sold From Box 3:</strong> ${entry.SoldBox3}  <strong>Winning Tickets From Box 3:</strong> ${entry.WinnerBox3}</p>
+      <p><strong>Comments</strong> ${entry.comments}</p>
     `;
     logContainer.appendChild(div);
   });

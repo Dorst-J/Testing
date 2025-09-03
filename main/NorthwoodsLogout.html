@@ -37,7 +37,7 @@
       <input type="text" name="CashBox2" required><br><br>
 
       <label>Tickets Left:</label>
-      <input type="text" name="TicketsBox2" required><br><br>
+      <input type="text" name="LeftBox2" required><br><br>
 
       <label>Tickets Sold:</label>
       <input type="text" name="SoldBox2" required><br><br>
@@ -56,7 +56,7 @@
       <input type="text" name="CashBox3" required><br><br>
 
       <label>Tickets Left:</label>
-      <input type="text" name="TicketsBox3" required><br><br>
+      <input type="text" name="LeftBox3" required><br><br>
 
       <label>Tickets Sold:</label>
       <input type="text" name="SoldBox3" required><br><br>
@@ -94,10 +94,19 @@ document.getElementById('signOutForm').addEventListener('submit', function(e) {
   const newEntry = {
     WeightBox1: formData.get('WeightBox1'),
     CashBox1: formData.get('CashBox1'),
+    LeftBox1: formData.get('LeftBox1'),
+    SoldBox1: formData.get('SoldBox1'),
+    WinnerBox1: formData.get('WinnerBox1'),
     WeightBox2: formData.get('WeightBox2'),
     CashBox2: formData.get('CashBox2'),
+    LeftBox2: formData.get('LeftBox2'),
+    SoldBox2: formData.get('SoldBox2'),
+    WinnerBox2: formData.get('WinnerBox2'),
     WeightBox3: formData.get('WeightBox3'),
     CashBox3: formData.get('CashBox3'),
+    LeftBox3: formData.get('LeftBox3'),
+    SoldBox3: formData.get('SoldBox3'),
+    WinnerBox3: formData.get('WinnerBox3'),
     timestamp: new Date().toISOString()
   };
 
