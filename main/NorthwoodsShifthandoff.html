@@ -33,11 +33,11 @@ if (entries.length === 0) {
     div.innerHTML = `
       <div class="timestamp"><strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
       <p><strong>Weight of Box 1:</strong> ${entry.WeightBox1}</p>
-      <p><strong>Cash of Box 1:</strong> ${withDollar(entry.WeightBox1)}</p>
+      <p><strong>Cash of Box 1:</strong> ${entry.WeightBox1}</p>
       <p><strong>Weight of Box 2:</strong> ${entry.WeightBox2}</p>
-      <p><strong>Cash of Box 2:</strong> ${withDollar(entry.WeightBox2)}</p>
+      <p><strong>Cash of Box 2:</strong> ${entry.WeightBox2}</p>
       <p><strong>Weight of Box 3:</strong> ${entry.WeightBox3}</p>
-      <p><strong>Cash of Box 3:</strong> ${withDollar(entry.WeightBox3)}</p>
+      <p><strong>Cash of Box 3:</strong> ${entry.WeightBox3}</p>
     `;
     logContainer.appendChild(div);
   });
