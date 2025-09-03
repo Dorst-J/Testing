@@ -7,24 +7,64 @@
 <body>
 
   <form id="signOutForm">
-    <h2>Box 1    Box 2    Box 3</h2><br><br>
-    <label>Weight of Box 1:</label> ||  <label>Weight of Box 2:</label><br>
-    <input type="text" name="WeightBox1" required><br><br>
+  <div class="form-grid">
+    <!-- Box 1 -->
+    <div class="box">
+      <h2>Box 1</h2>
+      <label>Weight of Box 1:</label>
+      <input type="text" name="WeightBox1" required><br><br>
 
-    <label>Cash of Box 1:</label><br>
-    <input type="text" name="CashtBox1" required>   <input type="text" name="WeightBox2" required><br><br>
+      <label>Cash of Box 1:</label>
+      <input type="text" name="CashBox1" required><br><br>
 
-    <label>Tickets Left in Box 1:</label><br>
-    <input type="text" name="CashtBox1" required><br><br>
+      <label>Tickets Left in Box 1:</label>
+      <input type="text" name="TicketsBox1" required><br><br>
+    </div>
 
-    <label>Weight of Box 3:</label><br>
-    <input type="text" name="WeightBox3" required><br><br>
+    <!-- Box 2 -->
+    <div class="box">
+      <h2>Box 2</h2>
+      <label>Weight of Box 2:</label>
+      <input type="text" name="WeightBox2" required><br><br>
 
-    <label>Cash of Box 3:</label><br>
-    <input type="text" name="CashtBox3" required><br><br>
+      <label>Cash of Box 2:</label>
+      <input type="text" name="CashBox2" required><br><br>
 
-    <button type="submit">Sign Out</button>
-  </form>
+      <label>Tickets Left in Box 2:</label>
+      <input type="text" name="TicketsBox2" required><br><br>
+    </div>
+
+    <!-- Box 3 -->
+    <div class="box">
+      <h2>Box 3</h2>
+      <label>Weight of Box 3:</label>
+      <input type="text" name="WeightBox3" required><br><br>
+
+      <label>Cash of Box 3:</label>
+      <input type="text" name="CashBox3" required><br><br>
+
+      <label>Tickets Left in Box 3:</label>
+      <input type="text" name="TicketsBox3" required><br><br>
+    </div>
+  </div>
+
+  <button type="submit">Sign Out</button>
+</form>
+
+<style>
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+  gap: 20px; /* spacing between boxes */
+}
+
+.box {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+</style>
 
 <script>
 document.getElementById('signOutForm').addEventListener('submit', function(e) {
