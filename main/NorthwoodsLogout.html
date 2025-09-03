@@ -34,9 +34,12 @@ document.getElementById('signOutForm').addEventListener('submit', function(e) {
 
   const formData = new FormData(e.target);
   const newEntry = {
-    reason: formData.get('reason'),
-    feedback: formData.get('feedback'),
-    suggestions: formData.get('suggestions'),
+    WeightBox1: formData.get('WeightBox1'),
+    CashBox1: formData.get('CashBox1'),
+    WeightBox2: formData.get('WeightBox2'),
+    CashBox2: formData.get('CashBox2'),
+    WeightBox3: formData.get('WeightBox3'),
+    CashBox3: formData.get('CashBox3'),
     timestamp: new Date().toISOString()
   };
 
