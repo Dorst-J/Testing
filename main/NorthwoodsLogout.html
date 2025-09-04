@@ -64,6 +64,25 @@
       <label>Winning Tickets:</label>
       <input type="text" name="WinnerBox3" required><br><br>
     </div>
+
+    <!-- Box 4 -->
+    <div class="box">
+      <h2>Box 3</h2>
+      <label>Weight:</label>
+      <input type="text" name="WeightBox4" required><br><br>
+
+      <label>Cash:</label>
+      <input type="text" name="CashBox4" required><br><br>
+
+      <label>Tickets Left:</label>
+      <input type="text" name="LeftBox4" required><br><br>
+
+      <label>Tickets Sold:</label>
+      <input type="text" name="SoldBox4" required><br><br>
+
+      <label>Winning Tickets:</label>
+      <input type="text" name="WinnerBox4" required><br><br>
+    </div>
   </div>
 <br><br>
   <label>Comments:</label>
@@ -74,7 +93,7 @@
 <style>
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+  grid-template-columns: repeat(4, 1fr); /* 4 equal columns */
   gap: 20px; /* spacing between boxes */
 }
 
@@ -107,6 +126,11 @@ document.getElementById('signOutForm').addEventListener('submit', function(e) {
     LeftBox3: formData.get('LeftBox3'),
     SoldBox3: formData.get('SoldBox3'),
     WinnerBox3: formData.get('WinnerBox3'),
+    WeightBox1: formData.get('WeightBox4'),
+    CashBox1: formData.get('CashBox4'),
+    LeftBox1: formData.get('LeftBox4'),
+    SoldBox1: formData.get('SoldBox4'),
+    WinnerBox1: formData.get('WinnerBox4'),
     comments: formData.get('comments'),
     timestamp: new Date().toISOString()
   };
