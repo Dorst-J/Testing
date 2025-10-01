@@ -34,31 +34,26 @@
   <div id="log"></div>
 
   <script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const entries = JSON.parse(localStorage.getItem('ChanticlearFormResponses')) || [];
-    const logContainer = document.getElementById('log');
+  const entries = JSON.parse(localStorage.getItem('formResponses')) || [];
 
-    if (!logContainer) {
-      console.error('Log container not found!');
-      return;
-    }
-
-    if (entries.length === 0) {
-      logContainer.innerText = 'No submissions yet.';
-    } else {
-      entries.forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'entry';
-        div.innerHTML = `
-          <div class="timestamp"><strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
-          <p><strong>Reason:</strong> ${entry.reason}</p>
-          <p><strong>Feedback:</strong> ${entry.feedback}</p>
-          <p><strong>Suggestions:</strong> ${entry.suggestions}</p>
-        `;
-        logContainer.appendChild(div);
-      });
-    }
+const logContainer = document.getElementById('log');
+if (entries.length === 0) {
+  logContainer.innerText = 'No submissions yet.';
+} else {
+  entries.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = `
+      <div class="timestamp"><strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
+      <p><strong>Weight of Box 1:</strong> ${entry.WeightBox1},  <strong>Cash of Box 1:</strong> ${entry.WeightBox1},  <strong>Tickets Left in Box 1:</strong> ${entry.LeftBox1},  <strong>Tickets Sold From Box 1:</strong> ${entry.SoldBox1},  <strong>Winning Tickets From Box 1:</strong> ${entry.WinnerBox1}</p>
+      <p><strong>Weight of Box 2:</strong> ${entry.WeightBox2},  <strong>Cash of Box 2:</strong> ${entry.WeightBox2},  <strong>Tickets Left in Box 2:</strong> ${entry.LeftBox2},  <strong>Tickets Sold From Box 2:</strong> ${entry.SoldBox2},  <strong>Winning Tickets From Box 2:</strong> ${entry.WinnerBox2}</p>
+      <p><strong>Weight of Box 3:</strong> ${entry.WeightBox3},  <strong>Cash of Box 3:</strong> ${entry.WeightBox3},  <strong>Tickets Left in Box 3:</strong> ${entry.LeftBox3},  <strong>Tickets Sold From Box 3:</strong> ${entry.SoldBox3},  <strong>Winning Tickets From Box 3:</strong> ${entry.WinnerBox3}</p>
+      <p><strong>Weight of Box 4:</strong> ${entry.WeightBox4},  <strong>Cash of Box 4:</strong> ${entry.WeightBox4},  <strong>Tickets Left in Box 4:</strong> ${entry.LeftBox4},  <strong>Tickets Sold From Box 4:</strong> ${entry.SoldBox4},  <strong>Winning Tickets From Box 4:</strong> ${entry.WinnerBox4}</p>
+      <p><strong>Comments</strong> ${entry.comments}</p>
+    `;
+    logContainer.appendChild(div);
   });
+};
     localStorage.setItem('ChanticlearLastViewed', new Date().toISOString());
 </script>
 

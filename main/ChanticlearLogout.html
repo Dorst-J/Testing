@@ -5,31 +5,135 @@
   <title>Logout Form</title>
 </head>
 <body>
-
   <form id="signOutForm">
-    <label>Reason for leaving:</label><br>
-    <input type="text" name="reason" required><br><br>
+  <div class="form-grid">
+    <!-- Box 1 -->
+    <div class="box">
+      <h2>Box 1</h2>
+      <label>Weight:</label>
+      <input type="text" name="WeightBox1" required><br><br>
 
-    <label>Feedback:</label><br>
-    <input type="text" name="feedback" required><br><br>
+      <label>Cash:</label>
+      <input type="text" name="CashBox1" required><br><br>
 
-    <label>Suggestions:</label><br>
-    <input type="text" name="suggestions" required><br><br>
+      <label>Tickets Left:</label>
+      <input type="text" name="LeftBox1" required><br><br>
 
-    <button type="submit">Sign Out</button>
-  </form>
+      <label>Tickets Sold:</label>
+      <input type="text" name="SoldBox1" required><br><br>
+
+      <label>Winning Tickets:</label>
+      <input type="text" name="WinnerBox1" required><br><br>
+    </div>
+
+    <!-- Box 2 -->
+    <div class="box">
+      <h2>Box 2</h2>
+      <label>Weight:</label>
+      <input type="text" name="WeightBox2" required><br><br>
+
+      <label>Cash:</label>
+      <input type="text" name="CashBox2" required><br><br>
+
+      <label>Tickets Left:</label>
+      <input type="text" name="LeftBox2" required><br><br>
+
+      <label>Tickets Sold:</label>
+      <input type="text" name="SoldBox2" required><br><br>
+
+      <label>Winning Tickets:</label>
+      <input type="text" name="WinnerBox2" required><br><br>
+    </div>
+
+    <!-- Box 3 -->
+    <div class="box">
+      <h2>Box 3</h2>
+      <label>Weight:</label>
+      <input type="text" name="WeightBox3" required><br><br>
+
+      <label>Cash:</label>
+      <input type="text" name="CashBox3" required><br><br>
+
+      <label>Tickets Left:</label>
+      <input type="text" name="LeftBox3" required><br><br>
+
+      <label>Tickets Sold:</label>
+      <input type="text" name="SoldBox3" required><br><br>
+
+      <label>Winning Tickets:</label>
+      <input type="text" name="WinnerBox3" required><br><br>
+    </div>
+
+    <!-- Box 4 -->
+    <div class="box">
+      <h2>Box 4</h2>
+      <label>Weight:</label>
+      <input type="text" name="WeightBox4" required><br><br>
+
+      <label>Cash:</label>
+      <input type="text" name="CashBox4" required><br><br>
+
+      <label>Tickets Left:</label>
+      <input type="text" name="LeftBox4" required><br><br>
+
+      <label>Tickets Sold:</label>
+      <input type="text" name="SoldBox4" required><br><br>
+
+      <label>Winning Tickets:</label>
+      <input type="text" name="WinnerBox4" required><br><br>
+    </div>
+  </div>
+<br><br>
+  <label>Comments:</label>
+  <input type="text" name="comments" required><br><br>
+  <button type="submit">Sign Out</button>
+</form>
+
+<style>
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 equal columns */
+  gap: 20px; /* spacing between boxes */
+}
+
+.box {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+</style>
 
 <script>
-  document.getElementById('signOutForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+document.getElementById('signOutForm').addEventListener('submit', function(e) {
+  e.preventDefault();
 
-    const formData = new FormData(e.target);
-    const newEntry = {
-      reason: formData.get('reason'),
-      feedback: formData.get('feedback'),
-      suggestions: formData.get('suggestions'),
-      timestamp: new Date().toISOString()
-    };
+  const formData = new FormData(e.target);
+  const newEntry = {
+    WeightBox1: formData.get('WeightBox1'),
+    CashBox1: formData.get('CashBox1'),
+    LeftBox1: formData.get('LeftBox1'),
+    SoldBox1: formData.get('SoldBox1'),
+    WinnerBox1: formData.get('WinnerBox1'),
+    WeightBox2: formData.get('WeightBox2'),
+    CashBox2: formData.get('CashBox2'),
+    LeftBox2: formData.get('LeftBox2'),
+    SoldBox2: formData.get('SoldBox2'),
+    WinnerBox2: formData.get('WinnerBox2'),
+    WeightBox3: formData.get('WeightBox3'),
+    CashBox3: formData.get('CashBox3'),
+    LeftBox3: formData.get('LeftBox3'),
+    SoldBox3: formData.get('SoldBox3'),
+    WinnerBox3: formData.get('WinnerBox3'),
+    WeightBox4: formData.get('WeightBox4'),
+    CashBox4: formData.get('CashBox4'),
+    LeftBox4: formData.get('LeftBox4'),
+    SoldBox4: formData.get('SoldBox4'),
+    WinnerBox4: formData.get('WinnerBox4'),
+    comments: formData.get('comments'),
+    timestamp: new Date().toISOString()
+  };
+
 
     // ✅ Use the correct key here
     const existing = JSON.parse(localStorage.getItem('ChanticlearFormResponses')) || [];
