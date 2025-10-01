@@ -83,6 +83,24 @@
       <label>Winning Tickets:</label>
       <input type="text" name="WinnerBox4" required><br><br>
     </div>
+    <!-- Box 5 -->
+    <div class="box">
+      <h2>Box 3</h2>
+      <label>Weight:</label>
+      <input type="text" name="WeightBox5" required><br><br>
+
+      <label>Cash:</label>
+      <input type="text" name="CashBox5" required><br><br>
+
+      <label>Tickets Left:</label>
+      <input type="text" name="LeftBox5" required><br><br>
+
+      <label>Tickets Sold:</label>
+      <input type="text" name="SoldBox5" required><br><br>
+
+      <label>Winning Tickets:</label>
+      <input type="text" name="WinnerBox5" required><br><br>
+    </div>
   </div>
 <br><br>
   <label>Comments:</label>
@@ -131,6 +149,11 @@ document.getElementById('signOutForm').addEventListener('submit', function(e) {
     LeftBox4: formData.get('LeftBox4'),
     SoldBox4: formData.get('SoldBox4'),
     WinnerBox4: formData.get('WinnerBox4'),
+    WeightBox5: formData.get('WeightBox5'),
+    CashBox5: formData.get('CashBox5'),
+    LeftBox5: formData.get('LeftBox5'),
+    SoldBox5: formData.get('SoldBox5'),
+    WinnerBox5: formData.get('WinnerBox5'),
     comments: formData.get('comments'),
     timestamp: new Date().toISOString()
   };
