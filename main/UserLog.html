@@ -70,12 +70,15 @@
         logs.forEach(log => {
           const row = document.createElement("tr");
           const nameCell = document.createElement("td");
+          const emailCell = document.createElement("td");
           const timeCell = document.createElement("td");
 
           nameCell.textContent = log.name;
+          emailCell.textContent = log.email;
           timeCell.textContent = new Date(log.timestamp).toLocaleString();
 
           row.appendChild(nameCell);
+          row.appendChild(emailCell);
           row.appendChild(timeCell);
           tbody.appendChild(row);
         });
