@@ -30,7 +30,7 @@ export default {
         }
 
         const timestamp = Date.now();
-        const logEntry = { name, timestamp };
+        const logEntry = { name, email, timestamp };
 
         await env.SIGNIN_LOGS.put(`log-${timestamp}`, JSON.stringify(logEntry));
 
