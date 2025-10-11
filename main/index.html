@@ -175,12 +175,12 @@ const API_URL = "https://thedatatab.jenna-dorst.workers.dev"; // replace with yo
       return JSON.parse(jsonPayload);
     }
 
-    async function logSignIn(name) {
+    async function logSignIn(name, email) {
       try {
         const res = await fetch(`${API_URL}/signin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name })
+          body: JSON.stringify({ name, email })
         });
         const data = await res.json();
         if (!data.success) {
