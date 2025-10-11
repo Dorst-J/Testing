@@ -20,30 +20,31 @@ export default {
 
     // --- POST /signin ---
     if (request.method === "POST" && url.pathname === "/signin") {
-      try {
-        const { name } = await request.json();
-        if (!name) {
-          return new Response(
-            JSON.stringify({ success: false, error: "Missing name" }),
-            { headers: corsHeaders(), status: 400 }
-          );
-        }
+  try {
+    const { name, email } = await request.json(); // <-- Added email here
 
-        const timestamp = Date.now();
-        const logEntry = { name, email, timestamp };
-
-        await env.SIGNIN_LOGS.put(`log-${timestamp}`, JSON.stringify(logEntry));
-
-        return new Response(JSON.stringify({ success: true }), {
-          headers: corsHeaders(),
-        });
-      } catch (err) {
-        return new Response(
-          JSON.stringify({ success: false, error: err.message }),
-          { headers: corsHeaders(), status: 500 }
-        );
-      }
+    if (!name || !email) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing name or email" }),
+        { headers: corsHeaders(), status: 400 }
+      );
     }
+
+    const timestamp = Date.now();
+    const logEntry = { name, email, timestamp }; // <-- Include email in log
+
+    await env.SIGNIN_LOGS.put(`log-${timestamp}`, JSON.stringify(logEntry));
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: corsHeaders(),
+    });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ success: false, error: err.message }),
+      { headers: corsHeaders(), status: 500 }
+    );
+  }
+}
 
     // --- GET /logs ---
     if (request.method === "GET" && url.pathname === "/logs") {
