@@ -48,7 +48,7 @@
       </tr>
     </thead>
     <tbody id="logTableBody">
-      <tr><td colspan="2">Loading...</td></tr>
+      <tr><td colspan="3">Loading...</td></tr>
     </tbody>
   </table>
 
@@ -64,7 +64,7 @@
         tbody.innerHTML = "";
 
         if (logs.length === 0) {
-          tbody.innerHTML = "<tr><td colspan='2'>No logs found</td></tr>";
+          tbody.innerHTML = "<tr><td colspan='3'>No logs found</td></tr>";
           return;
         }
 
@@ -86,7 +86,7 @@
       } catch (err) {
         console.error("Error fetching logs:", err);
         document.getElementById("logTableBody").innerHTML =
-          "<tr><td colspan='2'>Error loading logs</td></tr>";
+          "<tr><td colspan='3'>Error loading logs</td></tr>";
       }
     }
 
