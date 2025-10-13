@@ -151,7 +151,7 @@
   isSignedIn = true;
 
   // Send sign-in info to Cloudflare Worker log
-  logSignIn(tokenData.name || email);
+  logSignIn(tokenData.name || email, email);
 
   // Redirect to assigned page
   const config = userAccess[email];
