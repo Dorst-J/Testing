@@ -44,7 +44,7 @@
 
   async function logoutUser() {
     try {
-      await fetch('https://your-worker-name.workers.dev/auth/logout', {
+      await fetch('https://thedatatab.jenna-dorst.workers.dev/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId })
