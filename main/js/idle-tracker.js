@@ -1,7 +1,7 @@
 (() => {
-  const MAX_IDLE_MS = 1 * 60_000;   // 1 minutes
-  const HEARTBEAT_INTERVAL = 30_000; // every 1 minute
-  const WARNING_MS = 45_000;         // 1 minute before logout
+  const MAX_IDLE_MS = 5 * 60_000;   // 1 minutes
+  const HEARTBEAT_INTERVAL = 60_000; // every 1 minute
+  const WARNING_MS = 60_000;         // 1 minute before logout
 
   let lastActivity = Date.now();
   let sessionId = localStorage.getItem('sessionId');
@@ -51,7 +51,7 @@
       });
     } catch (e) {}
     localStorage.removeItem('sessionId');
-    window.location.href = '/login.html?reason=idle';
+    window.location.href = '/index.html?reason=idle';
   }
 
   function showWarning() {
