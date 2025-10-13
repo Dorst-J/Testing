@@ -21,7 +21,7 @@
 
   async function sendHeartbeat() {
     try {
-      await fetch('https://your-worker-name.workers.dev/api/heartbeat', {
+      await fetch('https://thedatatab.jenna-dorst.workers.dev/api/heartbeat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId })
