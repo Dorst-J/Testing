@@ -21,7 +21,7 @@
 
   async function sendHeartbeat() {
     try {
-      await fetch('https://thedatatab.jenna-dorst.workers.dev/heartbeat', {
+      await fetch('https://thedatatab.jenna-dorst.workers.dev/api/heartbeat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId })
@@ -44,7 +44,7 @@
 
   async function logoutUser() {
     try {
-      await fetch('https://thedatatab.jenna-dorst.workers.dev/logout', {
+      await fetch('https://thedatatab.jenna-dorst.workers.dev/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId })
