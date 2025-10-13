@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Out</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 4rem;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 18px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Are you sure you want to sign out?</h1>
+  <button id="signOutBtn">Sign Out</button>
+  <div id="message"></div>
+
+  <script>
+    const btn = document.getElementById('signOutBtn');
+    const message = document.getElementById('message');
+
+    btn.addEventListener('click', () => {
+      // Example sign-out logic (clear session or redirect)
+      // window.location.href = "/login.html"; // optional redirect
+
+      btn.disabled = true;
+      message.textContent = "✅ You have been signed out.";
+    });
+  </script>
+
+</body>
+</html>
