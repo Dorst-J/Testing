@@ -4,6 +4,12 @@ compatibility_date = "2025-08-11"
 type = "javascript"
 account_id = "85221db225a51b1c70076848e8c20111"
 workers_dev = true
+[observability]
+[observability.logs]
+enabled = false
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
 
 # KV Namespace
 [[kv_namespaces]]
