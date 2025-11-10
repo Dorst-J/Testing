@@ -184,7 +184,7 @@ if (request.method === "POST" && path === "/api/game/status/update") {
             }
             row.Box_Number = parseInt(boxNumber);
         } else {
-            row.['Box_Number'] = null;
+            row['Box_Number'] = null;
         }
         
         // Explicitly cast ALL numerical values in the row object to their best types
