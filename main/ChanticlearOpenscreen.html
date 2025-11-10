@@ -199,80 +199,89 @@
         }
     }
 
-    document.getElementById('inventoryForm').addEventListener('submit', async function(e) {
+    // --- In ChanticlearOpenscreen.html (New Game Form Submission) ---
+
+document.getElementById('inventoryForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // ** CRITICAL FIX: Re-read the input value directly **
+    // 1. CRITICAL: Retrieve the serial number directly and validate it immediately.
     const serial = document.getElementById('serialInput').value.trim();
     const messageDiv = document.getElementById('message');
     const formData = new FormData(this);
     
     if (!serial) {
-        messageDiv.textContent = 'Error: Missing or invalid input for column Serial_MF_Part.';
+        // Use the Worker's explicit error text to ensure we know this is a client-side block
+        messageDiv.textContent = 'Error: Serial Number box is empty. Cannot add game.';
         return;
     }
+
+    // --- CRITICAL FIX: Explicitly build the newGame object with all 16 required columns ---
+    const newGame = { 
+        // 1. Serial ID (from the search box)
+        Serial_MF_Part: serial,
         
-        // --- CRITICAL FIX: Explicitly build the newGame object with all 16 required columns ---
-        const newGame = { 
-    // ...
-    // FIX: Must use 'Number_Tickets' as used in Worker ALL_COLUMNS
-    Ticket_Price: parseFloat(formData.get('Ticket_Price')),
-    Number_Tickets: parseInt(formData.get('Number_Tickets')), // NOW CORRECTLY RETRIEVES THE VALUE
-    Tickets_Sold: 0, 
-    Current_Tickets: parseInt(formData.get('Current_Tickets')),
-    Number_Winners: parseInt(formData.get('Number_Winners')),
-    Winners_Sold: 0,
-    Current_Winners: parseInt(formData.get('Current_Winners')),
-    P_NP: formData.get('P_NP'),
-    Cash_Hand: 200, 
-    Ideal_Gross: parseFloat(formData.get('Ideal_Gross')),
-    Ideal_Prize: parseFloat(formData.get('Ideal_Prize')),
-    Ideal_Net: parseFloat(formData.get('Ideal_Net')),
-    // FIX: Must use 'Game_Cost' as used in Worker ALL_COLUMNS
-    Game_Cost: parseFloat(formData.get('Game_Cost')), // NOW CORRECTLY RETRIEVES THE VALUE
-    // ...
-};
-        // ------------------------------------------------------------------------------------
-        const TEXT_COLUMNS = ['P_NP', 'Game_Name', 'Serial_MF_Part', 'Status'];
-        // Ensure required numerical fields are actually present
-        for (const [key, value] of Object.entries(newGame)) {
-    // Check if the current column is *not* a text column
-    if (!TEXT_COLUMNS.includes(key)) {
-        // Now, perform strict numerical validation:
-        // Check if the value is null or NaN (invalid number)
-        if (value === null || isNaN(value)) {
-             messageDiv.textContent = `Error: Missing or invalid numerical input for column ${key}.`;
+        // 2-15. Data from form inputs (Uses final canonical names)
+        Game_Name: formData.get('Game_Name'),
+        Ticket_Price: parseFloat(formData.get('Ticket_Price')),
+        Number_Tickets: parseInt(formData.get('Number_Tickets')),
+        Tickets_Sold: 0, 
+        Current_Tickets: parseInt(formData.get('Current_Tickets')),
+        Number_Winners: parseInt(formData.get('Number_Winners')),
+        Winners_Sold: 0, 
+        Current_Winners: parseInt(formData.get('Current_Winners')),
+        P_NP: formData.get('P_NP'),
+        Cash_Hand: 200, 
+        Ideal_Gross: parseFloat(formData.get('Ideal_Gross')),
+        Ideal_Prize: parseFloat(formData.get('Ideal_Prize')),
+        Ideal_Net: parseFloat(formData.get('Ideal_Net')),
+        Game_Cost: parseFloat(formData.get('Game_Cost')),
+        
+        // 16. Status
+        Status: "Inventory", 
+    };
+    // ------------------------------------------------------------------------------------
+    
+    // Define all non-numerical columns for validation exclusion
+    const TEXT_COLUMNS = ['P_NP', 'Game_Name', 'Serial_MF_Part', 'Status'];
+    
+    // Ensure required numerical fields are actually present (client-side validation)
+    for (const [key, value] of Object.entries(newGame)) {
+        if (!TEXT_COLUMNS.includes(key)) {
+            // Check if the numerical value is null or NaN
+            if (value === null || isNaN(value)) {
+                 messageDiv.textContent = `Error: Missing or invalid numerical input for column ${key}.`;
+                 return;
+            }
+        } else if (key === 'Game_Name' && value.trim() === "") {
+             messageDiv.textContent = `Error: Game_Name cannot be blank.`;
              return;
         }
-    } else {
-        // For TEXT columns, ensure they are not sent as empty strings if required (only P_NP and Game_Name)
-        if ( (key === 'P_NP' || key === 'Game_Name') && value.trim() === "") {
-             messageDiv.textContent = `Error: ${key} cannot be left blank.`;
-             return;}
-            }
+        // Note: P_NP can be left blank if your database allows NULL/empty string, 
+        // but we'll allow it here since the database will check NOT NULL.
+    }
+
+    try {
+        messageDiv.textContent = 'Adding new game to Inventory...';
+        const response = await fetch(WORKER_URL + '/api/game/inventory/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newGame)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            messageDiv.textContent = `Success! New game ${serial} added to Inventory.`;
+            document.getElementById('newGameForm').classList.add('hidden');
+        } else {
+            // Display error returned by the Worker (e.g., D1_TYPE_ERROR)
+            messageDiv.textContent = `New Game Entry Failed: ${result.error}`;
         }
-
-        try {
-            messageDiv.textContent = 'Adding new game to Inventory...';
-            const response = await fetch(WORKER_URL + '/api/game/inventory/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newGame)
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                messageDiv.textContent = `Success! New game ${serial} added to Inventory.`;
-                document.getElementById('newGameForm').classList.add('hidden');
-            } else {
-                messageDiv.textContent = `New Game Entry Failed: ${result.error}`;
-            }
-        } catch (error) {
-            messageDiv.textContent = `Error: ${error.message}. Could not add game.`;
-            console.error('New Game Error:', error);
-        }
-    });
+    } catch (error) {
+        messageDiv.textContent = `Error: ${error.message}. Could not add game.`;
+        console.error('New Game Error:', error);
+    }
+});
 
 </script>
 <script src="/js/idle-tracker.js?v=20251013"></script>
