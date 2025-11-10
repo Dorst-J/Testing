@@ -5,11 +5,19 @@ type = "javascript"
 account_id = "85221db225a51b1c70076848e8c20111"
 workers_dev = true
 [observability]
-[observability.logs]
 enabled = false
 head_sampling_rate = 1
-invocation_logs = true
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
 persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
 
 # KV Namespace
 [[kv_namespaces]]
