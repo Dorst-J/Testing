@@ -19,18 +19,18 @@ const OPEN_TABLE = "Chanticlear_Open";
 const CLOSED_TABLE = "Chanticlear_Closed";
 const DB_NAME = "araa_testing";
 
-// CRITICAL: Updated column names based on your final consistency check
+// CRITICAL: Standardized Column Names (Number_Tickets, Game_Cost)
 const ALL_COLUMNS = [
     "Serial_MF_Part", "Game_Name", "Ticket_Price", "Number_Tickets",
     "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold",
     "Current_Winners", "P_NP", "Cash_Hand", "Ideal_Gross",
-    "Ideal_Prize", "Ideal_Net", "Game_Cost", // Standardized to uppercase C
+    "Ideal_Prize", "Ideal_Net", "Game_Cost", 
     "Status", "Box_Number"
 ];
 
-// Columns to show in the Main Page pop-up
+// Columns to show in the Main Page pop-up (Ticket_Price added for Sell page logic)
 const POPUP_COLUMNS = [
-    "Serial_MF_Part", "Game_Name", "Cash_Hand", "Current_Tickets", "Current_Winners", "Ticket_Price"
+    "Serial_MF_Part", "Game_Name", "Cash_Hand", "Current_Tickets", "Current_Winners", "Ticket_Price" 
 ];
 
 /**
@@ -55,20 +55,16 @@ async function moveRow(serial, currentTable, newTable, data, db) {
     try {
         let row = data; 
         
-        // 1. Construct INSERT query
         const cols = ALL_COLUMNS.join(", "); 
         const placeholders = ALL_COLUMNS.map(() => '?').join(", ");
         
-        // 2. Map row data to the exact order of ALL_COLUMNS
         const values = ALL_COLUMNS.map(col => {
-            // Check for property existence and correctly map undefined/null to SQL NULL
             return (row.hasOwnProperty(col) && row[col] !== null && row[col] !== undefined) ? row[col] : null;
         });
 
         const insertQuery = `INSERT INTO ${newTable} (${cols}) VALUES (${placeholders})`;
         await db.prepare(insertQuery).bind(...values).run();
         
-        // 3. Delete from the old table
         const deleteQuery = `DELETE FROM ${currentTable} WHERE Serial_MF_Part = ?`;
         await db.prepare(deleteQuery).bind(serial).run();
 
@@ -77,7 +73,7 @@ async function moveRow(serial, currentTable, newTable, data, db) {
     } catch (error) {
         await db.exec("ROLLBACK");
         console.error("Error moving row:", error);
-        throw error; // Rethrow to be caught by the route handler
+        throw error;
     }
 }
 
@@ -119,7 +115,8 @@ export default {
                 const columns = ALL_COLUMNS.filter(col => col !== 'Box_Number');
                 const placeholders = columns.map(() => '?').join(", ");
 
-                const values = columns.map(col => newGame[col]);
+                // CRITICAL: The values are now correctly sent from the HTML as a complete object.
+                const values = columns.map(col => newGame[col]); 
 
                 const insertQuery = `INSERT INTO ${INVENTORY_TABLE} (${columns.join(", ")}, Box_Number) VALUES (${placeholders}, NULL)`;
                 await env.araa_testing.prepare(insertQuery).bind(...values).run();
@@ -152,7 +149,6 @@ export default {
                         { headers: corsHeaders(), status: 400 });
                 }
                 
-                // 1. Get current row data (SELECT *)
                 const selectQuery = `SELECT * FROM ${oldTable} WHERE Serial_MF_Part = ?`;
                 const { results } = await env.araa_testing.prepare(selectQuery).bind(serial).all();
 
@@ -160,9 +156,9 @@ export default {
                     return new Response(JSON.stringify({ success: false, error: `Game ${serial} not found in ${oldTable}` }), 
                         { headers: corsHeaders(), status: 404 });
                 }
-                let row = results[0]; // IMPORTANT: Keep 'let' here for modification
+                let row = results[0];
                 
-                // --- 2. Sanitize and Update Row Data (All Necessary Conversions) ---
+                // --- 2. Sanitize and Update Row Data (All Conversions) ---
                 row.Status = newStatus;
 
                 // Set Box_Number (Required for Open, Null otherwise)
@@ -175,7 +171,7 @@ export default {
                     row.Box_Number = null;
                 }
                 
-                // CRITICAL FIX: Cast all numerical values to guarantee D1 sees clean numbers
+                // CRITICAL FIX: Cast all numerical values for D1 compatibility
                 const NUMERICAL_COLUMNS = [
                     "Ticket_Price", "Number_Tickets", "Tickets_Sold", "Current_Tickets", 
                     "Number_Winners", "Winners_Sold", "Current_Winners", "Cash_Hand", 
@@ -190,10 +186,9 @@ export default {
                     
                     const parsedValue = parseFloat(value);
                     if (isNaN(parsedValue)) {
-                        // If data is trash (e.g., empty string), set to null to avoid SQL error
                         row[col] = null; 
                     } else {
-                        // For integer fields, cast them explicitly
+                        // Integer fields must be cast to integer
                         if (["Number_Tickets", "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold", "Current_Winners"].includes(col)) {
                             row[col] = parseInt(parsedValue);
                         } else {
@@ -202,7 +197,6 @@ export default {
                     }
                 });
                 // --- END Sanitize and Update Row Data ---
-
 
                 // 3. Move the row
                 await moveRow(serial, oldTable, newTable, row, env.araa_testing);
@@ -251,7 +245,8 @@ export default {
                         { headers: corsHeaders(), status: 404 });
                 }
                 const game = results[0];
-
+                
+                // Ensure all math uses numbers, not strings from the DB
                 const newTicketsSold = parseInt(game.Tickets_Sold) + parseInt(ticketsSold);
                 const newCurrentTickets = parseInt(game.Number_Tickets) - newTicketsSold;
                 const newCashHand = parseFloat(game.Cash_Hand) + parseFloat(moneyInserted);
@@ -316,7 +311,7 @@ export default {
             }
         }
         
-        // --- Default Fallback ---
+        // --- Default Fallback (Placeholder for signin/logout/etc.) ---
         return new Response("Not found", { status: 404, headers: corsHeaders() });
     },
 };

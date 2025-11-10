@@ -89,7 +89,7 @@
 
 <script>
     // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
-    const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
+    const WORKER_URL = "https://your-worker-name.your-username.workers.dev";
     let gameData = {}; // To store the found game's details
 
     document.getElementById('statusDropdown').addEventListener('change', function() {
@@ -143,6 +143,11 @@
                 // Game not found - prepare for new entry
                 messageDiv.textContent = `Game serial ${serial} not found. Ready to add to Inventory.`;
                 document.getElementById('inventoryForm').reset();
+                // Prefill defaults that were not fields but columns
+                document.getElementById('q4').value = 0; // Tickets_Sold
+                document.getElementById('q7').value = 0; // Winners_Sold
+                document.getElementById('q10').value = 200; // Cash_Hand
+                document.getElementById('q15').value = 'Inventory'; // Status
                 newGameForm.classList.remove('hidden');
             }
 
@@ -153,6 +158,7 @@
     }
 
     async function updateStatus() {
+        // ... (Status update logic remains the same)
         const serial = document.getElementById('serialInput').value.trim();
         const newStatus = document.getElementById('statusDropdown').value;
         const boxNumber = document.getElementById('boxNumberInput').value.trim();
@@ -198,36 +204,43 @@
         const serial = document.getElementById('serialInput').value.trim();
         const messageDiv = document.getElementById('message');
         const formData = new FormData(this);
-        const newGame = { Serial_MF_Part: serial };
-
-        // Map form data to column names
-        // Q1: Game_Name, Q2: Ticket_Price, Q3: Numer_Tickets, Q4: Tickets_Sold, Q5: Current_Tickets, 
-        // Q6: Number_Winners, Q7: Winners_Sold, Q8: Current_Winners, Q9: P_NP, Q10: Cash_Hand, 
-        // Q11: Ideal_Gross, Q12: Ideal_Prize, Q13: Ideal_Net, Q14: Game_cost, Q15: Status
-        const columnMap = {
-            'q1': 'Game_Name', 'q2': 'Ticket_Price', 'q3': 'Numer_Tickets', 'q4': 'Tickets_Sold', 
-            'q5': 'Current_Tickets', 'q6': 'Number_Winners', 'q7': 'Winners_Sold', 'q8': 'Current_Winners', 
-            'q9': 'P_NP', 'q10': 'Cash_Hand', 'q11': 'Ideal_Gross', 'q12': 'Ideal_Prize', 
-            'q13': 'Ideal_Net', 'q14': 'Game_cost', 'q15': 'Status'
+        
+        // --- CRITICAL FIX: Explicitly build the newGame object with all 16 required columns ---
+        const newGame = { 
+            // 1. Serial ID (from the search box)
+            Serial_MF_Part: serial,
+            
+            // 2-15. Data from form inputs (Note: name attributes must match final column names)
+            Game_Name: formData.get('Game_Name'),
+            Ticket_Price: parseFloat(formData.get('Ticket_Price')),
+            Number_Tickets: parseInt(formData.get('Number_Tickets')),
+            Tickets_Sold: 0, // Hardcoded default based on Q4
+            Current_Tickets: parseInt(formData.get('Current_Tickets')),
+            Number_Winners: parseInt(formData.get('Number_Winners')),
+            Winners_Sold: 0, // Hardcoded default based on Q7
+            Current_Winners: parseInt(formData.get('Current_Winners')),
+            P_NP: formData.get('P_NP'),
+            Cash_Hand: 200, // Hardcoded default based on Q10
+            Ideal_Gross: parseFloat(formData.get('Ideal_Gross')),
+            Ideal_Prize: parseFloat(formData.get('Ideal_Prize')),
+            Ideal_Net: parseFloat(formData.get('Ideal_Net')),
+            Game_Cost: parseFloat(formData.get('Game_Cost')),
+            
+            // 16. Status (Hardcoded default based on Q15)
+            Status: "Inventory", 
         };
-
-        for (let pair of formData.entries()) {
-            const [key, value] = pair;
-            const columnName = columnMap[key] || key;
-            // Convert numbers
-            if (['Ticket_Price', 'Numer_Tickets', 'Tickets_Sold', 'Current_Tickets', 'Number_Winners', 'Winners_Sold', 'Current_Winners', 'Cash_Hand', 'Ideal_Gross', 'Ideal_Prize', 'Ideal_Net', 'Game_cost'].includes(columnName)) {
-                newGame[columnName] = parseFloat(value);
-            } else {
-                newGame[columnName] = value;
+        // ------------------------------------------------------------------------------------
+        
+        // Ensure required numerical fields are actually present
+        for (const [key, value] of Object.entries(newGame)) {
+            if (key !== 'P_NP' && key !== 'Game_Name' && value === null || isNaN(value)) {
+                 // Note: If any required number field is blank in the form, it becomes NaN, 
+                 // which we check here.
+                 messageDiv.textContent = `Error: Missing or invalid input for column ${key}.`;
+                 return;
             }
         }
 
-        // Final checks for required default values
-        newGame.Tickets_Sold = 0;
-        newGame.Winners_Sold = 0;
-        newGame.Cash_Hand = 200;
-        newGame.Status = "Inventory";
-        
         try {
             messageDiv.textContent = 'Adding new game to Inventory...';
             const response = await fetch(WORKER_URL + '/api/game/inventory/create', {
