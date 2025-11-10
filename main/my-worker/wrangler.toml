@@ -15,3 +15,8 @@ preview_id = "21170895129f4be28c3f40ca676dc1ea" # same as id if no separate prev
 binding = "SESSION_STATE"
 id = "9af89a52da844c5bae5ef2bab7e4f375"
 preview_id = "9af89a52da844c5bae5ef2bab7e4f375" # same as id if no separate preview namespace
+
+[[d1_databases]]
+binding = "DB"
+database_name = "araa_testing"
+dtabase_id = "1676ab2e-74e7-4b7e-b84c-b4c45adeb40c"
