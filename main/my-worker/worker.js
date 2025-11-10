@@ -21,10 +21,10 @@ const DB_NAME = "araa_testing";
 
 // CRITICAL: Updated column names based on your final consistency check
 const ALL_COLUMNS = [
-    "Serial_MF_Part", "Game_Name", "Ticket_Price", "Number_Tickets", // Corrected Number_Tickets
+    "Serial_MF_Part", "Game_Name", "Ticket_Price", "Number_Tickets",
     "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold",
     "Current_Winners", "P_NP", "Cash_Hand", "Ideal_Gross",
-    "Ideal_Prize", "Ideal_Net", "Game_Cost", // Corrected Game_Cost (assuming upper C standard)
+    "Ideal_Prize", "Ideal_Net", "Game_Cost", // Standardized to uppercase C
     "Status", "Box_Number"
 ];
 
