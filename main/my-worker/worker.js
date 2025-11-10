@@ -53,18 +53,23 @@ async function findGameBySerial(serial, db) {
 async function moveRow(serial, currentTable, newTable, data, db) {
     await db.exec("BEGIN");
     try {
-        let row = data; // Assumes 'data' is the clean, final object
-
+        let row = data; 
+        
         const cols = ALL_COLUMNS.join(", "); 
         const placeholders = ALL_COLUMNS.map(() => '?').join(", ");
         
-        // CRITICAL: We rely entirely on the row properties being correctly set by the route handler.
+        // CRITICAL FIX: Simplify mapping to ONLY read property values.
         const values = ALL_COLUMNS.map(col => {
-            return (row.hasOwnProperty(col) && row[col] !== null && row[col] !== undefined) ? row[col] : null;
+            // Read value directly. If it's undefined (meaning the property doesn't exist), 
+            // convert it to null for SQL, otherwise use the value (which is already sanitized).
+            const value = row[col];
+            return (value === undefined || value === null) ? null : value;
         });
 
         const insertQuery = `INSERT INTO ${newTable} (${cols}) VALUES (${placeholders})`;
+        // console.log should now execute!
         console.log("Attempting INSERT:", insertQuery, "with values:", values);
+        
         await db.prepare(insertQuery).bind(...values).run();
         
         const deleteQuery = `DELETE FROM ${currentTable} WHERE Serial_MF_Part = ?`;
@@ -74,8 +79,8 @@ async function moveRow(serial, currentTable, newTable, data, db) {
         return { success: true };
     } catch (error) {
         await db.exec("ROLLBACK");
-        console.error("Error moving row:", error);
-        throw error;
+        // CRITICAL: Throw the error *message* instead of the error object to prevent crash
+        throw new Error(error.message || "Unknown SQL Transaction Error"); 
     }
 }
 
