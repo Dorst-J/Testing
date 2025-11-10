@@ -71,19 +71,15 @@ async function moveRow(serial, currentTable, newTable, values, db) {
     } catch (error) {
         await db.exec("ROLLBACK");
         
-        // **ULTIMATE FIX:** Safely capture the error by converting the object to a string.
-        let errorMessage;
+        // **THE HARDEST FIX:** Use the generic String() constructor.
+        // This is guaranteed not to crash and will capture whatever text representation D1 provides.
+        const safeErrorMessage = `D1 Transaction Failed: ${String(error)}`;
         
-        try {
-             // 1. Try to stringify the object to safely capture the details
-            errorMessage = "D1 Transaction Failed: " + JSON.stringify(error);
-        } catch (e) {
-            // 2. Fallback to a simple string if the object is circular or problematic
-            errorMessage = "D1 Transaction Failed: Cannot serialize error object.";
-        }
-        
-        // Now, throw a guaranteed-safe JavaScript Error object
-        throw new Error(errorMessage); 
+        // Log the final safe message for immediate visibility
+        console.error("D1 Transaction Error (Safe Log):", safeErrorMessage); 
+
+        // Throw a standard JavaScript Error object with the safe message
+        throw new Error(safeErrorMessage); 
     }
 }
 
