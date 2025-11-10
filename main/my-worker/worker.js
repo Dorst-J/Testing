@@ -175,7 +175,10 @@ export default {
                 } else {
                     row.Box_Number = null;
                 }
-
+row.Tickets_Sold = parseInt(row.Tickets_Sold);
+row.Winners_Sold = parseInt(row.Winners_Sold);
+// Also ensure cash is a float
+row.Cash_Hand = parseFloat(row.Cash_Hand);
                 // 3. Move the row
                 await moveRow(serial, oldTable, newTable, row, env.araa_testing);
 
