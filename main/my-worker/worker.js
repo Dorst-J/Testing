@@ -182,7 +182,7 @@ if (request.method === "POST" && path === "/api/game/status/update") {
             if (!boxNumber || isNaN(parseInt(boxNumber)) || parseInt(boxNumber) < 1 || parseInt(boxNumber) > 7) {
                 throw new Error("Missing or invalid Box Number for Open status");
             }
-            row.Box_Number = parseInt(boxNumber);
+            row['Box_Number'] = parseInt(boxNumber);
         } else {
             row['Box_Number'] = null;
         }
