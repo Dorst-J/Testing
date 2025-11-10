@@ -55,7 +55,7 @@
             <label for="q2">2. Ticket Price ($):</label>
             <input type="number" id="q2" name="Ticket_Price" step="0.01" required> 
             <label for="q3">3. Number of Tickets:</label>
-            <input type="number" id="q3" name="Numer_Tickets" required> 
+            <input type="number" id="q3" name="Number_Tickets" required> 
             <label for="q4">4. Tickets sold (Should be 0):</label>
             <input type="number" id="q4" name="Tickets_Sold" value="0" readonly required> 
             <label for="q5">5. Current Tickets:</label>
@@ -76,8 +76,8 @@
             <input type="number" id="q12" name="Ideal_Prize" step="0.01" required> 
             <label for="q13">13. Ideal Net:</label>
             <input type="number" id="q13" name="Ideal_Net" step="0.01" required> 
-            <label for="q14">14. Game cost:</label>
-            <input type="number" id="q14" name="Game_cost" step="0.01" required> 
+            <label for="q14">14. Game Cost:</label>
+            <input type="number" id="q14" name="Game_Cost" step="0.01" required> 
             <label for="q15">15. Status (Default to Inventory):</label>
             <input type="text" id="q15" name="Status" value="Inventory" readonly required> 
             <button type="submit">Add to Inventory</button>
@@ -214,28 +214,24 @@
         
         // --- CRITICAL FIX: Explicitly build the newGame object with all 16 required columns ---
         const newGame = { 
-            // 1. Serial ID (from the search box)
-            Serial_MF_Part: serial,
-            
-            // 2-15. Data from form inputs (Note: name attributes must match final column names)
-            Game_Name: formData.get('Game_Name'),
-            Ticket_Price: parseFloat(formData.get('Ticket_Price')),
-            Number_Tickets: parseInt(formData.get('Number_Tickets')),
-            Tickets_Sold: 0, // Hardcoded default based on Q4
-            Current_Tickets: parseInt(formData.get('Current_Tickets')),
-            Number_Winners: parseInt(formData.get('Number_Winners')),
-            Winners_Sold: 0, // Hardcoded default based on Q7
-            Current_Winners: parseInt(formData.get('Current_Winners')),
-            P_NP: formData.get('P_NP'),
-            Cash_Hand: 200, // Hardcoded default based on Q10
-            Ideal_Gross: parseFloat(formData.get('Ideal_Gross')),
-            Ideal_Prize: parseFloat(formData.get('Ideal_Prize')),
-            Ideal_Net: parseFloat(formData.get('Ideal_Net')),
-            Game_Cost: parseFloat(formData.get('Game_Cost')),
-            
-            // 16. Status (Hardcoded default based on Q15)
-            Status: "Inventory", 
-        };
+    // ...
+    // FIX: Must use 'Number_Tickets' as used in Worker ALL_COLUMNS
+    Ticket_Price: parseFloat(formData.get('Ticket_Price')),
+    Number_Tickets: parseInt(formData.get('Number_Tickets')), // NOW CORRECTLY RETRIEVES THE VALUE
+    Tickets_Sold: 0, 
+    Current_Tickets: parseInt(formData.get('Current_Tickets')),
+    Number_Winners: parseInt(formData.get('Number_Winners')),
+    Winners_Sold: 0,
+    Current_Winners: parseInt(formData.get('Current_Winners')),
+    P_NP: formData.get('P_NP'),
+    Cash_Hand: 200, 
+    Ideal_Gross: parseFloat(formData.get('Ideal_Gross')),
+    Ideal_Prize: parseFloat(formData.get('Ideal_Prize')),
+    Ideal_Net: parseFloat(formData.get('Ideal_Net')),
+    // FIX: Must use 'Game_Cost' as used in Worker ALL_COLUMNS
+    Game_Cost: parseFloat(formData.get('Game_Cost')), // NOW CORRECTLY RETRIEVES THE VALUE
+    // ...
+};
         // ------------------------------------------------------------------------------------
         
         // Ensure required numerical fields are actually present
