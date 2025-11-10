@@ -71,18 +71,18 @@ async function moveRow(serial, currentTable, newTable, values, db) {
     } catch (error) {
         await db.exec("ROLLBACK");
         
-        // **FIXED CRITICAL LINE:** Safely extract and throw the D1 error message.
-        let errorMessage = "Unknown SQL Transaction Error (D1)";
-
-        if (error && typeof error.message === 'string') {
-            errorMessage = error.message;
-        } else if (error && typeof error === 'object') {
-            // Stringify the full D1 error object if .message isn't available
+        // **ULTIMATE FIX:** Safely capture the error by converting the object to a string.
+        let errorMessage;
+        
+        try {
+             // 1. Try to stringify the object to safely capture the details
             errorMessage = "D1 Transaction Failed: " + JSON.stringify(error);
-        } else if (typeof error === 'string') {
-            errorMessage = error;
+        } catch (e) {
+            // 2. Fallback to a simple string if the object is circular or problematic
+            errorMessage = "D1 Transaction Failed: Cannot serialize error object.";
         }
-
+        
+        // Now, throw a guaranteed-safe JavaScript Error object
         throw new Error(errorMessage); 
     }
 }
