@@ -44,7 +44,8 @@ async function findGameBySerial(serial, db) {
             return { table: tableName, row: results[0] };
         }
     }
-  return { table: null, row: null };
+    // Correct return for "not found"
+    return { table: null, row: null };
 }
 
 /**
@@ -220,13 +221,33 @@ export default {
                 return new Response(JSON.stringify({ success: true, newTable }), 
                     { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
             } catch (err) {
+                // FIX: Implemented robust error handling to prevent the Worker from crashing
                 console.error("Status Update Route Error:", typeof err, err);
+                
+                let errorMessage;
+                if (err && err.message) {
+                    errorMessage = err.message;
+                } else if (typeof err === 'object' && err !== null) {
+                    // Stringify the full object to debug the D1 error (e.g., duration error)
+                    errorMessage = JSON.stringify(err);
+                } else {
+                    errorMessage = String(err) || "Unknown database error during status update";
+                }
+
                 return new Response(
-                    JSON.stringify({ success: false, error: err.message || "Unknown database error during status update" }),
+                    // First Argument: Body (JSON string with the safe error message)
                     JSON.stringify({ 
-    success: false, 
-    error: (err && err.message) ? err.message : (typeof err === 'object' ? JSON.stringify(err) : String(err)) || "Unknown database error during status update" 
-}),
+                        success: false, 
+                        error: errorMessage 
+                    }),
+                    // Second Argument: Options (The valid ResponseInit object)
+                    { 
+                        status: 500, 
+                        headers: { 
+                            ...corsHeaders(), 
+                            "Content-Type": "application/json" 
+                        } 
+                    }
                 );
             }
         }
