@@ -109,7 +109,7 @@ export default {
         }
 
         // --- POST /api/game/inventory/create (New Game) ---
-        if (request.method === "POST" && path === "/api/game/inventory/create") {
+if (request.method === "POST" && path === "/api/game/inventory/create") {
     try {
         const newGame = await request.json();
         
@@ -118,23 +118,30 @@ export default {
             return new Response(JSON.stringify({ 
                 success: false, 
                 error: "D1_TYPE_ERROR: Missing Serial_MF_Part in submission data." 
-            }), { headers: corsHeaders(), status: 400 });
+            }), { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 });
         }
         
         const columns = ALL_COLUMNS.filter(col => col !== 'Box_Number');
         const placeholders = columns.map(() => '?').join(", ");
         
-        // The values map is now correct because newGame is explicitly built in HTML
         const values = columns.map(col => newGame[col]); 
 
         const insertQuery = `INSERT INTO ${INVENTORY_TABLE} (${columns.join(", ")}, Box_Number) VALUES (${placeholders}, NULL)`;
         await env.araa_testing.prepare(insertQuery).bind(...values).run();
-            } catch (err) {
-                console.error(err);
-                return new Response(JSON.stringify({ success: false, error: err.message }), 
-                    { headers: corsHeaders(), status: 500 });
-            }
-        }
+
+        // Ensure SUCCESS RESPONSE has the Content-Type header
+        return new Response(JSON.stringify({ success: true, message: "Game added to Inventory" }), 
+            { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
+            
+    } catch (err) { // <--- The error is being caught here
+        console.error("Inventory Create Error:", err);
+        // ** CRITICAL FIX: Ensure this path correctly sets the Content-Type header on failure **
+        return new Response(
+            JSON.stringify({ success: false, error: err.message || "Unknown error during inventory creation." }),
+            { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+        );
+    }
+}
         
         // --- POST /api/game/status/update (Status Change/Move) ---
         if (request.method === "POST" && path === "/api/game/status/update") {
