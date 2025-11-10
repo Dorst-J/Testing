@@ -11,17 +11,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <!-- Row 1 -->
 <div class="row">
-  <button class="button-box" id="One" onclick="openCenterPopup()"> Game<br>One</button>
-  <button class="button-box" id="Two" onclick="openCenterPopup()">Game<br>Two</button>
-  <button class="button-box" id="Three" onclick="openCenterPopup()">Game<br>Three</button>
+  <button class="button-box" id="One" onclick="openCenterPopup('One')"> Game<br>One</button>
+  <button class="button-box" id="Two" onclick="openCenterPopup('Two')">Game<br>Two</button>
+  <button class="button-box" id="Three" onclick="openCenterPopup('Three')">Game<br>Three</button>
 </div>
 
 <!-- Row 2 -->
 <div class="row">
-  <button class="button-box" id="Four" onclick="openCenterPopup()">Game<br>Four</button>
-  <button class="button-box" id="Five" onclick="openCenterPopup()">Game<br>Five</button>
-  <button class="button-box" id="Six" onclick="openCenterPopup()">Game<br>Six</button>
-  <button class="button-box" id="Seven" onclick="openCenterPopup()">Game<br>Seven</button>
+  <button class="button-box" id="Four" onclick="openCenterPopup('Four')">Game<br>Four</button>
+  <button class="button-box" id="Five" onclick="openCenterPopup('Five')">Game<br>Five</button>
+  <button class="button-box" id="Six" onclick="openCenterPopup('Six')">Game<br>Six</button>
+  <button class="button-box" id="Seven" onclick="openCenterPopup('Seven')">Game<br>Seven</button>
 </div>
 
 <!-- Centered Popup Window (initially hidden) -->
@@ -66,59 +66,141 @@
 </div>
 
 <script>
-  let isOpen = false;
+    // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
+    const WORKER_URL = "https://your-worker-name.your-username.workers.dev";
+    
+    let isOpen = false;
+    let currentBoxNumber = null;
 
-  function togglePopup() {
-    const popup = document.getElementById('popupWindow');
-    const button = document.getElementById('toggleBtn');
-
-    if (isOpen) {
-      popup.style.display = 'none';
-      button.textContent = '☰'; // Open icon
-    } else {
-      popup.style.display = 'block';
-      button.textContent = '✖'; // Close icon
+    function togglePopup() {
+        const popup = document.getElementById('popupWindow');
+        const button = document.getElementById('toggleBtn');
+        if (isOpen) {
+            popup.style.display = 'none';
+            button.textContent = '☰'; // Open icon
+        } else {
+            popup.style.display = 'block';
+            button.textContent = '✖'; // Close icon
+        }
+        isOpen = !isOpen;
     }
 
-    isOpen = !isOpen;
-  }
+    async function openCenterPopup(boxId) {
+        // Map button ID to Box_Number (1 to 7)
+        const boxMap = {
+            'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5, 'Six': 6, 'Seven': 7
+        };
+        currentBoxNumber = boxMap[boxId];
+        sessionStorage.setItem('currentBoxNumber', currentBoxNumber); // Store for selling/winning pages
+        
+        const popupContent = document.getElementById('popupCenterWindow');
+        const gameTableId = 'openGameTable';
+        let table = document.getElementById(gameTableId);
+        
+        // Remove old table if it exists
+        if (table) table.remove();
 
-  function openCenterPopup() {
-    document.getElementById('popupCenterWindow').style.display = 'block';
-  }
+        popupContent.style.display = 'block';
+        
+        try {
+            // 1. Fetch all open games
+            const response = await fetch(WORKER_URL + '/api/open/games');
+            const result = await response.json();
+            
+            if (!result.success) throw new Error(result.error);
+            
+            // 2. Find the specific game for the clicked box
+            const game = result.games.find(g => g.Box_Number === currentBoxNumber);
+            
+            if (game) {
+                // 3. Create and populate the table
+                table = document.createElement('table');
+                table.id = gameTableId;
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                
+                const thead = table.createTHead();
+                const headerRow = thead.insertRow();
+                // Columns: Serial_MF_Part, Game_Name, Cash_Hand, Current_Tickets, Current_Winners
+                ['Serial ID', 'Game', 'Cash Hand', 'Tickets Left', 'Winners Left'].forEach(text => {
+                    let th = document.createElement('th');
+                    th.textContent = text;
+                    th.style.border = '1px solid black';
+                    th.style.padding = '8px';
+                    th.style.backgroundColor = '#f2f2f2';
+                    headerRow.appendChild(th);
+                });
+                
+                const tbody = table.createTBody();
+                const dataRow = tbody.insertRow();
+                // Ensure data is inserted in the correct order
+                ['Serial_MF_Part', 'Game_Name', 'Cash_Hand', 'Current_Tickets', 'Current_Winners'].forEach(col => {
+                    let td = dataRow.insertCell();
+                    td.textContent = game[col];
+                    td.style.border = '1px solid black';
+                    td.style.padding = '8px';
+                    td.style.textAlign = 'center';
+                });
+                
+                // Insert the table just before the close button
+                popupContent.insertBefore(table, document.getElementById('center-popup'));
+            } else {
+                // Display message if no game is in the box
+                const msg = document.createElement('p');
+                msg.id = gameTableId; // Reuse the ID for removal
+                msg.textContent = `No game is currently in Box ${currentBoxNumber}.`;
+                msg.style.textAlign = 'center';
+                popupContent.insertBefore(msg, document.getElementById('center-popup'));
+            }
+            
+        } catch (error) {
+            console.error('Error fetching game data:', error);
+            const msg = document.createElement('p');
+            msg.id = gameTableId;
+            msg.textContent = `Error loading game data: ${error.message}`;
+            msg.style.color = 'red';
+            popupContent.insertBefore(msg, document.getElementById('center-popup'));
+        }
+    }
 
-  function closeCenterPopup() {
-    document.getElementById('popupCenterWindow').style.display = 'none';
-  }
+    function closeCenterPopup() {
+        document.getElementById('popupCenterWindow').style.display = 'none';
+        currentBoxNumber = null;
+        sessionStorage.removeItem('currentBoxNumber');
+    }
+    
+    // UPDATE all button clicks in the HTML for Game One to Game Seven
+    // from onclick="openCenterPopup()" to onclick="openCenterPopup('One')" etc.
+    // Example: <button class="button-box" id="One" onclick="openCenterPopup('One')"> Game<br>One</button>
+    // Since you provided the full HTML, I'll assume you update the HTML buttons to pass their ID.
 
+    // ... rest of your existing JS logic (LOG_KEY, LAST_VIEWED_KEY, entries, lastViewed)
+    
+    // Existing logic for Shift Handoff notification
     const LOG_KEY = 'ChanticlearFormResponses';
-const LAST_VIEWED_KEY = 'ChanticlearLastViewed';
-
-const entries = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
-const lastViewed = localStorage.getItem(LAST_VIEWED_KEY);
-
-if (entries.length > 0) {
-  const newestTimestamp = entries[0].timestamp;
-  if (!lastViewed || newestTimestamp > lastViewed) {
-    // Show a visible alert in the top corner
-    const notif = document.createElement('div');
-    notif.textContent = '🔔 New Shift Handoff Entry!';
-    notif.style.position = 'fixed';
-    notif.style.top = '10px';
-    notif.style.left = '50%';
-    notif.style.transform = 'translateX(-50%)';
-    notif.style.backgroundColor = 'red';
-    notif.style.color = 'white';
-    notif.style.padding = '10px 20px';
-    notif.style.borderRadius = '5px';
-    notif.style.zIndex = '2000';
-    notif.style.fontSize = '18px';
-    document.body.appendChild(notif);
-
-    // Optional: make it disappear after 10 seconds
-    setTimeout(() => notif.remove(), 10000);
-  }
-}
+    const LAST_VIEWED_KEY = 'ChanticlearLastViewed';
+    const entries = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+    const lastViewed = localStorage.getItem(LAST_VIEWED_KEY);
+    
+    if (entries.length > 0) {
+     const newestTimestamp = entries[0].timestamp;
+     if (!lastViewed || newestTimestamp > lastViewed) {
+         const notif = document.createElement('div');
+         notif.textContent = '🔔 New Shift Handoff Entry!';
+         notif.style.position = 'fixed';
+         notif.style.top = '10px';
+         notif.style.left = '50%';
+         notif.style.transform = 'translateX(-50%)';
+         notif.style.backgroundColor = 'red';
+         notif.style.color = 'white';
+         notif.style.padding = '10px 20px';
+         notif.style.borderRadius = '5px';
+         notif.style.zIndex = '2000';
+         notif.style.fontSize = '18px';
+         document.body.appendChild(notif);
+         setTimeout(() => notif.remove(), 10000);
+     }
+    }
 </script>
 <script src="/js/idle-tracker.js?v=20251013"></script>
 </body>

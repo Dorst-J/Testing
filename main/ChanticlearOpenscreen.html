@@ -1,44 +1,256 @@
 <!DOCTYPE html>
-<html>
-  <div style="text-align: center;">
-  <img src="https://chanticlearpizza.com/wp-content/uploads/2019/09/chanticlear-logo.png" alt="Chanticlear Pizza" style="width: 200px; text-align: center;">
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <title>Open/New Game</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.2); width: 90%; max-width: 500px; }
+        h2 { text-align: center; margin-bottom: 20px; color: #333; }
+        input[type="text"], select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1em; }
+        button { width: 100%; padding: 12px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; background-color: #007bff; color: white; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+        .back-btn { background-color: #dc3545; margin-top: 10px; }
+        .back-btn:hover { background-color: #a71d2a; }
+        .popup-form { border-top: 2px solid #eee; padding-top: 20px; }
+        #message { margin-top: 20px; text-align: center; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Game Serial Lookup</h2>
+    
+    <label for="serialInput">Scan/Type Serial Number:</label>
+    <input type="text" id="serialInput" placeholder="Enter Serial_MF_Part">
+    <button onclick="lookupSerial()">Search Game</button>
+    <div id="message"></div>
+
+    <div id="statusPopup" class="popup-form hidden">
+        <hr>
+        <h3>Game Found! Change Status:</h3>
+        <label for="statusDropdown">New Status:</label>
+        <select id="statusDropdown">
+            <option value="Inventory">Inventory</option>
+            <option value="Open">Open</option>
+            <option value="Closed">Closed</option>
+        </select>
+        
+        <div id="boxNumberInputGroup" class="hidden">
+             <label for="boxNumberInput">Box Number (1-7):</label>
+             <input type="number" id="boxNumberInput" min="1" max="7" placeholder="e.g., 3">
+        </div>
+        
+        <button onclick="updateStatus()">Submit Status Change</button>
+    </div>
+
+    <div id="newGameForm" class="popup-form hidden">
+        <hr>
+        <h3>New Game Entry (Inventory)</h3>
+        <form id="inventoryForm">
+            <label for="q1">1. Game name:</label>
+            <input type="text" id="q1" name="Game_Name" required> 
+            <label for="q2">2. Ticket Price ($):</label>
+            <input type="number" id="q2" name="Ticket_Price" step="0.01" required> 
+            <label for="q3">3. Number of Tickets:</label>
+            <input type="number" id="q3" name="Numer_Tickets" required> 
+            <label for="q4">4. Tickets sold (Should be 0):</label>
+            <input type="number" id="q4" name="Tickets_Sold" value="0" readonly required> 
+            <label for="q5">5. Current Tickets:</label>
+            <input type="number" id="q5" name="Current_Tickets" required> 
+            <label for="q6">6. Number of winners:</label>
+            <input type="number" id="q6" name="Number_Winners" required> 
+            <label for="q7">7. Winners sold (Should be 0):</label>
+            <input type="number" id="q7" name="Winners_Sold" value="0" readonly required> 
+            <label for="q8">8. Current winners:</label>
+            <input type="number" id="q8" name="Current_Winners" required> 
+            <label for="q9">9. Posted or Not posted (P_NP):</label>
+            <input type="text" id="q9" name="P_NP" required> 
+            <label for="q10">10. Cash in hand (Should be 200):</label>
+            <input type="number" id="q10" name="Cash_Hand" value="200" required> 
+            <label for="q11">11. Ideal Gross:</label>
+            <input type="number" id="q11" name="Ideal_Gross" step="0.01" required> 
+            <label for="q12">12. Ideal Prize:</label>
+            <input type="number" id="q12" name="Ideal_Prize" step="0.01" required> 
+            <label for="q13">13. Ideal Net:</label>
+            <input type="number" id="q13" name="Ideal_Net" step="0.01" required> 
+            <label for="q14">14. Game cost:</label>
+            <input type="number" id="q14" name="Game_cost" step="0.01" required> 
+            <label for="q15">15. Status (Default to Inventory):</label>
+            <input type="text" id="q15" name="Status" value="Inventory" readonly required> 
+            <button type="submit">Add to Inventory</button>
+        </form>
+    </div>
+
+    <button class="back-btn" onclick="window.location.href='./Chanticlear.html'">Return to Main</button>
 </div>
-<table border="1" cellspacing="0" cellpadding="8">
-  <thead>
-    <tr>
-      <th>Game Name</th>
-      <th>Date Opened</th>
-      <th>Price of Ticket</th>
-      <th>Gross Profit</th>
-      <th>Number of Tickets</th>
-      <th>Number of Winners</th>
-      <th>Col 7</th>
-      <th>Col 8</th>
-      <th>Col 9</th>
-      <th>Col 10</th>
-      <th>Col 11</th>
-      <th>Col 12</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td>Game One</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Two</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Three</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Four</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Five</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Six</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-  </tbody>
-</table>
-<br>
-<br>
-<br>
-<br>
-<button class="return-btn" onclick="goToMainPage()" style="text-align: center;">Return</button>
+
 <script>
-function goToMainPage() {
-    window.location.href = "./Chanticlear.html";
-  }
-  </script>
-  <a href="./AdminMainPage.html">Home</a>
-  <script src="/js/idle-tracker.js?v=20251013"></script>
+    // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
+    const WORKER_URL = "https://your-worker-name.your-username.workers.dev";
+    let gameData = {}; // To store the found game's details
+
+    document.getElementById('statusDropdown').addEventListener('change', function() {
+        const boxInputGroup = document.getElementById('boxNumberInputGroup');
+        if (this.value === 'Open') {
+            boxInputGroup.classList.remove('hidden');
+            document.getElementById('boxNumberInput').setAttribute('required', 'required');
+        } else {
+            boxInputGroup.classList.add('hidden');
+            document.getElementById('boxNumberInput').removeAttribute('required');
+        }
+    });
+
+    async function lookupSerial() {
+        const serial = document.getElementById('serialInput').value.trim();
+        const messageDiv = document.getElementById('message');
+        const statusPopup = document.getElementById('statusPopup');
+        const newGameForm = document.getElementById('newGameForm');
+
+        messageDiv.textContent = 'Searching...';
+        statusPopup.classList.add('hidden');
+        newGameForm.classList.add('hidden');
+        gameData = {}; // Clear previous data
+
+        if (!serial) {
+            messageDiv.textContent = 'Please enter a serial number.';
+            return;
+        }
+
+        try {
+            const response = await fetch(WORKER_URL + '/api/game/find', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serial })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.row) {
+                // Game found
+                gameData = result.row;
+                gameData.oldTable = result.table; // Store original table name
+                messageDiv.textContent = `Game found! Current status: ${gameData.Status} in ${gameData.oldTable}`;
+                
+                document.getElementById('statusDropdown').value = gameData.Status;
+                document.getElementById('boxNumberInput').value = gameData.Box_Number || '';
+                
+                statusPopup.classList.remove('hidden');
+                document.getElementById('boxNumberInputGroup').classList.add('hidden'); // Hide by default
+            } else {
+                // Game not found - prepare for new entry
+                messageDiv.textContent = `Game serial ${serial} not found. Ready to add to Inventory.`;
+                document.getElementById('inventoryForm').reset();
+                newGameForm.classList.remove('hidden');
+            }
+
+        } catch (error) {
+            messageDiv.textContent = `Error: ${error.message}. Could not complete search.`;
+            console.error('Lookup Error:', error);
+        }
+    }
+
+    async function updateStatus() {
+        const serial = document.getElementById('serialInput').value.trim();
+        const newStatus = document.getElementById('statusDropdown').value;
+        const boxNumber = document.getElementById('boxNumberInput').value.trim();
+        const messageDiv = document.getElementById('message');
+
+        let data = {
+            serial: serial,
+            oldTable: gameData.oldTable,
+            newStatus: newStatus,
+            boxNumber: (newStatus === 'Open') ? parseInt(boxNumber) : null
+        };
+
+        if (newStatus === 'Open' && (!data.boxNumber || data.boxNumber < 1 || data.boxNumber > 7)) {
+            messageDiv.textContent = 'Box Number must be 1-7 for Open status.';
+            return;
+        }
+
+        try {
+            messageDiv.textContent = `Changing status to ${newStatus}...`;
+            const response = await fetch(WORKER_URL + '/api/game/status/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                messageDiv.textContent = `Success! Game status updated to ${newStatus} and moved.`;
+                document.getElementById('statusPopup').classList.add('hidden');
+                gameData = {}; // Clear data
+            } else {
+                messageDiv.textContent = `Status Update Failed: ${result.error}`;
+            }
+        } catch (error) {
+            messageDiv.textContent = `Error: ${error.message}. Could not update status.`;
+            console.error('Status Update Error:', error);
+        }
+    }
+
+    document.getElementById('inventoryForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const serial = document.getElementById('serialInput').value.trim();
+        const messageDiv = document.getElementById('message');
+        const formData = new FormData(this);
+        const newGame = { Serial_MF_Part: serial };
+
+        // Map form data to column names
+        // Q1: Game_Name, Q2: Ticket_Price, Q3: Numer_Tickets, Q4: Tickets_Sold, Q5: Current_Tickets, 
+        // Q6: Number_Winners, Q7: Winners_Sold, Q8: Current_Winners, Q9: P_NP, Q10: Cash_Hand, 
+        // Q11: Ideal_Gross, Q12: Ideal_Prize, Q13: Ideal_Net, Q14: Game_cost, Q15: Status
+        const columnMap = {
+            'q1': 'Game_Name', 'q2': 'Ticket_Price', 'q3': 'Numer_Tickets', 'q4': 'Tickets_Sold', 
+            'q5': 'Current_Tickets', 'q6': 'Number_Winners', 'q7': 'Winners_Sold', 'q8': 'Current_Winners', 
+            'q9': 'P_NP', 'q10': 'Cash_Hand', 'q11': 'Ideal_Gross', 'q12': 'Ideal_Prize', 
+            'q13': 'Ideal_Net', 'q14': 'Game_cost', 'q15': 'Status'
+        };
+
+        for (let pair of formData.entries()) {
+            const [key, value] = pair;
+            const columnName = columnMap[key] || key;
+            // Convert numbers
+            if (['Ticket_Price', 'Numer_Tickets', 'Tickets_Sold', 'Current_Tickets', 'Number_Winners', 'Winners_Sold', 'Current_Winners', 'Cash_Hand', 'Ideal_Gross', 'Ideal_Prize', 'Ideal_Net', 'Game_cost'].includes(columnName)) {
+                newGame[columnName] = parseFloat(value);
+            } else {
+                newGame[columnName] = value;
+            }
+        }
+
+        // Final checks for required default values
+        newGame.Tickets_Sold = 0;
+        newGame.Winners_Sold = 0;
+        newGame.Cash_Hand = 200;
+        newGame.Status = "Inventory";
+        
+        try {
+            messageDiv.textContent = 'Adding new game to Inventory...';
+            const response = await fetch(WORKER_URL + '/api/game/inventory/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newGame)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                messageDiv.textContent = `Success! New game ${serial} added to Inventory.`;
+                document.getElementById('newGameForm').classList.add('hidden');
+            } else {
+                messageDiv.textContent = `New Game Entry Failed: ${result.error}`;
+            }
+        } catch (error) {
+            messageDiv.textContent = `Error: ${error.message}. Could not add game.`;
+            console.error('New Game Error:', error);
+        }
+    });
+
+</script>
+<script src="/js/idle-tracker.js?v=20251013"></script>
+</body>
 </html>
