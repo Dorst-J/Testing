@@ -233,14 +233,22 @@
     // ...
 };
         // ------------------------------------------------------------------------------------
-        
+        const TEXT_COLUMNS = ['P_NP', 'Game_Name', 'Serial_MF_Part', 'Status'];
         // Ensure required numerical fields are actually present
         for (const [key, value] of Object.entries(newGame)) {
-            if (key !== 'P_NP' && key !== 'Game_Name' && value === null || isNaN(value)) {
-                 // Note: If any required number field is blank in the form, it becomes NaN, 
-                 // which we check here.
-                 messageDiv.textContent = `Error: Missing or invalid input for column ${key}.`;
-                 return;
+    // Check if the current column is *not* a text column
+    if (!TEXT_COLUMNS.includes(key)) {
+        // Now, perform strict numerical validation:
+        // Check if the value is null or NaN (invalid number)
+        if (value === null || isNaN(value)) {
+             messageDiv.textContent = `Error: Missing or invalid numerical input for column ${key}.`;
+             return;
+        }
+    } else {
+        // For TEXT columns, ensure they are not sent as empty strings if required (only P_NP and Game_Name)
+        if ( (key === 'P_NP' || key === 'Game_Name') && value.trim() === "") {
+             messageDiv.textContent = `Error: ${key} cannot be left blank.`;
+             return;}
             }
         }
 
