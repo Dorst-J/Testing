@@ -61,7 +61,7 @@ async function moveRow(serial, currentTable, newTable, values, db) {
         const insertQuery = `INSERT INTO ${newTable} (${cols}) VALUES (${placeholders})`;
         console.log("Attempting INSERT:", insertQuery, "with values:", values);
         
-        await db.prepare(insertQuery).bind(...values).run(); // Binds the pre-built array
+        await db.prepare(insertQuery).bind(...values).run();
         
         const deleteQuery = `DELETE FROM ${currentTable} WHERE Serial_MF_Part = ?`;
         await db.prepare(deleteQuery).bind(serial).run();
@@ -70,8 +70,20 @@ async function moveRow(serial, currentTable, newTable, values, db) {
         return { success: true };
     } catch (error) {
         await db.exec("ROLLBACK");
-        // CRITICAL: Throw the error message for client visibility
-        throw new Error(error.message || "Unknown SQL Transaction Error"); 
+        
+        // **FIXED CRITICAL LINE:** Safely extract and throw the D1 error message.
+        let errorMessage = "Unknown SQL Transaction Error (D1)";
+
+        if (error && typeof error.message === 'string') {
+            errorMessage = error.message;
+        } else if (error && typeof error === 'object') {
+            // Stringify the full D1 error object if .message isn't available
+            errorMessage = "D1 Transaction Failed: " + JSON.stringify(error);
+        } else if (typeof error === 'string') {
+            errorMessage = error;
+        }
+
+        throw new Error(errorMessage); 
     }
 }
 
