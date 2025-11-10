@@ -110,19 +110,25 @@ export default {
 
         // --- POST /api/game/inventory/create (New Game) ---
         if (request.method === "POST" && path === "/api/game/inventory/create") {
-            try {
-                const newGame = await request.json();
-                const columns = ALL_COLUMNS.filter(col => col !== 'Box_Number');
-                const placeholders = columns.map(() => '?').join(", ");
+    try {
+        const newGame = await request.json();
+        
+        // ** CRITICAL FIX: Ensure Serial_MF_Part is present **
+        if (!newGame.Serial_MF_Part) {
+            return new Response(JSON.stringify({ 
+                success: false, 
+                error: "D1_TYPE_ERROR: Missing Serial_MF_Part in submission data." 
+            }), { headers: corsHeaders(), status: 400 });
+        }
+        
+        const columns = ALL_COLUMNS.filter(col => col !== 'Box_Number');
+        const placeholders = columns.map(() => '?').join(", ");
+        
+        // The values map is now correct because newGame is explicitly built in HTML
+        const values = columns.map(col => newGame[col]); 
 
-                // CRITICAL: The values are now correctly sent from the HTML as a complete object.
-                const values = columns.map(col => newGame[col]); 
-
-                const insertQuery = `INSERT INTO ${INVENTORY_TABLE} (${columns.join(", ")}, Box_Number) VALUES (${placeholders}, NULL)`;
-                await env.araa_testing.prepare(insertQuery).bind(...values).run();
-
-                return new Response(JSON.stringify({ success: true, message: "Game added to Inventory" }), 
-                    { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
+        const insertQuery = `INSERT INTO ${INVENTORY_TABLE} (${columns.join(", ")}, Box_Number) VALUES (${placeholders}, NULL)`;
+        await env.araa_testing.prepare(insertQuery).bind(...values).run();
             } catch (err) {
                 console.error(err);
                 return new Response(JSON.stringify({ success: false, error: err.message }), 
