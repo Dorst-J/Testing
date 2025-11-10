@@ -200,10 +200,17 @@
     }
 
     document.getElementById('inventoryForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const serial = document.getElementById('serialInput').value.trim();
-        const messageDiv = document.getElementById('message');
-        const formData = new FormData(this);
+    e.preventDefault();
+    
+    // ** CRITICAL FIX: Re-read the input value directly **
+    const serial = document.getElementById('serialInput').value.trim();
+    const messageDiv = document.getElementById('message');
+    const formData = new FormData(this);
+    
+    if (!serial) {
+        messageDiv.textContent = 'Error: Missing or invalid input for column Serial_MF_Part.';
+        return;
+    }
         
         // --- CRITICAL FIX: Explicitly build the newGame object with all 16 required columns ---
         const newGame = { 
