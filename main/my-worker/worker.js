@@ -35,13 +35,19 @@ const POPUP_COLUMNS = [
 /**
  * Searches all tables for a Serial_MF_Part.
  * @param {string} serial The serial number to search for.
- * @param {D1Database} db The D1 database instance.
+ * @param {D1Database} db The D1 database instance (env.araa_testing).
  * @returns {Promise<{table: string|null, row: object|null}>}
  */
 async function findGameBySerial(serial, db) {
-    for (const tableName of [INVENTORY_TABLE, OPEN_TABLE, CLOSED_TABLE]) {
+    // List tables in the order we want to check (Inventory is often first or Open)
+    for (const tableName of [OPEN_TABLE, INVENTORY_TABLE, CLOSED_TABLE]) {
+        // Use a standard SQL SELECT *
         const query = `SELECT * FROM ${tableName} WHERE Serial_MF_Part = ?`;
+        
+        // D1 execution pattern: prepare -> bind -> all
         const { results } = await db.prepare(query).bind(serial).all();
+        
+        // D1 returns an object with a results array. Check if the array has entries.
         if (results.length > 0) {
             return { table: tableName, row: results[0] };
         }

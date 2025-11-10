@@ -17,6 +17,6 @@ id = "9af89a52da844c5bae5ef2bab7e4f375"
 preview_id = "9af89a52da844c5bae5ef2bab7e4f375" # same as id if no separate preview namespace
 
 [[d1_databases]]
-binding = "DB"
+binding = "araa_testing"
 database_name = "araa_testing"
 dtabase_id = "1676ab2e-74e7-4b7e-b84c-b4c45adeb40c"
