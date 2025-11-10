@@ -22,10 +22,10 @@ const DB_NAME = "araa_testing";
 
 // Column names must be in the exact order for INSERT
 const ALL_COLUMNS = [
-    "Serial_MF_Part", "Game_Name", "Ticket_Price", "Numer_Tickets",
+    "Serial_MF_Part", "Game_Name", "Ticket_Price", "Number_Tickets",
     "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold",
     "Current_Winners", "P_NP", "Cash_Hand", "Ideal_Gross",
-    "Ideal_Prize", "Ideal_Net", "Game_cost", "Status", "Box_Number"
+    "Ideal_Prize", "Ideal_Net", "Game_Cost", "Status", "Box_Number"
 ];
 
 // Columns to show in the Main Page pop-up
