@@ -59,38 +59,37 @@ async function findGameBySerial(serial, db) {
  * Moves a row from its current table to a new table.
  */
 async function moveRow(serial, currentTable, newTable, data, db) {
+    // We must ensure ALL_COLUMNS is defined at the top of worker.js
+    // const ALL_COLUMNS = [ "Serial_MF_Part", "Game_Name", "Ticket_Price", "Numer_Tickets", ... ];
+    
     await db.exec("BEGIN");
     try {
-        // 1. Get the row data (if not already provided)
-        let row;
-        if (!data) {
-            const selectQuery = `SELECT * FROM ${currentTable} WHERE Serial_MF_Part = ?`;
-            const { results } = await db.prepare(selectQuery).bind(serial).all();
-            if (results.length === 0) throw new Error(`Game with serial ${serial} not found in ${currentTable}`);
-            row = results[0];
-        } else {
-            row = data;
-        }
+        let row = data; // Use the provided data (which includes new Box_Number/Status)
 
-        // 2. Adjust Status and Box_Number for the new table
-        row.Status = newTable.replace('Chanticlear_', ''); // Inventory, Open, or Closed
-        row.Box_Number = (newTable === OPEN_TABLE) ? (row.Box_Number || null) : null;
+        // 1. Construct INSERT query for the new table
+        const cols = ALL_COLUMNS.join(", "); // e.g., "Serial_MF_Part, Game_Name, ..."
+        const placeholders = ALL_COLUMNS.map(() => '?').join(", "); // e.g., "?, ?, ?"
         
-        // Ensure Box_Number is null for Inventory and Closed
-        if (newTable === INVENTORY_TABLE || newTable === CLOSED_TABLE) {
-            row.Box_Number = null;
-        }
-
-        // 3. Construct INSERT query for the new table
-        const cols = ALL_COLUMNS.join(", ");
-        const placeholders = ALL_COLUMNS.map(() => '?').join(", ");
-        const values = ALL_COLUMNS.map(col => row[col]);
+        // 2. Map row data to the exact order of ALL_COLUMNS
+        const values = ALL_COLUMNS.map(col => {
+            // D1 requires explicit nulls for columns that should be null
+            return (row[col] === undefined || row[col] === null) ? null : row[col];
+        });
 
         const insertQuery = `INSERT INTO ${newTable} (${cols}) VALUES (${placeholders})`;
-        await db.prepare(insertQuery).bind(...values).run();
+        
+        // Use .run() for INSERT, not .all()
+        const insertResult = await db.prepare(insertQuery).bind(...values).run();
+        
+        // Check if the INSERT was successful (optional but helpful)
+        if (insertResult.success === false && insertResult.error) {
+            throw new Error(`Insert failed: ${insertResult.error}`);
+        }
 
-        // 4. Delete from the old table
+        // 3. Delete from the old table
         const deleteQuery = `DELETE FROM ${currentTable} WHERE Serial_MF_Part = ?`;
+        
+        // Use .run() for DELETE
         await db.prepare(deleteQuery).bind(serial).run();
 
         await db.exec("COMMIT");
