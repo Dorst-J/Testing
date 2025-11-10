@@ -181,11 +181,17 @@ export default {
             }
 
             // 3. Move the row (pass the now updated 'row' object)
-            await moveRow(serial, oldTable, newTable, row, env.araa_testing);
+           await moveRow(serial, oldTable, newTable, row, env.araa_testing);
 
             return new Response(JSON.stringify({ success: true, newTable }), 
                 { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
         } catch (err) {
+            // **CRITICAL FIX: Ensure this always returns JSON, NOT just exiting**
+            console.error("Status Update Route Error:", err);
+            return new Response(
+                JSON.stringify({ success: false, error: err.message || "Unknown database error during status update" }),
+                { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+            );
             // ... error handling ...
         }
     }
