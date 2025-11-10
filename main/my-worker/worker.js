@@ -1,6 +1,5 @@
 // --- Worker Utility Functions ---
 function corsHeaders() {
-    // CRITICAL: Ensure this Origin matches your website's domain
     return {
         "Access-Control-Allow-Origin": "https://thedatatab.com", 
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -20,17 +19,18 @@ const OPEN_TABLE = "Chanticlear_Open";
 const CLOSED_TABLE = "Chanticlear_Closed";
 const DB_NAME = "araa_testing";
 
-// Column names must be in the exact order for INSERT
+// CRITICAL: Updated column names based on your final consistency check
 const ALL_COLUMNS = [
-    "Serial_MF_Part", "Game_Name", "Ticket_Price", "Number_Tickets",
+    "Serial_MF_Part", "Game_Name", "Ticket_Price", "Number_Tickets", // Corrected Number_Tickets
     "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold",
     "Current_Winners", "P_NP", "Cash_Hand", "Ideal_Gross",
-    "Ideal_Prize", "Ideal_Net", "Game_Cost", "Status", "Box_Number"
+    "Ideal_Prize", "Ideal_Net", "Game_Cost", // Corrected Game_Cost (assuming upper C standard)
+    "Status", "Box_Number"
 ];
 
 // Columns to show in the Main Page pop-up
 const POPUP_COLUMNS = [
-    "Serial_MF_Part", "Game_Name", "Cash_Hand", "Current_Tickets", "Current_Winners", "Ticket_Price" // Added Ticket_Price for Selling Page
+    "Serial_MF_Part", "Game_Name", "Cash_Hand", "Current_Tickets", "Current_Winners", "Ticket_Price"
 ];
 
 /**
@@ -142,7 +142,6 @@ export default {
                         { headers: corsHeaders(), status: 400 });
                 }
 
-                // ** THIS BLOCK DEFINES newTable AND WAS CAUSING THE ERROR **
                 let newTable; 
 
                 if (newStatus === "Inventory") newTable = INVENTORY_TABLE;
@@ -152,7 +151,6 @@ export default {
                     return new Response(JSON.stringify({ success: false, error: "Invalid status: " + newStatus }), 
                         { headers: corsHeaders(), status: 400 });
                 }
-                // *********************************************************
                 
                 // 1. Get current row data (SELECT *)
                 const selectQuery = `SELECT * FROM ${oldTable} WHERE Serial_MF_Part = ?`;
@@ -162,11 +160,12 @@ export default {
                     return new Response(JSON.stringify({ success: false, error: `Game ${serial} not found in ${oldTable}` }), 
                         { headers: corsHeaders(), status: 404 });
                 }
-                const row = results[0];
+                let row = results[0]; // IMPORTANT: Keep 'let' here for modification
                 
-                // 2. Update Status and Box_Number for the row object to be moved
+                // --- 2. Sanitize and Update Row Data (All Necessary Conversions) ---
                 row.Status = newStatus;
 
+                // Set Box_Number (Required for Open, Null otherwise)
                 if (newTable === OPEN_TABLE) {
                     if (!boxNumber || isNaN(parseInt(boxNumber)) || parseInt(boxNumber) < 1 || parseInt(boxNumber) > 7) {
                         throw new Error("Missing or invalid Box Number for Open status");
@@ -175,10 +174,36 @@ export default {
                 } else {
                     row.Box_Number = null;
                 }
-row.Tickets_Sold = parseInt(row.Tickets_Sold);
-row.Winners_Sold = parseInt(row.Winners_Sold);
-// Also ensure cash is a float
-row.Cash_Hand = parseFloat(row.Cash_Hand);
+                
+                // CRITICAL FIX: Cast all numerical values to guarantee D1 sees clean numbers
+                const NUMERICAL_COLUMNS = [
+                    "Ticket_Price", "Number_Tickets", "Tickets_Sold", "Current_Tickets", 
+                    "Number_Winners", "Winners_Sold", "Current_Winners", "Cash_Hand", 
+                    "Ideal_Gross", "Ideal_Prize", "Ideal_Net", "Game_Cost"
+                ];
+
+                NUMERICAL_COLUMNS.forEach(col => {
+                    const value = row[col];
+                    if (value === null || value === undefined) {
+                        return; // Keep null if null
+                    }
+                    
+                    const parsedValue = parseFloat(value);
+                    if (isNaN(parsedValue)) {
+                        // If data is trash (e.g., empty string), set to null to avoid SQL error
+                        row[col] = null; 
+                    } else {
+                        // For integer fields, cast them explicitly
+                        if (["Number_Tickets", "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold", "Current_Winners"].includes(col)) {
+                            row[col] = parseInt(parsedValue);
+                        } else {
+                            row[col] = parsedValue;
+                        }
+                    }
+                });
+                // --- END Sanitize and Update Row Data ---
+
+
                 // 3. Move the row
                 await moveRow(serial, oldTable, newTable, row, env.araa_testing);
 
@@ -196,7 +221,6 @@ row.Cash_Hand = parseFloat(row.Cash_Hand);
         // --- GET /api/open/games (Main Page Data) ---
         if (request.method === "GET" && path === "/api/open/games") {
             try {
-                // Now includes Ticket_Price for the Selling page
                 const cols = POPUP_COLUMNS.join(", "); 
                 const query = `SELECT ${cols}, Box_Number FROM ${OPEN_TABLE} WHERE Box_Number IS NOT NULL AND Box_Number >= 1 AND Box_Number <= 7`;
                 const { results } = await env.araa_testing.prepare(query).all();
@@ -219,8 +243,7 @@ row.Cash_Hand = parseFloat(row.Cash_Hand);
                         { headers: corsHeaders(), status: 400 });
                 }
 
-                // 1. Get current game data
-                const selectQuery = `SELECT Cash_Hand, Tickets_Sold, Numer_Tickets FROM ${OPEN_TABLE} WHERE Box_Number = ?`;
+                const selectQuery = `SELECT Cash_Hand, Tickets_Sold, Number_Tickets FROM ${OPEN_TABLE} WHERE Box_Number = ?`;
                 const { results } = await env.araa_testing.prepare(selectQuery).bind(boxNumber).all();
 
                 if (results.length === 0) {
@@ -229,12 +252,10 @@ row.Cash_Hand = parseFloat(row.Cash_Hand);
                 }
                 const game = results[0];
 
-                // 2. Calculate new values
-                const newTicketsSold = game.Tickets_Sold + ticketsSold;
-                const newCurrentTickets = game.Numer_Tickets - newTicketsSold;
-                const newCashHand = game.Cash_Hand + moneyInserted;
+                const newTicketsSold = parseInt(game.Tickets_Sold) + parseInt(ticketsSold);
+                const newCurrentTickets = parseInt(game.Number_Tickets) - newTicketsSold;
+                const newCashHand = parseFloat(game.Cash_Hand) + parseFloat(moneyInserted);
 
-                // 3. Update the database
                 const updateQuery = `
                     UPDATE ${OPEN_TABLE} SET 
                     Tickets_Sold = ?, 
@@ -264,7 +285,6 @@ row.Cash_Hand = parseFloat(row.Cash_Hand);
                         { headers: corsHeaders(), status: 400 });
                 }
 
-                // 1. Get current game data
                 const selectQuery = `SELECT Winners_Sold, Number_Winners FROM ${OPEN_TABLE} WHERE Box_Number = ?`;
                 const { results } = await env.araa_testing.prepare(selectQuery).bind(boxNumber).all();
 
@@ -274,11 +294,9 @@ row.Cash_Hand = parseFloat(row.Cash_Hand);
                 }
                 const game = results[0];
 
-                // 2. Calculate new values
-                const newWinnersSold = game.Winners_Sold + winnersPaid;
-                const newCurrentWinners = game.Number_Winners - newWinnersSold;
+                const newWinnersSold = parseInt(game.Winners_Sold) + parseInt(winnersPaid);
+                const newCurrentWinners = parseInt(game.Number_Winners) - newWinnersSold;
 
-                // 3. Update the database
                 const updateQuery = `
                     UPDATE ${OPEN_TABLE} SET 
                     Winners_Sold = ?, 
@@ -297,9 +315,6 @@ row.Cash_Hand = parseFloat(row.Cash_Hand);
                     { headers: corsHeaders(), status: 500 });
             }
         }
-
-        // --- Existing routes (assuming your original signin, logs, heartbeat, logout logic remains) ---
-        // Note: Place your existing signin, logs, heartbeat, and logout routes here
         
         // --- Default Fallback ---
         return new Response("Not found", { status: 404, headers: corsHeaders() });
