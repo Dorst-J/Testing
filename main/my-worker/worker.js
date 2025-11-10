@@ -50,27 +50,16 @@ async function findGameBySerial(serial, db) {
 /**
  * Moves a row from its current table to a new table using a D1 transaction.
  */
-async function moveRow(serial, currentTable, newTable, data, db) {
+async function moveRow(serial, currentTable, newTable, values, db) {
     await db.exec("BEGIN");
     try {
-        let row = data; 
-        
         const cols = ALL_COLUMNS.join(", "); 
         const placeholders = ALL_COLUMNS.map(() => '?').join(", ");
         
-        // CRITICAL FIX: Simplify mapping to ONLY read property values.
-        const values = ALL_COLUMNS.map(col => {
-            // Read value directly. If it's undefined (meaning the property doesn't exist), 
-            // convert it to null for SQL, otherwise use the value (which is already sanitized).
-            const value = row[col];
-            return (value === undefined || value === null) ? null : value;
-        });
-
         const insertQuery = `INSERT INTO ${newTable} (${cols}) VALUES (${placeholders})`;
-        // console.log should now execute!
         console.log("Attempting INSERT:", insertQuery, "with values:", values);
         
-        await db.prepare(insertQuery).bind(...values).run();
+        await db.prepare(insertQuery).bind(...values).run(); // Binds the pre-built array
         
         const deleteQuery = `DELETE FROM ${currentTable} WHERE Serial_MF_Part = ?`;
         await db.prepare(deleteQuery).bind(serial).run();
@@ -79,7 +68,7 @@ async function moveRow(serial, currentTable, newTable, data, db) {
         return { success: true };
     } catch (error) {
         await db.exec("ROLLBACK");
-        // CRITICAL: Throw the error *message* instead of the error object to prevent crash
+        // CRITICAL: We need a readable error message here.
         throw new Error(error.message || "Unknown SQL Transaction Error"); 
     }
 }
@@ -193,11 +182,25 @@ if (request.method === "POST" && path === "/api/game/status/update") {
         }
         
         // Explicitly cast ALL numerical values in the row object to their best types
-        const NUMERICAL_COLUMNS = [
-            "Ticket_Price", "Number_Tickets", "Tickets_Sold", "Current_Tickets", 
-            "Number_Winners", "Winners_Sold", "Current_Winners", "Cash_Hand", 
-            "Ideal_Gross", "Ideal_Prize", "Ideal_Net", "Game_Cost"
-        ];
+        const finalValues = [
+    row.Serial_MF_Part,
+    row.Game_Name,
+    row.Ticket_Price,
+    row.Number_Tickets,
+    row.Tickets_Sold,
+    row.Current_Tickets,
+    row.Number_Winners,
+    row.Winners_Sold,
+    row.Current_Winners,
+    row.P_NP,
+    row.Cash_Hand,
+    row.Ideal_Gross,
+    row.Ideal_Prize,
+    row.Ideal_Net,
+    row.Game_Cost,
+    row.Status,
+    row.Box_Number // Should be the sanitized value from logic above
+];
 
         NUMERICAL_COLUMNS.forEach(col => {
             const value = row[col];
@@ -222,7 +225,7 @@ if (request.method === "POST" && path === "/api/game/status/update") {
         // --- END Sanitize and Update Row Data ---
 
         // 3. Move the row using the clean, updated 'row' object as the data source
-        await moveRow(serial, oldTable, newTable, row, env.araa_testing);
+        await moveRow(serial, oldTable, newTable, finalValues, env.araa_testing);
 
         return new Response(JSON.stringify({ success: true, newTable }), 
             { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
