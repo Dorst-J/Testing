@@ -101,11 +101,6 @@
   </div>
 
   <div class="input-group">
-    <label for="ticketsInput">Amount of Tickets:</label>
-    <input type="text" id="ticketsInput" onclick="setActiveInput('ticketsInput')" readonly placeholder="0">
-  </div>
-
-  <div class="input-group">
     <label for="ticketPrice">Price per Ticket ($):</label>
     <input type="text" id="ticketPrice" onclick="setActiveInput('ticketPrice')" readonly placeholder="0.00">
   </div>
@@ -208,7 +203,7 @@
 
     const calculatedTickets = Math.floor(money / price);
     
-    let resultMessage = `The money inserted ($${money.toFixed(2)}) should buy **${calculatedTickets}** tickets (at $${price.toFixed(2)} each).`;
+    let resultMessage = `Give out ${calculatedTickets} tickets.`;
 
     if (!isNaN(ticketsGiven) && ticketsGiven >= 0) {
         if (ticketsGiven === calculatedTickets) {
