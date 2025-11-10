@@ -220,10 +220,13 @@ export default {
                 return new Response(JSON.stringify({ success: true, newTable }), 
                     { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
             } catch (err) {
-                console.error("Status Update Route Error:", err);
+                console.error("Status Update Route Error:", typeof err, err);
                 return new Response(
                     JSON.stringify({ success: false, error: err.message || "Unknown database error during status update" }),
-                    { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+                    JSON.stringify({ 
+    success: false, 
+    error: (err && err.message) ? err.message : (typeof err === 'object' ? JSON.stringify(err) : String(err)) || "Unknown database error during status update" 
+}),
                 );
             }
         }
