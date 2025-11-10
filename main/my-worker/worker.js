@@ -53,11 +53,12 @@ async function findGameBySerial(serial, db) {
 async function moveRow(serial, currentTable, newTable, data, db) {
     await db.exec("BEGIN");
     try {
-        let row = data; 
-        
+        let row = data; // Assumes 'data' is the clean, final object
+
         const cols = ALL_COLUMNS.join(", "); 
         const placeholders = ALL_COLUMNS.map(() => '?').join(", ");
         
+        // CRITICAL: We rely entirely on the row properties being correctly set by the route handler.
         const values = ALL_COLUMNS.map(col => {
             return (row.hasOwnProperty(col) && row[col] !== null && row[col] !== undefined) ? row[col] : null;
         });
@@ -143,87 +144,90 @@ if (request.method === "POST" && path === "/api/game/inventory/create") {
     }
 }
         
-        // --- POST /api/game/status/update (Status Change/Move) ---
-        if (request.method === "POST" && path === "/api/game/status/update") {
-            try {
-                const { serial, oldTable, newStatus, boxNumber } = await request.json();
-                if (!serial || !oldTable || !newStatus) {
-                    return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), 
-                        { headers: corsHeaders(), status: 400 });
-                }
+        // Worker code starting at // --- POST /api/game/status/update (Status Change/Move) ---
 
-                let newTable; 
-
-                if (newStatus === "Inventory") newTable = INVENTORY_TABLE;
-                else if (newStatus === "Open") newTable = OPEN_TABLE;
-                else if (newStatus === "Closed") newTable = CLOSED_TABLE;
-                else {
-                    return new Response(JSON.stringify({ success: false, error: "Invalid status: " + newStatus }), 
-                        { headers: corsHeaders(), status: 400 });
-                }
-                
-                const selectQuery = `SELECT * FROM ${oldTable} WHERE Serial_MF_Part = ?`;
-                const { results } = await env.araa_testing.prepare(selectQuery).bind(serial).all();
-
-                if (results.length === 0) {
-                    return new Response(JSON.stringify({ success: false, error: `Game ${serial} not found in ${oldTable}` }), 
-                        { headers: corsHeaders(), status: 404 });
-                }
-                let row = results[0];
-                
-                // --- 2. Sanitize and Update Row Data (All Conversions) ---
-                row.Status = newStatus;
-
-                // Set Box_Number (Required for Open, Null otherwise)
-                if (newTable === OPEN_TABLE) {
-                    if (!boxNumber || isNaN(parseInt(boxNumber)) || parseInt(boxNumber) < 1 || parseInt(boxNumber) > 7) {
-                        throw new Error("Missing or invalid Box Number for Open status");
-                    }
-                    row.Box_Number = parseInt(boxNumber);
-                } else {
-                    row.Box_Number = null;
-                }
-                
-                // CRITICAL FIX: Cast all numerical values for D1 compatibility
-                const NUMERICAL_COLUMNS = [
-                    "Ticket_Price", "Number_Tickets", "Tickets_Sold", "Current_Tickets", 
-                    "Number_Winners", "Winners_Sold", "Current_Winners", "Cash_Hand", 
-                    "Ideal_Gross", "Ideal_Prize", "Ideal_Net", "Game_Cost"
-                ];
-
-                NUMERICAL_COLUMNS.forEach(col => {
-                    const value = row[col];
-                    if (value === null || value === undefined) {
-                        return; // Keep null if null
-                    }
-                    
-                    const parsedValue = parseFloat(value);
-                    if (isNaN(parsedValue)) {
-                        row[col] = null; 
-                    } else {
-                        // Integer fields must be cast to integer
-                        if (["Number_Tickets", "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold", "Current_Winners"].includes(col)) {
-                            row[col] = parseInt(parsedValue);
-                        } else {
-                            row[col] = parsedValue;
-                        }
-                    }
-                });
-                // --- END Sanitize and Update Row Data ---
-
-                // 3. Move the row
-                await moveRow(serial, oldTable, newTable, row, env.araa_testing);
-
-                return new Response(JSON.stringify({ success: true, newTable }), 
-                    { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
-            } catch (err) {
-                console.error("Status Update Route Error:", err);
-                return new Response(
-                    JSON.stringify({ success: false, error: err.message || "Unknown database error during status update" }),
-                    { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
-                );
-            }
+if (request.method === "POST" && path === "/api/game/status/update") {
+    try {
+        const { serial, oldTable, newStatus, boxNumber } = await request.json();
+        if (!serial || !oldTable || !newStatus) {
+            return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), 
+                { headers: corsHeaders(), status: 400 });
         }
+
+        let newTable; 
+        if (newStatus === "Inventory") newTable = INVENTORY_TABLE;
+        else if (newStatus === "Open") newTable = OPEN_TABLE;
+        else if (newStatus === "Closed") newTable = CLOSED_TABLE;
+        else {
+            return new Response(JSON.stringify({ success: false, error: "Invalid status: " + newStatus }), 
+                { headers: corsHeaders(), status: 400 });
+        }
+        
+        // 1. Get current row data from the source table
+        const selectQuery = `SELECT * FROM ${oldTable} WHERE Serial_MF_Part = ?`;
+        const { results } = await env.araa_testing.prepare(selectQuery).bind(serial).all();
+
+        if (results.length === 0) {
+            return new Response(JSON.stringify({ success: false, error: `Game ${serial} not found in ${oldTable}` }), 
+                { headers: corsHeaders(), status: 404 });
+        }
+        let row = results[0];
+        
+        // --- 2. Sanitize and Update Row Data (Final Attempt) ---
+        row.Status = newStatus;
+
+        // Set Box_Number
+        if (newTable === OPEN_TABLE) {
+            if (!boxNumber || isNaN(parseInt(boxNumber)) || parseInt(boxNumber) < 1 || parseInt(boxNumber) > 7) {
+                throw new Error("Missing or invalid Box Number for Open status");
+            }
+            row.Box_Number = parseInt(boxNumber);
+        } else {
+            row.Box_Number = null;
+        }
+        
+        // Explicitly cast ALL numerical values in the row object to their best types
+        const NUMERICAL_COLUMNS = [
+            "Ticket_Price", "Number_Tickets", "Tickets_Sold", "Current_Tickets", 
+            "Number_Winners", "Winners_Sold", "Current_Winners", "Cash_Hand", 
+            "Ideal_Gross", "Ideal_Prize", "Ideal_Net", "Game_Cost"
+        ];
+
+        NUMERICAL_COLUMNS.forEach(col => {
+            const value = row[col];
+            // Only try to parse if there's a value. NULL remains NULL.
+            if (value !== null && value !== undefined) {
+                const parsedValue = parseFloat(value);
+                
+                if (isNaN(parsedValue)) {
+                    // This is the safety net: if it's junk data, setting it to NULL
+                    // should trigger a clean D1 NOT NULL error, not the 'duration' crash.
+                    row[col] = null; 
+                } else {
+                    // Cast to Integer if required, otherwise keep the float
+                    if (["Number_Tickets", "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold", "Current_Winners"].includes(col)) {
+                        row[col] = parseInt(parsedValue);
+                    } else {
+                        row[col] = parsedValue;
+                    }
+                }
+            }
+        });
+        // --- END Sanitize and Update Row Data ---
+
+        // 3. Move the row using the clean, updated 'row' object as the data source
+        await moveRow(serial, oldTable, newTable, row, env.araa_testing);
+
+        return new Response(JSON.stringify({ success: true, newTable }), 
+            { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
+    } catch (err) {
+        console.error("Status Update Route Error:", err);
+        return new Response(
+            JSON.stringify({ success: false, error: err.message || "Unknown database error during status update" }),
+            { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+        );
+    }
+}
 
         // --- GET /api/open/games (Main Page Data) ---
         if (request.method === "GET" && path === "/api/open/games") {
