@@ -159,49 +159,34 @@ export default {
     if (request.method === "POST" && path === "/api/game/status/update") {
         try {
             const { serial, oldTable, newStatus, boxNumber } = await request.json();
-            if (!serial || !oldTable || !newStatus) {
-                return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), 
-                    { headers: corsHeaders(), status: 400 });
-            }
+            // ... validation checks ...
 
-            let newTable = "";
-            if (newStatus === "Inventory") newTable = INVENTORY_TABLE;
-            else if (newStatus === "Open") newTable = OPEN_TABLE;
-            else if (newStatus === "Closed") newTable = CLOSED_TABLE;
-            else {
-                return new Response(JSON.stringify({ success: false, error: "Invalid status" }), 
-                    { headers: corsHeaders(), status: 400 });
-            }
-            
-            // 1. Get current row data
+            // ... newTable assignment ...
+
+            // 1. Get current row data (SELECT *)
             const selectQuery = `SELECT * FROM ${oldTable} WHERE Serial_MF_Part = ?`;
             const { results } = await env.araa_testing.prepare(selectQuery).bind(serial).all();
-            if (results.length === 0) {
-                return new Response(JSON.stringify({ success: false, error: `Game ${serial} not found in ${oldTable}` }), 
-                    { headers: corsHeaders(), status: 404 });
-            }
-            const row = results[0];
             
-            // 2. Update Box_Number if moving to Open
+            // ... check for results.length ...
+            const row = results[0]; // This is the full, old row data
+
+            // 2. UPDATE Status and Box_Number on the row object
+            row.Status = newStatus; // Crucial: Update the Status column
+            
             if (newTable === OPEN_TABLE) {
-                if (!boxNumber || isNaN(parseInt(boxNumber)) || parseInt(boxNumber) < 1 || parseInt(boxNumber) > 7) {
-                    return new Response(JSON.stringify({ success: false, error: "Missing or invalid Box Number for Open status" }), 
-                    { headers: corsHeaders(), status: 400 });
-                }
-                row.Box_Number = parseInt(boxNumber);
+                // boxNumber is passed from the front-end input
+                row.Box_Number = parseInt(boxNumber); 
             } else {
                 row.Box_Number = null;
             }
 
-            // 3. Move the row
+            // 3. Move the row (pass the now updated 'row' object)
             await moveRow(serial, oldTable, newTable, row, env.araa_testing);
 
             return new Response(JSON.stringify({ success: true, newTable }), 
                 { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
         } catch (err) {
-            console.error(err);
-            return new Response(JSON.stringify({ success: false, error: err.message }), 
-                { headers: corsHeaders(), status: 500 });
+            // ... error handling ...
         }
     }
 
