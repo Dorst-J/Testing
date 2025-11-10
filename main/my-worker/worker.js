@@ -212,48 +212,62 @@ export default {
         }
     }
 
-    // --- NEW: POST /api/game/sell ---
-    if (request.method === "POST" && path === "/api/game/sell") {
+    // --- NEW: POST /api/game/status/update ---
+    if (request.method === "POST" && path === "/api/game/status/update") {
         try {
-            const { boxNumber, moneyInserted, ticketsSold } = await request.json();
-            if (!boxNumber || isNaN(moneyInserted) || isNaN(ticketsSold)) {
-                return new Response(JSON.stringify({ success: false, error: "Missing or invalid selling data" }), 
+            const { serial, oldTable, newStatus, boxNumber } = await request.json();
+            if (!serial || !oldTable || !newStatus) {
+                return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), 
                     { headers: corsHeaders(), status: 400 });
             }
 
-            // 1. Get current game data and Ticket_Price
-            const selectQuery = `SELECT Cash_Hand, Tickets_Sold, Numer_Tickets FROM ${OPEN_TABLE} WHERE Box_Number = ?`;
-            const { results } = await env.araa_testing.prepare(selectQuery).bind(boxNumber).all();
+            // <--- START: INSERT/REPLACE CODE HERE --->
+            let newTable; // Declare newTable to be accessible in the try block
 
+            if (newStatus === "Inventory") newTable = INVENTORY_TABLE;
+            else if (newStatus === "Open") newTable = OPEN_TABLE;
+            else if (newStatus === "Closed") newTable = CLOSED_TABLE;
+            else {
+                // If the status is not one of the expected values, stop and return an error
+                return new Response(JSON.stringify({ success: false, error: "Invalid status: " + newStatus }), 
+                    { headers: corsHeaders(), status: 400 });
+            }
+            // <--- END: INSERT/REPLACE CODE HERE --->
+            
+            // 1. Get current row data
+            const selectQuery = `SELECT * FROM ${oldTable} WHERE Serial_MF_Part = ?`;
+            const { results } = await env.araa_testing.prepare(selectQuery).bind(serial).all();
+            
             if (results.length === 0) {
-                return new Response(JSON.stringify({ success: false, error: `Game not found in box ${boxNumber}` }), 
+                return new Response(JSON.stringify({ success: false, error: `Game ${serial} not found in ${oldTable}` }), 
                     { headers: corsHeaders(), status: 404 });
             }
-            const game = results[0];
+            const row = results[0];
+            
+            // 2. Update Status and Box_Number for the row object
+            row.Status = newStatus;
 
-            // 2. Calculate new values
-            const newTicketsSold = game.Tickets_Sold + ticketsSold;
-            const newCurrentTickets = game.Numer_Tickets - newTicketsSold;
-            const newCashHand = game.Cash_Hand + moneyInserted;
+            if (newTable === OPEN_TABLE) {
+                if (!boxNumber || isNaN(parseInt(boxNumber)) || parseInt(boxNumber) < 1 || parseInt(boxNumber) > 7) {
+                    throw new Error("Missing or invalid Box Number for Open status");
+                }
+                row.Box_Number = parseInt(boxNumber);
+            } else {
+                row.Box_Number = null;
+            }
 
-            // 3. Update the database
-            const updateQuery = `
-                UPDATE ${OPEN_TABLE} SET 
-                Tickets_Sold = ?, 
-                Current_Tickets = ?, 
-                Cash_Hand = ? 
-                WHERE Box_Number = ?`;
-            await env.araa_testing.prepare(updateQuery)
-                .bind(newTicketsSold, newCurrentTickets, newCashHand, boxNumber)
-                .run();
+            // 3. Move the row
+            // The moveRow function now receives the defined newTable
+            await moveRow(serial, oldTable, newTable, row, env.araa_testing);
 
-            return new Response(JSON.stringify({ success: true, newTicketsSold, newCurrentTickets, newCashHand }), 
+            return new Response(JSON.stringify({ success: true, newTable }), 
                 { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
-
         } catch (err) {
-            console.error(err);
-            return new Response(JSON.stringify({ success: false, error: err.message }), 
-                { headers: corsHeaders(), status: 500 });
+            console.error("Status Update Route Error:", err);
+            return new Response(
+                JSON.stringify({ success: false, error: err.message || "Unknown database error during status update" }),
+                { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+            );
         }
     }
     
