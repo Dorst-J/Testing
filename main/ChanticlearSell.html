@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-      <meta charset="UTF-8" />
+    <meta charset="UTF-8" />
   <title>Calculator</title>
   <style>
     body {
@@ -30,13 +30,15 @@
     label {
       display: block;
       margin-top: 15px;
+      font-weight: bold; /* Added emphasis for labels */
     }
 
     input {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
-      font-size: 1em;
+      font-size: 1.2em; /* Slightly larger font */
+      text-align: right; /* Align input text to the right */
     }
 
     .button-group {
@@ -62,6 +64,9 @@
       margin-top: 20px;
       font-size: 1.2em;
       text-align: center;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
 
     .numpad {
@@ -81,7 +86,7 @@
     }
 
     .input-group {
-      margin-bottom: 20px;
+      margin-bottom: 10px; /* Reduced margin */
     }
   </style>
 </head>
@@ -92,12 +97,17 @@
 
   <div class="input-group">
     <label for="moneyInput">Money Inserted ($):</label>
-    <input type="text" id="moneyInput" onclick="setActiveInput('moneyInput')" readonly>
+    <input type="text" id="moneyInput" onclick="setActiveInput('moneyInput')" readonly placeholder="0.00">
+  </div>
+
+  <div class="input-group">
+    <label for="ticketsInput">Amount of Tickets:</label>
+    <input type="text" id="ticketsInput" onclick="setActiveInput('ticketsInput')" readonly placeholder="0">
   </div>
 
   <div class="input-group">
     <label for="ticketPrice">Price per Ticket ($):</label>
-    <input type="text" id="ticketPrice" onclick="setActiveInput('ticketPrice')" readonly>
+    <input type="text" id="ticketPrice" onclick="setActiveInput('ticketPrice')" readonly placeholder="0.00">
   </div>
 
   <div class="numpad">
@@ -127,43 +137,98 @@
 </div>
 
 <script>
-  let activeInput = null;
+  let activeInputId = null;
+
+  // Initialize function to check for rolled money
+  window.onload = function() {
+      const rolledMoney = sessionStorage.getItem('rolledMoney');
+      if (rolledMoney) {
+          document.getElementById('moneyInput').value = rolledMoney;
+          // Clear the storage item so it doesn't persist on a normal refresh
+          sessionStorage.removeItem('rolledMoney'); 
+          // Set the active input to ticketPrice after money is inserted
+          setActiveInput('ticketPrice'); 
+      } else {
+          setActiveInput('moneyInput');
+      }
+  };
+
 
   function setActiveInput(id) {
-    activeInput = document.getElementById(id);
+    activeInputId = id;
+    // Optional: Add visual focus indicator (e.g., border color) if you want to show which field is active
+    document.querySelectorAll('.input-group input').forEach(input => {
+        input.style.border = '1px solid #ccc';
+    });
+    const activeElement = document.getElementById(id);
+    if (activeElement) {
+        activeElement.style.border = '2px solid blue';
+    }
   }
 
   function press(val) {
-    if (activeInput) {
+    if (!activeInputId) return;
+    const activeInput = document.getElementById(activeInputId);
+    
+    if (activeInputId === "ticketsInput") {
+      // Only allow digits for tickets (whole integers)
+      if (val === '.' || isNaN(parseInt(val))) return;
+
+      // Prevent leading zero unless it's the only digit
+      if (activeInput.value === '0' && val !== '0') {
+          activeInput.value = val;
+      } else if (activeInput.value === '' && val === '0') {
+          activeInput.value = '0';
+      } else if (activeInput.value !== '0') {
+          activeInput.value += val;
+      }
+      
+    } else {
+      // Allow digits and dot for money/price (decimal values)
+      if (val === '.' && activeInput.value.includes('.')) return;
       activeInput.value += val;
     }
   }
 
   function backspace() {
-    if (activeInput) {
-      activeInput.value = activeInput.value.slice(0, -1);
+    if (activeInputId) {
+      document.getElementById(activeInputId).value = document.getElementById(activeInputId).value.slice(0, -1);
     }
   }
 
   function calculateTickets() {
     const money = parseFloat(document.getElementById('moneyInput').value);
     const price = parseFloat(document.getElementById('ticketPrice').value);
+    const ticketsGiven = parseInt(document.getElementById('ticketsInput').value);
 
     if (isNaN(money) || isNaN(price) || price <= 0) {
       alert("Please enter valid numbers. Ticket price must be more than zero.");
       return;
     }
 
-    const tickets = Math.floor(money / price);
-    document.getElementById('ticketCount').textContent = tickets;
+    const calculatedTickets = Math.floor(money / price);
+    
+    let resultMessage = `The money inserted ($${money.toFixed(2)}) should buy **${calculatedTickets}** tickets (at $${price.toFixed(2)} each).`;
+
+    if (!isNaN(ticketsGiven) && ticketsGiven >= 0) {
+        if (ticketsGiven === calculatedTickets) {
+            resultMessage += `<br><span style="color: green;">The actual tickets given (${ticketsGiven}) matches the calculated amount.</span>`;
+        } else {
+            resultMessage += `<br><span style="color: red;">The actual tickets given (${ticketsGiven}) **DOES NOT** match the calculated amount.</span>`;
+        }
+    }
+
+
+    document.getElementById('ticketCount').innerHTML = resultMessage;
     document.getElementById('results').style.display = 'block';
   }
 
   function clearFields() {
     document.getElementById('moneyInput').value = '';
+    document.getElementById('ticketsInput').value = '';
     document.getElementById('ticketPrice').value = '';
     document.getElementById('results').style.display = 'none';
-    activeInput = null;
+    setActiveInput('moneyInput'); // Reset focus
   }
 
   function goToMainPage() {

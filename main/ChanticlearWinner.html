@@ -31,14 +31,28 @@
       text-align: center;
     }
 
-    input[type="text"] {
+    /* Style for all text inputs in the calculator */
+    .calculator input[type="text"] {
       width: 100%;
       font-size: 1.5em;
       padding: 10px;
-      margin-top: 15px;
-      margin-bottom: 20px;
+      margin-top: 5px;
+      margin-bottom: 10px; /* Reduced margin for closer input fields */
       text-align: right;
     }
+
+    .input-group label {
+        display: block;
+        font-weight: bold;
+        margin-top: 15px;
+    }
+
+    /* Override for money input to allow greater visual focus if needed, but not strictly required */
+    #moneyInput {
+        /* font-size: 1.5em; */
+        margin-bottom: 20px;
+    }
+
 
     .numpad {
       display: grid;
@@ -107,8 +121,17 @@
 
 <div class="container">
   <div class="calculator">
-    <h2>Enter Money</h2>
-    <input type="text" id="moneyInput" readonly placeholder="0.00">
+    <h2>Winner Details</h2>
+
+    <div class="input-group">
+        <label for="moneyInput">Enter Money ($):</label>
+        <input type="text" id="moneyInput" readonly placeholder="0.00" onclick="setActiveInput('moneyInput')">
+    </div>
+
+    <div class="input-group">
+        <label for="ticketsInput">Amount of Tickets:</label>
+        <input type="text" id="ticketsInput" readonly placeholder="0" onclick="setActiveInput('ticketsInput')">
+    </div>
 
     <div class="numpad">
       <button onclick="press('7')">7</button>
@@ -127,7 +150,7 @@
     </div>
 
     <div class="actions">
-      <button class="rollback-btn" onclick="rollBack()">Roll Money Back In</button>
+      <button class="rollback-btn" onclick="rollMoneyOver()">Roll Money Over</button>
       <button class="return-btn" onclick="returnToMain()">Return to Main Page</button>
     </div>
   </div>
@@ -135,54 +158,101 @@
   <div class="instructions" id="instructionsBox">
     <h3>Instructions</h3>
     <div id="instructionText">
-      <!-- Placeholder for dynamic instructions -->
-    </div>
+      </div>
   </div>
 </div>
 
 <script>
-  const inputField = document.getElementById("moneyInput");
+  const moneyInput = document.getElementById("moneyInput");
+  const ticketsInput = document.getElementById("ticketsInput");
   const instructionsBox = document.getElementById("instructionsBox");
   const instructionText = document.getElementById("instructionText");
+  let activeInputId = "moneyInput"; // Default active input
 
   const threshold = 50; // Change this to your desired threshold value
 
+  function setActiveInput(id) {
+    activeInputId = id;
+    // Visually highlight the active input if desired (optional)
+    moneyInput.style.border = (id === 'moneyInput') ? '2px solid blue' : '1px solid #ccc';
+    ticketsInput.style.border = (id === 'ticketsInput') ? '2px solid blue' : '1px solid #ccc';
+  }
+
   function press(value) {
-    inputField.value += value;
-  }
+    const activeInput = document.getElementById(activeInputId);
+    if (!activeInput) return;
 
-  function backspace() {
-    inputField.value = inputField.value.slice(0, -1);
-  }
+    if (activeInputId === "ticketsInput") {
+      // Only allow digits for tickets
+      if (value === '.' || isNaN(parseInt(value))) return;
 
-  function showInstructions() {
-    const money = parseFloat(inputField.value);
-    if (!isNaN(money)) {
-      instructionsBox.style.display = "block";
-      if (money > threshold) {
-        instructionText.innerHTML = `
-          <p><strong>High amount detected:</strong> Please follow these instructions for large entries.</p>
-          <p><em>[Custom high-value instructions go here]</em></p>
-        `;
-      } else {
-        instructionText.innerHTML = `
-          <p><strong>Standard process:</strong> Follow the usual procedure.</p>
-          <p><em>[Custom normal instructions go here]</em></p>
-        `;
+      // Prevent leading zero unless it's the only digit
+      if (activeInput.value === '0' && value !== '0') {
+          activeInput.value = value;
+      } else if (activeInput.value === '' && value === '0') {
+          activeInput.value = '0';
+      } else if (activeInput.value !== '0') {
+          activeInput.value += value;
       }
-    } else {
-      alert("Please enter a valid number.");
+
+    } else if (activeInputId === "moneyInput") {
+      // Allow digits and dot for money (standard calculator logic)
+      if (value === '.' && activeInput.value.includes('.')) return;
+      activeInput.value += value;
     }
   }
 
-  function rollBack() {
-    inputField.value = "";
-    instructionsBox.style.display = "none";
-    window.location.href = "./ChanticlearSell.html"; // Replace with your selling page
+  function backspace() {
+    const activeInput = document.getElementById(activeInputId);
+    if (activeInput) {
+      activeInput.value = activeInput.value.slice(0, -1);
+    }
+  }
+
+  function showInstructions() {
+    const money = parseFloat(moneyInput.value);
+    const tickets = parseInt(ticketsInput.value);
+
+    // Basic validation for money input
+    if (isNaN(money) || money < 0) {
+      alert("Please enter a valid money amount.");
+      return;
+    }
+    // Basic validation for tickets input
+    if (isNaN(tickets) || tickets < 0) {
+      alert("Please enter a valid number of tickets.");
+      return;
+    }
+
+
+    instructionsBox.style.display = "block";
+    if (money > threshold) {
+      instructionText.innerHTML = `
+        <p><strong>High amount detected:</strong> Please follow these instructions for large entries.</p>
+        <p>You entered <strong>$${money.toFixed(2)}</strong> for <strong>${tickets}</strong> tickets.</p>
+        <p><em>[Custom high-value instructions go here]</em></p>
+      `;
+    } else {
+      instructionText.innerHTML = `
+        <p><strong>Standard process:</strong> Follow the usual procedure.</p>
+        <p>You entered <strong>$${money.toFixed(2)}</strong> for <strong>${tickets}</strong> tickets.</p>
+        <p><em>[Custom normal instructions go here]</em></p>
+      `;
+    }
+  }
+
+  function rollMoneyOver() {
+    const money = moneyInput.value;
+    // Store the money value in session storage
+    sessionStorage.setItem('rolledMoney', money);
+    
+    // Navigate to the selling page
+    window.location.href = "./ChanticlearSell.html"; 
   }
 
   function returnToMain() {
-    inputField.value = "";
+    moneyInput.value = "";
+    ticketsInput.value = "";
     instructionsBox.style.display = "none";
     window.location.href = "./Chanticlear.html"; // Replace with your main page
   }
