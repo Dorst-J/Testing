@@ -235,22 +235,22 @@ export default {
                 }
 
                 return new Response(
-                    // First Argument: Body (JSON string with the safe error message)
-                    JSON.stringify({ 
-                        success: false, 
-                        error: errorMessage 
-                    }),
-                    // Second Argument: Options (The valid ResponseInit object)
-                    { 
-                        status: 500, 
-                        headers: { 
-                            ...corsHeaders(), 
-                            "Content-Type": "application/json" 
-                        } 
-                    }
-                );
+            // Argument 1: Body (JSON string with the safe error message)
+            JSON.stringify({ 
+                success: false, 
+                error: errorMessage 
+            }),
+            // Argument 2: Options (The valid ResponseInit object {status, headers})
+            { 
+                status: 500, 
+                headers: { 
+                    ...corsHeaders(), 
+                    "Content-Type": "application/json" 
+                } 
             }
-        }
+        );
+    }
+}
         // ... rest of the worker code (sell, winner, default fallback)
         // ...
         
