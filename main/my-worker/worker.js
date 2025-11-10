@@ -64,6 +64,7 @@ async function moveRow(serial, currentTable, newTable, data, db) {
         });
 
         const insertQuery = `INSERT INTO ${newTable} (${cols}) VALUES (${placeholders})`;
+        console.log("Attempting INSERT:", insertQuery, "with values:", values);
         await db.prepare(insertQuery).bind(...values).run();
         
         const deleteQuery = `DELETE FROM ${currentTable} WHERE Serial_MF_Part = ?`;
