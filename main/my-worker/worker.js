@@ -71,11 +71,11 @@ async function moveRow(serial, currentTable, newTable, values, db) {
     } catch (error) {
         await db.exec("ROLLBACK");
         
-        // **THE HARDEST FIX:** Use the generic String() constructor.
-        // This is guaranteed not to crash and will capture whatever text representation D1 provides.
+        // **FIXED (The Ultimate Hardening):** Use the generic String() constructor 
+        // to safely convert the D1 error object without crashing.
         const safeErrorMessage = `D1 Transaction Failed: ${String(error)}`;
         
-        // Log the final safe message for immediate visibility
+        // Log the final safe message
         console.error("D1 Transaction Error (Safe Log):", safeErrorMessage); 
 
         // Throw a standard JavaScript Error object with the safe message
@@ -175,8 +175,6 @@ export default {
                 let row = results[0];
                 
                 // --- 2. Sanitize and Update Row Data (Final Attempt) ---
-                
-                // Define NUMERICAL_COLUMNS for local use (Fixes the "is not defined" error)
                 const NUMERICAL_COLUMNS = [
                     "Ticket_Price", "Number_Tickets", "Tickets_Sold", "Current_Tickets", 
                     "Number_Winners", "Winners_Sold", "Current_Winners", "Cash_Hand", 
@@ -214,7 +212,7 @@ export default {
                 });
                 // --- END Sanitize and Update Row Data ---
 
-                // CRITICAL FIX: Construct final array explicitly, avoiding the crash-prone .map() on the row object
+                // CRITICAL FIX: Construct final array explicitly
                 const finalValues = [
                     row.Serial_MF_Part, row.Game_Name, row.Ticket_Price, row.Number_Tickets,
                     row.Tickets_Sold, row.Current_Tickets, row.Number_Winners, row.Winners_Sold,
@@ -229,38 +227,44 @@ export default {
                 return new Response(JSON.stringify({ success: true, newTable }), 
                     { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
             } catch (err) {
-                // FIX: Implemented robust error handling to prevent the Worker from crashing
-                console.error("Status Update Route Error:", typeof err, err);
+                // **FIXED (The Ultimate Hardening of the main catch block):**
+                // Safely log and extract the message thrown by moveRow.
+                const safeLoggedError = String(err);
                 
+                // 2. Log the safe error
+                console.error("Status Update Route Error (Safely Logged):", safeLoggedError); 
+                
+                // 3. Prepare the message for the client
                 let errorMessage;
-                if (err && err.message) {
-                    errorMessage = err.message;
-                } else if (typeof err === 'object' && err !== null) {
-                    // Stringify the full object to debug the D1 error (e.g., duration error)
-                    errorMessage = JSON.stringify(err);
+                
+                // Clean up the error message for client readability
+                if (safeLoggedError.includes("D1 Transaction Failed")) {
+                    // Message from moveRow: "Error: D1 Transaction Failed: Error: SQLITE_CONSTRAINT_..."
+                    errorMessage = safeLoggedError.replace('Error: D1 Transaction Failed: Error: ', 'Database Transaction Failed: ');
+                    // Clean up generic D1 message structure if still present
+                    errorMessage = errorMessage.replace('D1 Transaction Failed: Error: ', 'Database Transaction Failed: ');
                 } else {
-                    errorMessage = String(err) || "Unknown database error during status update";
+                    // Fallback for other errors (e.g., missing box number)
+                    errorMessage = safeLoggedError;
                 }
 
+                // 4. Return the Response with the safe message and correct structure
                 return new Response(
-            // Argument 1: Body (JSON string with the safe error message)
-            JSON.stringify({ 
-                success: false, 
-                error: errorMessage 
-            }),
-            // Argument 2: Options (The valid ResponseInit object {status, headers})
-            { 
-                status: 500, 
-                headers: { 
-                    ...corsHeaders(), 
-                    "Content-Type": "application/json" 
-                } 
+                    JSON.stringify({ 
+                        success: false, 
+                        error: errorMessage
+                    }),
+                    { 
+                        status: 500, 
+                        headers: { 
+                            ...corsHeaders(), 
+                            "Content-Type": "application/json" 
+                        } 
+                    }
+                );
             }
-        );
-    }
-}
+        }
         // ... rest of the worker code (sell, winner, default fallback)
-        // ...
         
         return new Response("Not found", { status: 404, headers: corsHeaders() });
     },
