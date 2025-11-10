@@ -30,15 +30,15 @@
     label {
       display: block;
       margin-top: 15px;
-      font-weight: bold; /* Added emphasis for labels */
+      font-weight: bold;
     }
 
     input {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
-      font-size: 1.2em; /* Slightly larger font */
-      text-align: right; /* Align input text to the right */
+      font-size: 1.2em;
+      text-align: right;
     }
 
     .button-group {
@@ -86,7 +86,7 @@
     }
 
     .input-group {
-      margin-bottom: 10px; /* Reduced margin */
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -151,7 +151,7 @@
 
   function setActiveInput(id) {
     activeInputId = id;
-    // Optional: Add visual focus indicator (e.g., border color) if you want to show which field is active
+    // Visually indicate the active input
     document.querySelectorAll('.input-group input').forEach(input => {
         input.style.border = '1px solid #ccc';
     });
@@ -165,24 +165,9 @@
     if (!activeInputId) return;
     const activeInput = document.getElementById(activeInputId);
     
-    if (activeInputId === "ticketsInput") {
-      // Only allow digits for tickets (whole integers)
-      if (val === '.' || isNaN(parseInt(val))) return;
-
-      // Prevent leading zero unless it's the only digit
-      if (activeInput.value === '0' && val !== '0') {
-          activeInput.value = val;
-      } else if (activeInput.value === '' && val === '0') {
-          activeInput.value = '0';
-      } else if (activeInput.value !== '0') {
-          activeInput.value += val;
-      }
-      
-    } else {
-      // Allow digits and dot for money/price (decimal values)
-      if (val === '.' && activeInput.value.includes('.')) return;
-      activeInput.value += val;
-    }
+    // Allow digits and dot for money/price (decimal values)
+    if (val === '.' && activeInput.value.includes('.')) return;
+    activeInput.value += val;
   }
 
   function backspace() {
@@ -194,33 +179,21 @@
   function calculateTickets() {
     const money = parseFloat(document.getElementById('moneyInput').value);
     const price = parseFloat(document.getElementById('ticketPrice').value);
-    const ticketsGiven = parseInt(document.getElementById('ticketsInput').value);
 
     if (isNaN(money) || isNaN(price) || price <= 0) {
-      alert("Please enter valid numbers. Ticket price must be more than zero.");
+      alert("Please enter valid money and price. Ticket price must be more than zero.");
       return;
     }
 
+    // Calculate the whole number of tickets
     const calculatedTickets = Math.floor(money / price);
     
-    let resultMessage = `Give out **${calculatedTickets}** tickets.`;
-
-    if (!isNaN(ticketsGiven) && ticketsGiven >= 0) {
-        if (ticketsGiven === calculatedTickets) {
-            resultMessage += `<br><span style="color: green;">The actual tickets given (${ticketsGiven}) matches the calculated amount.</span>`;
-        } else {
-            resultMessage += `<br><span style="color: red;">The actual tickets given (${ticketsGiven}) **DOES NOT** match the calculated amount.</span>`;
-        }
-    }
-
-
-    document.getElementById('ticketCount').innerHTML = resultMessage;
+    document.getElementById('ticketCount').textContent = calculatedTickets;
     document.getElementById('results').style.display = 'block';
   }
 
   function clearFields() {
     document.getElementById('moneyInput').value = '';
-    document.getElementById('ticketsInput').value = '';
     document.getElementById('ticketPrice').value = '';
     document.getElementById('results').style.display = 'none';
     setActiveInput('moneyInput'); // Reset focus
