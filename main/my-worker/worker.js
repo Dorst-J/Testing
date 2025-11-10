@@ -44,7 +44,7 @@ async function findGameBySerial(serial, db) {
             return { table: tableName, row: results[0] };
         }
     }
-  let row = JSON.parse(JSON.stringify(results[0]));
+  return { table: null, row: null };
 }
 
 /**
