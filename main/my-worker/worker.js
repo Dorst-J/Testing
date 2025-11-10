@@ -181,26 +181,7 @@ if (request.method === "POST" && path === "/api/game/status/update") {
             row['Box_Number'] = null;
         }
         
-        // Explicitly cast ALL numerical values in the row object to their best types
-        const finalValues = [
-    row.Serial_MF_Part,
-    row.Game_Name,
-    row.Ticket_Price,
-    row.Number_Tickets,
-    row.Tickets_Sold,
-    row.Current_Tickets,
-    row.Number_Winners,
-    row.Winners_Sold,
-    row.Current_Winners,
-    row.P_NP,
-    row.Cash_Hand,
-    row.Ideal_Gross,
-    row.Ideal_Prize,
-    row.Ideal_Net,
-    row.Game_Cost,
-    row.Status,
-    row.Box_Number // Should be the sanitized value from logic above
-];
+       
 
         NUMERICAL_COLUMNS.forEach(col => {
             const value = row[col];
@@ -223,7 +204,26 @@ if (request.method === "POST" && path === "/api/game/status/update") {
             }
         });
         // --- END Sanitize and Update Row Data ---
-
+ // Explicitly cast ALL numerical values in the row object to their best types
+        const finalValues = [
+     row.Serial_MF_Part,
+    row.Game_Name,
+    row.Ticket_Price,
+    row.Number_Tickets,
+    row.Tickets_Sold,
+    row.Current_Tickets,
+    row.Number_Winners,
+    row.Winners_Sold,
+    row.Current_Winners,
+    row.P_NP,
+    row.Cash_Hand,
+    row.Ideal_Gross,
+    row.Ideal_Prize,
+    row.Ideal_Net,
+    row.Game_Cost,
+    row.Status,
+    row.Box_Number // Should be the sanitized value from logic above
+];
         // 3. Move the row using the clean, updated 'row' object as the data source
         await moveRow(serial, oldTable, newTable, finalValues, env.araa_testing);
 
