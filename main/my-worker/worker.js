@@ -53,35 +53,23 @@ async function findGameBySerial(serial, db) {
  * Expects the 'values' array to be pre-built and perfectly ordered.
  */
 async function moveRow(serial, currentTable, newTable, values, db) {
-    await db.exec("BEGIN");
+    const cols = ALL_COLUMNS.join(", "); 
+    const placeholders = ALL_COLUMNS.map(() => '?').join(", ");
+    
     try {
-        const cols = ALL_COLUMNS.join(", "); 
-        const placeholders = ALL_COLUMNS.map(() => '?').join(", ");
-        
         const insertQuery = `INSERT INTO ${newTable} (${cols}) VALUES (${placeholders})`;
-        console.log("Attempting INSERT:", insertQuery, "with values:", values);
-        
         await db.prepare(insertQuery).bind(...values).run();
-        
+
         const deleteQuery = `DELETE FROM ${currentTable} WHERE Serial_MF_Part = ?`;
         await db.prepare(deleteQuery).bind(serial).run();
 
-        await db.exec("COMMIT");
         return { success: true };
     } catch (error) {
-        await db.exec("ROLLBACK");
-        
-        // **FIXED (The Ultimate Hardening):** Use the generic String() constructor 
-        // to safely convert the D1 error object without crashing.
-        const safeErrorMessage = `D1 Transaction Failed: ${String(error)}`;
-        
-        // Log the final safe message
-        console.error("D1 Transaction Error (Safe Log):", safeErrorMessage); 
-
-        // Throw a standard JavaScript Error object with the safe message
-        throw new Error(safeErrorMessage); 
+        console.error("D1 MoveRow Error:", error);
+        throw new Error(`MoveRow failed: ${String(error)}`);
     }
 }
+
 
 // --- Main Worker Export ---
 export default {
