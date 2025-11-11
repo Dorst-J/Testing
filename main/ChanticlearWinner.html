@@ -163,139 +163,174 @@
 </div>
 
 <script>
-    // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
-    const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
-    
-    const moneyInput = document.getElementById("moneyInput");
-    const ticketsInput = document.getElementById("ticketsInput");
-    const instructionsBox = document.getElementById("instructionsBox");
-    const instructionText = document.getElementById("instructionText");
-    let activeInputId = "moneyInput"; 
-    const threshold = 50; 
-    let currentBoxNumber = null;
+  // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
+  const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
 
-    window.onload = function() {
-        currentBoxNumber = sessionStorage.getItem('currentBoxNumber');
-        if (!currentBoxNumber) {
-            alert("No box selected. Returning to main page.");
-            returnToMain();
-            return;
-        }
-        setActiveInput('moneyInput');
-    };
-    
-    // ... rest of your existing setActiveInput, press, backspace, rollMoneyOver, returnToMain functions ...
-    // Keep them exactly as they are, but update returnToMain to clear currentBoxNumber.
+  const moneyInput = document.getElementById("moneyInput");
+  const ticketsInput = document.getElementById("ticketsInput");
+  const instructionsBox = document.getElementById("instructionsBox");
+  const instructionText = document.getElementById("instructionText");
+  let activeInputId = "moneyInput";
+  const threshold = 50;
+  let currentBoxNumber = null;
 
-    function setActiveInput(id) {
-        activeInputId = id;
-        moneyInput.style.border = (id === 'moneyInput') ? '2px solid blue' : '1px solid #ccc';
-        ticketsInput.style.border = (id === 'ticketsInput') ? '2px solid blue' : '1px solid #ccc';
+  window.onload = function () {
+    currentBoxNumber = sessionStorage.getItem('currentBoxNumber');
+    if (!currentBoxNumber) {
+      alert("No box selected. Returning to main page.");
+      returnToMain();
+      return;
+    }
+    setActiveInput('moneyInput');
+  };
+
+  function setActiveInput(id) {
+    activeInputId = id;
+    moneyInput.style.border   = (id === 'moneyInput')   ? '2px solid blue' : '1px solid #ccc';
+    ticketsInput.style.border = (id === 'ticketsInput') ? '2px solid blue' : '1px solid #ccc';
+  }
+
+  function press(value) {
+    const activeInput = document.getElementById(activeInputId);
+    if (!activeInput) return;
+
+    if (activeInputId === "ticketsInput") {
+      if (value === '.' || isNaN(parseInt(value))) return;
+      if (activeInput.value === '0' && value !== '0') {
+        activeInput.value = value;
+      } else if (activeInput.value === '' && value === '0') {
+        activeInput.value = '0';
+      } else if (activeInput.value !== '0') {
+        activeInput.value += value;
+      }
+    } else if (activeInputId === "moneyInput") {
+      if (value === '.' && activeInput.value.includes('.')) return;
+      activeInput.value += value;
+    }
+  }
+
+  function backspace() {
+    const activeInput = document.getElementById(activeInputId);
+    if (activeInput) {
+      activeInput.value = activeInput.value.slice(0, -1);
+    }
+  }
+
+  // SUBTRACTS payout from Cash_Hand and updates winner counts
+  async function showInstructions() {
+    const money   = parseFloat(moneyInput.value);
+    const tickets = parseInt(ticketsInput.value);
+
+    if (isNaN(money) || money < 0) {
+      alert("Please enter a valid money amount.");
+      return;
+    }
+    if (isNaN(tickets) || tickets < 0) {
+      alert("Please enter a valid number of tickets.");
+      return;
     }
 
-    function press(value) {
-        const activeInput = document.getElementById(activeInputId);
-        if (!activeInput) return;
-
-        if (activeInputId === "ticketsInput") {
-            if (value === '.' || isNaN(parseInt(value))) return;
-            if (activeInput.value === '0' && value !== '0') {
-                activeInput.value = value;
-            } else if (activeInput.value === '' && value === '0') {
-                activeInput.value = '0';
-            } else if (activeInput.value !== '0') {
-                activeInput.value += value;
-            }
-        } else if (activeInputId === "moneyInput") {
-            if (value === '.' && activeInput.value.includes('.')) return;
-            activeInput.value += value;
-        }
+    const boxNumber = sessionStorage.getItem('currentBoxNumber');
+    if (!boxNumber) {
+      alert("Box number missing. Cannot record winner.");
+      return;
     }
 
-    function backspace() {
-        const activeInput = document.getElementById(activeInputId);
-        if (activeInput) {
-            activeInput.value = activeInput.value.slice(0, -1);
-        }
+    try {
+      const res = await fetch(WORKER_URL + '/api/game/winner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          boxNumber: Number(boxNumber),
+          winnersPaid: tickets,     // winning tickets paid out
+          payoutCash: Number(money) // $$$ to subtract from Cash_Hand
+        })
+      });
+
+      let result;
+      try { result = await res.json(); }
+      catch { throw new Error(`HTTP ${res.status} ${await res.text()}`); }
+
+      if (!res.ok || !result.success) {
+        throw new Error(result?.error || 'Winner update failed');
+      }
+
+      // Show instructions (unchanged UI)
+      instructionsBox.style.display = "block";
+      let statusText = "";
+      if (money > threshold) {
+        statusText = "High amount detected";
+        instructionText.innerHTML = `
+          <p><strong>${statusText}:</strong> Please follow these instructions for large entries.</p>
+          <p>You entered <strong>$${money.toFixed(2)}</strong> for <strong>${tickets}</strong> winning tickets.</p>
+          <p><em>[Custom high-value instructions go here]</em></p>
+        `;
+      } else {
+        statusText = "Standard process";
+        instructionText.innerHTML = `
+          <p><strong>${statusText}:</strong> Follow the usual procedure.</p>
+          <p>You entered <strong>$${money.toFixed(2)}</strong> for <strong>${tickets}</strong> winning tickets.</p>
+          <p><em>[Custom normal instructions go here]</em></p>
+        `;
+      }
+    } catch (error) {
+      alert(`Error communicating with server: ${error.message}`);
+      console.error('Winner Update Error:', error);
+    }
+  }
+
+  // ADDS payout back to Cash_Hand, then navigates to Sell with rolledMoney
+  function rollMoneyOver() {
+    const money = parseFloat(moneyInput.value || "0");
+    const boxNumber = sessionStorage.getItem('currentBoxNumber');
+
+    if (!boxNumber) {
+      alert("Box number missing. Cannot roll money over.");
+      return;
     }
 
-    async function showInstructions() {
-        const money = parseFloat(moneyInput.value);
-        const tickets = parseInt(ticketsInput.value);
-
-        if (isNaN(money) || money < 0) {
-            alert("Please enter a valid money amount.");
-            return;
-        }
-        if (isNaN(tickets) || tickets < 0) {
-            alert("Please enter a valid number of tickets.");
-            return;
-        }
-
-        // 1. Update the Worker with winner data
-        const boxNumber = sessionStorage.getItem('currentBoxNumber');
-        if (!boxNumber) {
-            alert("Box number missing. Cannot record winner.");
-            return;
-        }
-        
-        try {
-            const response = await fetch(WORKER_URL + '/api/game/winner', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    boxNumber: parseInt(boxNumber),
-                    winnersPaid: tickets // Amount of Tickets (winning tickets paid out)
-                })
-            });
-
-            const result = await response.json();
-
-            if (!result.success) {
-                alert(`Winner update failed: ${result.error}`);
-                return;
-            }
-            
-            // 2. Display instructions (original logic)
-            instructionsBox.style.display = "block";
-            let statusText = "";
-            if (money > threshold) {
-                statusText = "High amount detected";
-                instructionText.innerHTML = `
-                    <p><strong>${statusText}:</strong> Please follow these instructions for large entries.</p>
-                    <p>You entered <strong>$${money.toFixed(2)}</strong> for <strong>${tickets}</strong> winning tickets.</p>
-                    <p><em>[Custom high-value instructions go here]</em></p>
-                `;
-            } else {
-                statusText = "Standard process";
-                instructionText.innerHTML = `
-                    <p><strong>${statusText}:</strong> Follow the usual procedure.</p>
-                    <p>You entered <strong>$${money.toFixed(2)}</strong> for <strong>${tickets}</strong> winning tickets.</p>
-                    <p><em>[Custom normal instructions go here]</em></p>
-                `;
-            }
-
-        } catch (error) {
-            alert(`Error communicating with server: ${error.message}`);
-            console.error('Winner Update Error:', error);
-        }
+    // no money to roll? just go to sell with 0
+    if (!Number.isFinite(money) || money <= 0) {
+      sessionStorage.setItem('rolledMoney', "0");
+      window.location.href = "./ChanticlearSell.html";
+      return;
     }
 
-    function rollMoneyOver() {
-        const money = moneyInput.value;
-        sessionStorage.setItem('rolledMoney', money);
-        
-        window.location.href = "./ChanticlearSell.html";
-    }
+    fetch(WORKER_URL + '/api/game/winner/credit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        boxNumber: Number(boxNumber),
+        amount: money  // $$$ to add back to Cash_Hand
+      })
+    })
+    .then(async (res) => {
+      let json;
+      try { json = await res.json(); }
+      catch { throw new Error(`HTTP ${res.status} ${await res.text()}`); }
+      if (!res.ok || !json.success) throw new Error(json?.error || 'Credit failed');
+      return json;
+    })
+    .then(() => {
+      sessionStorage.setItem('rolledMoney', String(money));
+      // IMPORTANT: do NOT clear currentBoxNumber/currentSerial here
+      window.location.href = "./ChanticlearSell.html";
+    })
+    .catch(err => {
+      alert(`Unable to roll money over: ${err.message}`);
+      console.error('Roll Money Over Error:', err);
+    });
+  }
 
-    function returnToMain() {
-        moneyInput.value = "";
-        ticketsInput.value = "";
-        instructionsBox.style.display = "none";
-        sessionStorage.removeItem('currentBoxNumber');
-        window.location.href = "./Chanticlear.html";
-    }
+  function returnToMain() {
+    moneyInput.value = "";
+    ticketsInput.value = "";
+    instructionsBox.style.display = "none";
+    sessionStorage.removeItem('currentBoxNumber'); // ok to clear when leaving flow
+    window.location.href = "./Chanticlear.html";
+  }
 </script>
+
 <script src="/js/idle-tracker.js?v=20251013"></script>
 </body>
 </html>

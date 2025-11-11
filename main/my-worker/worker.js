@@ -385,18 +385,17 @@ if (request.method === "POST" && path === "/api/game/sell") {
   }
 }
 
-// --- POST /api/game/winner (Record paid winning tickets) ---
+// --- POST /api/game/winner (Record paid winning tickets and subtract payout) ---
 if (request.method === "POST" && path === "/api/game/winner") {
   try {
     const payload = await request.json();
     let { serial, boxNumber, winnersPaid, payoutCash } = payload;
 
-    // Normalize numbers
     if (typeof boxNumber === "string") boxNumber = parseInt(boxNumber, 10);
     if (typeof winnersPaid === "string") winnersPaid = parseInt(winnersPaid, 10);
     if (typeof payoutCash === "string") payoutCash = parseFloat(payoutCash);
 
-    // Identify the game by serial OR by boxNumber
+    // locate the game by serial or boxNumber
     let selectQuery, bindVal;
     if (serial) {
       selectQuery = `SELECT * FROM ${OPEN_TABLE} WHERE Serial_MF_Part = ?`;
@@ -405,79 +404,118 @@ if (request.method === "POST" && path === "/api/game/winner") {
       selectQuery = `SELECT * FROM ${OPEN_TABLE} WHERE Box_Number = ?`;
       bindVal = boxNumber;
     } else {
-      return new Response(
-        JSON.stringify({ success: false, error: "Missing serial or boxNumber" }),
-        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
-      );
+      return new Response(JSON.stringify({ success: false, error: "Missing serial or boxNumber" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 });
     }
 
     const { results } = await env.araa_testing.prepare(selectQuery).bind(bindVal).all();
     if (results.length === 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Game not found in Open table" }),
-        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 404 }
-      );
+      return new Response(JSON.stringify({ success: false, error: "Game not found in Open table" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 404 });
     }
     const game = results[0];
 
-    // Validate inputs
+    // validate inputs
     winnersPaid = Number(winnersPaid ?? 0);
+    payoutCash  = Number(payoutCash ?? 0);
     if (!Number.isFinite(winnersPaid) || winnersPaid < 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: "winnersPaid must be a non-negative integer" }),
-        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
-      );
+      return new Response(JSON.stringify({ success: false, error: "winnersPaid must be a non-negative integer" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 });
     }
-    payoutCash = Number(payoutCash ?? 0);
     if (!Number.isFinite(payoutCash) || payoutCash < 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: "payoutCash must be a non-negative number" }),
-        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
-      );
+      return new Response(JSON.stringify({ success: false, error: "payoutCash must be a non-negative number" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 });
     }
 
-    // Current values
+    // current values
     const winnersSoldSoFar = Number(game.Winners_Sold || 0);
     const currentWinners   = Number(game.Current_Winners || 0);
     const cashHandSoFar    = Number(game.Cash_Hand || 0);
 
-    // Compute new values
-    const newWinnersSold   = winnersSoldSoFar + winnersPaid;
+    // compute new values (payout subtracts from cash)
+    const newWinnersSold    = winnersSoldSoFar + winnersPaid;
     const newCurrentWinners = Math.max(0, currentWinners - winnersPaid);
-    const newCashHand      = cashHandSoFar - payoutCash; // paying winners reduces cash on hand
+    const newCashHand       = cashHandSoFar - payoutCash;
 
-    // Update row
-    const updateQuery = `
-      UPDATE ${OPEN_TABLE}
-      SET Winners_Sold = ?, Current_Winners = ?, Cash_Hand = ?
-      WHERE Serial_MF_Part = ?
-    `;
     await env.araa_testing
-      .prepare(updateQuery)
+      .prepare(`UPDATE ${OPEN_TABLE} SET Winners_Sold = ?, Current_Winners = ?, Cash_Hand = ? WHERE Serial_MF_Part = ?`)
       .bind(newWinnersSold, newCurrentWinners, newCashHand, game.Serial_MF_Part)
       .run();
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Recorded ${winnersPaid} winning ticket(s).`,
-        serial: game.Serial_MF_Part,
-        boxNumber: game.Box_Number ?? null,
-        payoutCash,
-        newWinnersSold,
-        newCurrentWinners,
-        newCashHand
-      }),
-      { headers: { ...corsHeaders(), "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({
+      success: true,
+      message: `Recorded ${winnersPaid} winning ticket(s).`,
+      serial: game.Serial_MF_Part,
+      boxNumber: game.Box_Number ?? null,
+      payoutCash,
+      newWinnersSold,
+      newCurrentWinners,
+      newCashHand
+    }), { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
+
   } catch (err) {
     console.error("Winner route error:", err);
-    return new Response(
-      JSON.stringify({ success: false, error: err.message }),
-      { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
-    );
+    return new Response(JSON.stringify({ success: false, error: err.message }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 });
   }
 }
+
+// --- POST /api/game/winner/credit (Add money back to Cash_Hand on rollover) ---
+if (request.method === "POST" && path === "/api/game/winner/credit") {
+  try {
+    const payload = await request.json();
+    let { serial, boxNumber, amount } = payload;
+
+    if (typeof amount === "string") amount = parseFloat(amount);
+    amount = Number(amount ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return new Response(JSON.stringify({ success: false, error: "amount must be a positive number" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 });
+    }
+
+    // locate the game by serial or boxNumber
+    let selectQuery, bindVal;
+    if (serial) {
+      selectQuery = `SELECT * FROM ${OPEN_TABLE} WHERE Serial_MF_Part = ?`;
+      bindVal = serial;
+    } else if (boxNumber) {
+      if (typeof boxNumber === "string") boxNumber = parseInt(boxNumber, 10);
+      selectQuery = `SELECT * FROM ${OPEN_TABLE} WHERE Box_Number = ?`;
+      bindVal = boxNumber;
+    } else {
+      return new Response(JSON.stringify({ success: false, error: "Missing serial or boxNumber" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 });
+    }
+
+    const { results } = await env.araa_testing.prepare(selectQuery).bind(bindVal).all();
+    if (results.length === 0) {
+      return new Response(JSON.stringify({ success: false, error: "Game not found in Open table" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 404 });
+    }
+    const game = results[0];
+
+    const cashHand = Number(game.Cash_Hand || 0);
+    const newCashHand = cashHand + amount;
+
+    await env.araa_testing
+      .prepare(`UPDATE ${OPEN_TABLE} SET Cash_Hand = ? WHERE Serial_MF_Part = ?`)
+      .bind(newCashHand, game.Serial_MF_Part)
+      .run();
+
+    return new Response(JSON.stringify({
+      success: true,
+      serial: game.Serial_MF_Part,
+      boxNumber: game.Box_Number ?? null,
+      newCashHand
+    }), { headers: { ...corsHeaders(), "Content-Type": "application/json" } });
+
+  } catch (err) {
+    console.error("Winner credit route error:", err);
+    return new Response(JSON.stringify({ success: false, error: err.message }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 });
+  }
+}
+
 
         return new Response("Not found", { status: 404, headers: corsHeaders() });
     },
