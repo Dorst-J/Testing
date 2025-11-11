@@ -253,7 +253,32 @@ export default {
             }
         }
         // ... rest of the worker code (sell, winner, default fallback)
-       // --- POST /api/game/sell (Sell tickets from an open game) ---
+        // --- GET /api/open/games (Return all open games) ---
+if (request.method === "GET" && path === "/api/open/games") {
+    try {
+        // Fetch all open games from Chanticlear_Open table
+        const query = `
+            SELECT ${POPUP_COLUMNS.join(", ")} 
+            FROM ${OPEN_TABLE}
+            ORDER BY Box_Number ASC
+        `;
+        const { results } = await env.araa_testing.prepare(query).all();
+
+        // Return as JSON
+        return new Response(
+            JSON.stringify({ success: true, games: results }),
+            { headers: { ...corsHeaders(), "Content-Type": "application/json" } }
+        );
+    } catch (err) {
+        console.error("Error fetching open games:", err);
+        return new Response(
+            JSON.stringify({ success: false, error: err.message }),
+            { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+        );
+    }
+}
+
+// --- POST /api/game/sell (Sell tickets from an open game) ---
 if (request.method === "POST" && path === "/api/game/sell") {
   try {
     const payload = await request.json();
