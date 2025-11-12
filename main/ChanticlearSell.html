@@ -144,7 +144,6 @@
   // Fetch the ticket price and set up the active input
   window.onload = async function() {
     const moneyInput = document.getElementById('moneyInput');
-    const rolloverLabel = document.getElementById('rolloverLabel');
     currentBoxNumber = sessionStorage.getItem('currentBoxNumber');
 
     if (!currentBoxNumber) {
@@ -158,11 +157,8 @@
     rolloverActive = rolledMoney > 0;
     if (rolloverActive) {
       console.log(`Rollover pending: $${rolledMoney.toFixed(2)}`);
+      // Prefill the input with rollover
       moneyInput.value = rolledMoney.toFixed(2);
-      rolloverLabel.style.display = "block";
-      rolloverLabel.textContent = `💬 Rollover Active: $${rolledMoney.toFixed(2)}`;
-    } else {
-      rolloverLabel.style.display = "none";
     }
 
     // Fetch Ticket_Price
@@ -225,7 +221,6 @@
   function clearFields() {
     document.getElementById('moneyInput').value = '';
     document.getElementById('results').style.display = 'none';
-    document.getElementById('rolloverLabel').style.display = 'none';
     sessionStorage.setItem('rolledMoney', "0");
     rolloverActive = false;
     rolledMoney = 0;
@@ -252,25 +247,19 @@
     let adjustedMoney = money;
     if (rolloverActive && rolledMoney > 0) {
       console.log(`Rollover detected ($${rolledMoney.toFixed(2)}), not sending again to Worker.`);
-      adjustedMoney = money - rolledMoney;
+      adjustedMoney = money - rolledMoney; // remove from server-side sale request
       rolloverActive = false;
       sessionStorage.setItem('rolledMoney', "0");
-      document.getElementById('rolloverLabel').style.display = "none";
     }
 
     const calculatedTickets = Math.floor(money / price);
+
     document.getElementById('ticketCount').textContent = calculatedTickets;
     document.getElementById('results').style.display = 'block';
 
     const boxNumber = sessionStorage.getItem('currentBoxNumber');
     if (!boxNumber) {
       alert("Box number missing. Cannot record sale.");
-      return;
-    }
-
-    // ✅ If adjustedMoney is 0, show friendly rollover message instead of error
-    if (adjustedMoney <= 0) {
-      alert(`Rollover complete — ${calculatedTickets} ticket${calculatedTickets !== 1 ? 's' : ''} ready to sell.`);
       return;
     }
 
@@ -298,7 +287,6 @@
     }
   }
 </script>
-
 
 
 <script src="/js/idle-tracker.js?v=20251013"></script>
