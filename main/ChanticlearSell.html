@@ -236,58 +236,57 @@
 
   // --- CALCULATE (APPLY ROLLOVER + SELL) ---
   async function calculateTickets() {
-    let money = parseFloat(document.getElementById('moneyInput').value);
-    const price = parseFloat(document.getElementById('ticketPrice').value);
+  let money = parseFloat(document.getElementById('moneyInput').value);
+  const price = parseFloat(document.getElementById('ticketPrice').value);
 
-    if (isNaN(money) || isNaN(price) || price <= 0) {
-      alert("Please enter valid money and price. Ticket price must be more than zero.");
-      return;
-    }
-
-    // Apply rollover only once
-    if (rolloverActive && rolledMoney > 0) {
-      console.log(`Applying rollover: +$${rolledMoney.toFixed(2)}`);
-      money += rolledMoney; // now apply it
-      rolloverActive = false;
-      sessionStorage.setItem('rolledMoney', "0");
-    }
-
-    const calculatedTickets = Math.floor(money / price);
-
-    // Display the count
-    document.getElementById('ticketCount').textContent = calculatedTickets;
-    document.getElementById('results').style.display = 'block';
-
-    // Update the Worker
-    const boxNumber = sessionStorage.getItem('currentBoxNumber');
-    if (!boxNumber) {
-      alert("Box number missing. Cannot record sale.");
-      return;
-    }
-
-    try {
-      const response = await fetch(WORKER_URL + '/api/game/sell', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          boxNumber: parseInt(boxNumber),
-          moneyInserted: money,
-          ticketsSold: calculatedTickets
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        console.log("Sale recorded successfully.");
-      } else {
-        alert(`Sale recording failed: ${result.error}`);
-      }
-    } catch (error) {
-      alert(`Error communicating with server: ${error.message}`);
-      console.error('Sale Error:', error);
-    }
+  if (isNaN(money) || isNaN(price) || price <= 0) {
+    alert("Please enter valid money and price. Ticket price must be more than zero.");
+    return;
   }
+
+  // ✅ FIX: The prefilled rollover is already inside the input
+  // So do NOT add it again, just clear the flag
+  if (rolloverActive) {
+    console.log(`Rollover detected ($${rolledMoney.toFixed(2)}), already applied in input.`);
+    rolloverActive = false;
+    sessionStorage.setItem('rolledMoney', "0");
+  }
+
+  const calculatedTickets = Math.floor(money / price);
+
+  document.getElementById('ticketCount').textContent = calculatedTickets;
+  document.getElementById('results').style.display = 'block';
+
+  const boxNumber = sessionStorage.getItem('currentBoxNumber');
+  if (!boxNumber) {
+    alert("Box number missing. Cannot record sale.");
+    return;
+  }
+
+  try {
+    const response = await fetch(WORKER_URL + '/api/game/sell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        boxNumber: parseInt(boxNumber),
+        moneyInserted: money,
+        ticketsSold: calculatedTickets
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      console.log("Sale recorded successfully.");
+    } else {
+      alert(`Sale recording failed: ${result.error}`);
+    }
+  } catch (error) {
+    alert(`Error communicating with server: ${error.message}`);
+    console.error('Sale Error:', error);
+  }
+}
+
 </script>
 
 <script src="/js/idle-tracker.js?v=20251013"></script>
