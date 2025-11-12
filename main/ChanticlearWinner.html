@@ -279,9 +279,9 @@
     }
   }
 
-  // ADDS payout back to Cash_Hand, then navigates to Sell with rolledMoney
-  function rollMoneyOver() {
-    const money = parseFloat(moneyInput.value || "0");
+  // ✅ HANDLES full or partial rollovers
+  async function rollMoneyOver() {
+    const totalPayout = parseFloat(moneyInput.value || "0");
     const boxNumber = sessionStorage.getItem('currentBoxNumber');
 
     if (!boxNumber) {
@@ -289,37 +289,56 @@
       return;
     }
 
-    // no money to roll? just go to sell with 0
-    if (!Number.isFinite(money) || money <= 0) {
-      sessionStorage.setItem('rolledMoney', "0");
-      window.location.href = "./ChanticlearSell.html";
+    if (!Number.isFinite(totalPayout) || totalPayout <= 0) {
+      alert("No payout amount to roll over.");
       return;
     }
 
-    fetch(WORKER_URL + '/api/game/winner/credit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        boxNumber: Number(boxNumber),
-        amount: money  // $$$ to add back to Cash_Hand
-      })
-    })
-    .then(async (res) => {
-      let json;
-      try { json = await res.json(); }
-      catch { throw new Error(`HTTP ${res.status} ${await res.text()}`); }
-      if (!res.ok || !json.success) throw new Error(json?.error || 'Credit failed');
-      return json;
-    })
-    .then(() => {
-      sessionStorage.setItem('rolledMoney', String(money));
-      // IMPORTANT: do NOT clear currentBoxNumber/currentSerial here
+    // Ask how much of the payout should be rolled over
+    let rolloverAmountStr = prompt(
+      `The player won $${totalPayout.toFixed(2)}.\n` +
+      `Enter amount to roll over (0 to ${totalPayout.toFixed(2)}):`,
+      totalPayout.toFixed(2)
+    );
+
+    if (rolloverAmountStr === null) {
+      // User cancelled
+      return;
+    }
+
+    let rolloverAmount = parseFloat(rolloverAmountStr);
+    if (isNaN(rolloverAmount) || rolloverAmount < 0 || rolloverAmount > totalPayout) {
+      alert("Invalid rollover amount.");
+      return;
+    }
+
+    try {
+      // Add the rollover amount back to Cash_Hand
+      const res = await fetch(WORKER_URL + '/api/game/winner/credit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          boxNumber: Number(boxNumber),
+          amount: rolloverAmount
+        })
+      });
+
+      const result = await res.json();
+      if (!result.success) {
+        alert(`Rollover failed: ${result.error}`);
+        return;
+      }
+
+      // Save the rolled-over amount for the Sell page
+      sessionStorage.setItem('rolledMoney', String(rolloverAmount));
+
+      // Go to the Sell page
       window.location.href = "./ChanticlearSell.html";
-    })
-    .catch(err => {
-      alert(`Unable to roll money over: ${err.message}`);
-      console.error('Roll Money Over Error:', err);
-    });
+
+    } catch (err) {
+      alert(`Error communicating with server: ${err.message}`);
+      console.error("Roll Money Over Error:", err);
+    }
   }
 
   function returnToMain() {
