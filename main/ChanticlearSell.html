@@ -132,166 +132,164 @@
 </div>
 
 <script>
-    // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
-    const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
-    let activeInputId = null;
-    let currentBoxNumber = null;
+  // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
+  const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
+  let activeInputId = null;
+  let currentBoxNumber = null;
 
-    // Fetch the ticket price and set up the active input
-    window.onload = async function() {
-        const moneyInput = document.getElementById('moneyInput');
-        currentBoxNumber = sessionStorage.getItem('currentBoxNumber');
-        
-        if (!currentBoxNumber) {
-            alert("No box selected. Returning to main page.");
-            goToMainPage();
-            return;
-        }
+  // --- Rollover state ---
+  let rolledMoney = 0;
+  let rolloverActive = false;
 
-        // Set initial focus
-        const rolledMoney = sessionStorage.getItem('rolledMoney');
-        if (rolledMoney) {
-            moneyInput.value = rolledMoney;
-            sessionStorage.removeItem('rolledMoney');
-            setActiveInput('ticketPrice'); // Focus on price, although it will be fetched
+  // Fetch the ticket price and set up the active input
+  window.onload = async function() {
+    const moneyInput = document.getElementById('moneyInput');
+    currentBoxNumber = sessionStorage.getItem('currentBoxNumber');
+
+    if (!currentBoxNumber) {
+      alert("No box selected. Returning to main page.");
+      goToMainPage();
+      return;
+    }
+
+    // --- Handle ROLLED OVER MONEY ---
+    rolledMoney = parseFloat(sessionStorage.getItem('rolledMoney') || "0");
+    rolloverActive = rolledMoney > 0;
+    if (rolloverActive) {
+      console.log(`Rollover pending: $${rolledMoney.toFixed(2)}`);
+      // Prefill the box, but don’t apply to totals until Calculate is pressed
+      moneyInput.value = rolledMoney.toFixed(2);
+    }
+
+    // Fetch Ticket_Price from open games
+    try {
+      const response = await fetch(WORKER_URL + '/api/open/games');
+      const result = await response.json();
+
+      if (!result.success) throw new Error(result.error);
+
+      const game = result.games.find(g => g.Box_Number == currentBoxNumber);
+
+      if (game) {
+        const price = parseFloat(game.Ticket_Price);
+        if (price && !isNaN(price)) {
+          document.getElementById('ticketPrice').value = price.toFixed(2);
         } else {
-            setActiveInput('moneyInput');
+          console.error("Ticket_Price not available in /api/open/games response.");
+          document.getElementById('ticketPrice').value = '0.00';
         }
-
-        // Fetch Ticket_Price
-        try {
-            const response = await fetch(WORKER_URL + '/api/open/games');
-            const result = await response.json();
-            
-            if (!result.success) throw new Error(result.error);
-            
-            const game = result.games.find(g => g.Box_Number == currentBoxNumber);
-            
-            if (game) {
-                // We need to fetch the full row to get Ticket_Price. 
-                // A dedicated /api/game/details/boxNumber route would be better, 
-                // but for now, we'll fetch all open games and rely on the Main page's 
-                // data structure, even though it doesn't list Ticket_Price.
-                // NOTE: The worker only returns POPUP_COLUMNS now. You must update 
-                // the worker's /api/open/games route to return Ticket_Price too, 
-                // or create a new route. Since the worker isn't fully set up for 
-                // D1 schemas, I'll assume we can make another call for Ticket_Price.
-                
-                // Let's assume you update the worker to fetch Ticket_Price.
-                // For a quick fix, let's call the 'find' API for the serial. 
-                // However, without the Serial from the box, we can't do that.
-                
-                // *** WORKAROUND: Assume Ticket_Price is available on the Worker's box data request ***
-                // NOTE: This will fail if the Worker's POPUP_COLUMNS list isn't updated to include Ticket_Price
-                const price = game.Ticket_Price; 
-                
-                if (price) {
-                     document.getElementById('ticketPrice').value = price.toFixed(2);
-                } else {
-                    // Fallback if price isn't immediately available.
-                    // A better worker route that returns all needed columns is highly recommended.
-                    console.error("Ticket_Price not available from /api/open/games. Please update worker.");
-                    document.getElementById('ticketPrice').value = '0.00';
-                }
-
-            } else {
-                alert(`No game found in Box ${currentBoxNumber}. Returning to main.`);
-                goToMainPage();
-            }
-        } catch (error) {
-            alert(`Error loading game data: ${error.message}`);
-            goToMainPage();
-        }
-    };
-    
-    // ... rest of your existing press, backspace, clearFields, goToMainPage functions ...
-    // Keep them exactly as they are.
-
-    function setActiveInput(id) {
-        activeInputId = id;
-        document.querySelectorAll('.input-group input').forEach(input => {
-            input.style.border = '1px solid #ccc';
-        });
-        const activeElement = document.getElementById(id);
-        if (activeElement) {
-            activeElement.style.border = '2px solid blue';
-        }
-    }
-    
-    function press(val) {
-        if (!activeInputId) return;
-        const activeInput = document.getElementById(activeInputId);
-        if (activeInputId === 'ticketPrice') return; // Price is auto-filled and shouldn't be edited.
-        
-        if (val === '.' && activeInput.value.includes('.')) return;
-        activeInput.value += val;
-    }
-    
-    function backspace() {
-        if (activeInputId && activeInputId !== 'ticketPrice') {
-            document.getElementById(activeInputId).value = document.getElementById(activeInputId).value.slice(0, -1);
-        }
-    }
-    
-    function clearFields() {
-        document.getElementById('moneyInput').value = '';
-        // DO NOT clear ticketPrice, it's game data
-        document.getElementById('results').style.display = 'none';
-        setActiveInput('moneyInput');
-    }
-    
-    function goToMainPage() {
-        sessionStorage.removeItem('currentBoxNumber');
-        window.location.href = "./Chanticlear.html";
+      } else {
+        alert(`No game found in Box ${currentBoxNumber}. Returning to main.`);
+        goToMainPage();
+      }
+    } catch (error) {
+      alert(`Error loading game data: ${error.message}`);
+      goToMainPage();
     }
 
-    async function calculateTickets() {
-        const money = parseFloat(document.getElementById('moneyInput').value);
-        const price = parseFloat(document.getElementById('ticketPrice').value);
+    setActiveInput('moneyInput');
+  };
 
-        if (isNaN(money) || isNaN(price) || price <= 0) {
-            alert("Please enter valid money and price. Ticket price must be more than zero.");
-            return;
-        }
-
-        const calculatedTickets = Math.floor(money / price);
-        
-        // 1. Display the count
-        document.getElementById('ticketCount').textContent = calculatedTickets;
-        document.getElementById('results').style.display = 'block';
-
-        // 2. Update the Worker
-        const boxNumber = sessionStorage.getItem('currentBoxNumber');
-        if (!boxNumber) {
-            alert("Box number missing. Cannot record sale.");
-            return;
-        }
-
-        try {
-            const response = await fetch(WORKER_URL + '/api/game/sell', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    boxNumber: parseInt(boxNumber),
-                    moneyInserted: money,
-                    ticketsSold: calculatedTickets
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Success - optional confirmation display
-                console.log("Sale recorded successfully.");
-            } else {
-                alert(`Sale recording failed: ${result.error}`);
-            }
-        } catch (error) {
-            alert(`Error communicating with server: ${error.message}`);
-            console.error('Sale Error:', error);
-        }
+  // --- INPUT CONTROL ---
+  function setActiveInput(id) {
+    activeInputId = id;
+    document.querySelectorAll('.input-group input').forEach(input => {
+      input.style.border = '1px solid #ccc';
+    });
+    const activeElement = document.getElementById(id);
+    if (activeElement) {
+      activeElement.style.border = '2px solid blue';
     }
+  }
+
+  function press(val) {
+    if (!activeInputId) return;
+    const activeInput = document.getElementById(activeInputId);
+    if (activeInputId === 'ticketPrice') return; // Price shouldn't be edited
+
+    if (val === '.' && activeInput.value.includes('.')) return;
+    activeInput.value += val;
+  }
+
+  function backspace() {
+    if (activeInputId && activeInputId !== 'ticketPrice') {
+      const activeInput = document.getElementById(activeInputId);
+      activeInput.value = activeInput.value.slice(0, -1);
+    }
+  }
+
+  function clearFields() {
+    document.getElementById('moneyInput').value = '';
+    document.getElementById('results').style.display = 'none';
+    // Reset rollover state completely
+    sessionStorage.setItem('rolledMoney', "0");
+    rolloverActive = false;
+    rolledMoney = 0;
+    setActiveInput('moneyInput');
+    console.log("Cleared sale inputs and reset rollover.");
+  }
+
+  function goToMainPage() {
+    sessionStorage.removeItem('currentBoxNumber');
+    window.location.href = "./Chanticlear.html";
+  }
+
+  // --- CALCULATE (APPLY ROLLOVER + SELL) ---
+  async function calculateTickets() {
+    let money = parseFloat(document.getElementById('moneyInput').value);
+    const price = parseFloat(document.getElementById('ticketPrice').value);
+
+    if (isNaN(money) || isNaN(price) || price <= 0) {
+      alert("Please enter valid money and price. Ticket price must be more than zero.");
+      return;
+    }
+
+    // Apply rollover only once
+    if (rolloverActive && rolledMoney > 0) {
+      console.log(`Applying rollover: +$${rolledMoney.toFixed(2)}`);
+      money += rolledMoney; // now apply it
+      rolloverActive = false;
+      sessionStorage.setItem('rolledMoney', "0");
+    }
+
+    const calculatedTickets = Math.floor(money / price);
+
+    // Display the count
+    document.getElementById('ticketCount').textContent = calculatedTickets;
+    document.getElementById('results').style.display = 'block';
+
+    // Update the Worker
+    const boxNumber = sessionStorage.getItem('currentBoxNumber');
+    if (!boxNumber) {
+      alert("Box number missing. Cannot record sale.");
+      return;
+    }
+
+    try {
+      const response = await fetch(WORKER_URL + '/api/game/sell', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          boxNumber: parseInt(boxNumber),
+          moneyInserted: money,
+          ticketsSold: calculatedTickets
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log("Sale recorded successfully.");
+      } else {
+        alert(`Sale recording failed: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`Error communicating with server: ${error.message}`);
+      console.error('Sale Error:', error);
+    }
+  }
 </script>
+
 <script src="/js/idle-tracker.js?v=20251013"></script>
 </body>
 </html>
