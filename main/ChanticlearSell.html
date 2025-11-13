@@ -2,66 +2,121 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta charset="UTF-8" />
-<title>Pull Tab Ticket Calculator</title>
-<style>
-  body {
-    font-family: sans-serif;
-    background: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-  .calculator {
-    background: white;
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    width: 360px;
-  }
-  h2 { text-align: center; margin-bottom: 20px; }
-  label { display: block; margin-top: 15px; font-weight: bold; }
-  input {
-    width: 100%; padding: 8px; margin-top: 5px;
-    font-size: 1.2em; text-align: right;
-  }
-  .button-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-  button {
-    padding: 10px; font-size: 1.1em; border: none;
-    border-radius: 5px; cursor: pointer;
-  }
-  .calculate-btn { background-color: #007bff; color: white; }
-  .clear-btn { background-color: #ffc107; }
-  .return-btn { background-color: #dc3545; color: white; }
-  .results {
-    margin-top: 20px; font-size: 1.2em; text-align: center;
-    padding: 10px; border: 1px solid #ccc; border-radius: 5px;
-  }
-  .numpad {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 10px; margin-top: 15px;
-  }
-  .numpad button { font-size: 1.2em; background-color: #e0e0e0; }
-  .numpad .backspace { background-color: #ff8888; }
-</style>
+    <meta charset="UTF-8" />
+  <title>Calculator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .calculator {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 360px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      font-size: 1.2em;
+      text-align: right;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 10px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .calculate-btn { background-color: #007bff; color: white; }
+    .clear-btn { background-color: #ffc107; }
+    .return-btn { background-color: #dc3545; color: white; }
+
+    .results {
+      margin-top: 20px;
+      font-size: 1.2em;
+      text-align: center;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .numpad button {
+      font-size: 1.2em;
+      background-color: #e0e0e0;
+    }
+
+    .numpad .backspace {
+      background-color: #ff8888;
+    }
+
+    .input-group {
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
 
 <div class="calculator">
   <h2>Pull Tab Ticket Calculator</h2>
 
-  <label for="moneyInput">Money Inserted ($):</label>
-  <input type="text" id="moneyInput" readonly onclick="setActiveInput('moneyInput')" placeholder="0.00">
+  <div class="input-group">
+    <label for="moneyInput">Money Inserted ($):</label>
+    <input type="text" id="moneyInput" onclick="setActiveInput('moneyInput')" readonly placeholder="0.00">
+  </div>
 
-  <label for="ticketPrice">Price per Ticket ($):</label>
-  <input type="text" id="ticketPrice" readonly placeholder="0.00">
+  <div class="input-group">
+    <label for="ticketPrice">Price per Ticket ($):</label>
+    <input type="text" id="ticketPrice" onclick="setActiveInput('ticketPrice')" readonly placeholder="0.00">
+  </div>
 
   <div class="numpad">
-    <button onclick="press('7')">7</button><button onclick="press('8')">8</button><button onclick="press('9')">9</button>
-    <button onclick="press('4')">4</button><button onclick="press('5')">5</button><button onclick="press('6')">6</button>
-    <button onclick="press('1')">1</button><button onclick="press('2')">2</button><button onclick="press('3')">3</button>
-    <button onclick="press('0')">0</button><button onclick="press('.')">.</button>
+    <button onclick="press('7')">7</button>
+    <button onclick="press('8')">8</button>
+    <button onclick="press('9')">9</button>
+    <button onclick="press('4')">4</button>
+    <button onclick="press('5')">5</button>
+    <button onclick="press('6')">6</button>
+    <button onclick="press('1')">1</button>
+    <button onclick="press('2')">2</button>
+    <button onclick="press('3')">3</button>
+    <button onclick="press('0')">0</button>
+    <button onclick="press('.')">.</button>
     <button class="backspace" onclick="backspace()">←</button>
   </div>
 
@@ -72,130 +127,181 @@
   </div>
 
   <div class="results" id="results" style="display:none;">
-    <strong>Tickets to Give:</strong> <span id="ticketCount"></span>
+    <strong>Number of Tickets to give:</strong> <span id="ticketCount"></span>
   </div>
 </div>
 
 <script>
-const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
-let activeInputId = "moneyInput";
-let currentBoxNumber = null;
-let rolledMoney = 0;
-let rolloverActive = false;
+  // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
+  const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
+  let activeInputId = null;
+  let currentBoxNumber = null;
 
-window.onload = async function() {
-  const moneyInput = document.getElementById('moneyInput');
-  currentBoxNumber = sessionStorage.getItem('currentBoxNumber');
+  // --- Rollover state ---
+  let rolledMoney = 0;
+  let rolloverActive = false;
 
-  if (!currentBoxNumber) {
-    alert("No box selected. Returning to main page.");
-    goToMainPage();
-    return;
+  // Fetch the ticket price and set up the active input
+  window.onload = async function() {
+    const moneyInput = document.getElementById('moneyInput');
+    currentBoxNumber = sessionStorage.getItem('currentBoxNumber');
+
+    if (!currentBoxNumber) {
+      alert("No box selected. Returning to main page.");
+      goToMainPage();
+      return;
+    }
+
+    // --- Handle ROLLED OVER MONEY ---
+    rolledMoney = parseFloat(sessionStorage.getItem('rolledMoney') || "0");
+    rolloverActive = rolledMoney > 0;
+    if (rolloverActive) {
+      console.log(`Rollover pending: $${rolledMoney.toFixed(2)}`);
+      // Prefill the input with rollover
+      moneyInput.value = rolledMoney.toFixed(2);
+    }
+
+    // Fetch Ticket_Price
+    try {
+      const response = await fetch(WORKER_URL + '/api/open/games');
+      const result = await response.json();
+
+      if (!result.success) throw new Error(result.error);
+
+      const game = result.games.find(g => g.Box_Number == currentBoxNumber);
+
+      if (game) {
+        const price = parseFloat(game.Ticket_Price);
+        if (price && !isNaN(price)) {
+          document.getElementById('ticketPrice').value = price.toFixed(2);
+        } else {
+          console.error("Ticket_Price not available in /api/open/games response.");
+          document.getElementById('ticketPrice').value = '0.00';
+        }
+      } else {
+        alert(`No game found in Box ${currentBoxNumber}. Returning to main.`);
+        goToMainPage();
+      }
+    } catch (error) {
+      alert(`Error loading game data: ${error.message}`);
+      goToMainPage();
+    }
+
+    setActiveInput('moneyInput');
+  };
+
+  // --- INPUT CONTROL ---
+  function setActiveInput(id) {
+    activeInputId = id;
+    document.querySelectorAll('.input-group input').forEach(input => {
+      input.style.border = '1px solid #ccc';
+    });
+    const activeElement = document.getElementById(id);
+    if (activeElement) {
+      activeElement.style.border = '2px solid blue';
+    }
   }
 
-  rolledMoney = parseFloat(sessionStorage.getItem('rolledMoney') || "0");
-  rolloverActive = rolledMoney > 0;
-  if (rolloverActive) {
-    console.log(`Rollover pending: $${rolledMoney.toFixed(2)}`);
-    moneyInput.value = rolledMoney.toFixed(2);
+  function press(val) {
+    if (!activeInputId) return;
+    const activeInput = document.getElementById(activeInputId);
+    if (activeInputId === 'ticketPrice') return;
+
+    if (val === '.' && activeInput.value.includes('.')) return;
+    activeInput.value += val;
   }
 
-  try {
-    const res = await fetch(WORKER_URL + '/api/open/games');
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    const game = data.games.find(g => g.Box_Number == currentBoxNumber);
-    if (game) document.getElementById('ticketPrice').value = parseFloat(game.Ticket_Price).toFixed(2);
-  } catch (err) {
-    alert("Error loading game info: " + err.message);
-    goToMainPage();
-  }
-};
-
-function setActiveInput(id) {
-  activeInputId = id;
-  document.querySelectorAll("input").forEach(el => el.style.border = "1px solid #ccc");
-  document.getElementById(id).style.border = "2px solid blue";
-}
-
-function press(val) {
-  const input = document.getElementById(activeInputId);
-  if (!input || activeInputId === 'ticketPrice') return;
-  if (val === '.' && input.value.includes('.')) return;
-  input.value += val;
-}
-
-function backspace() {
-  const input = document.getElementById(activeInputId);
-  if (input && activeInputId !== 'ticketPrice') input.value = input.value.slice(0, -1);
-}
-
-function clearFields() {
-  document.getElementById('moneyInput').value = '';
-  document.getElementById('results').style.display = 'none';
-  sessionStorage.setItem('rolledMoney', "0");
-  rolloverActive = false;
-  rolledMoney = 0;
-  console.log("Cleared sale inputs and reset rollover.");
-}
-
-function goToMainPage() {
-  sessionStorage.removeItem('currentBoxNumber');
-  window.location.href = "./Chanticlear.html";
-}
-
-async function calculateTickets() {
-  const money = parseFloat(document.getElementById('moneyInput').value);
-  const price = parseFloat(document.getElementById('ticketPrice').value);
-  if (isNaN(money) || isNaN(price) || price <= 0) {
-    alert("Please enter valid money and price.");
-    return;
+  function backspace() {
+    if (activeInputId && activeInputId !== 'ticketPrice') {
+      const activeInput = document.getElementById(activeInputId);
+      activeInput.value = activeInput.value.slice(0, -1);
+    }
   }
 
-  const calculatedTickets = Math.floor(money / price);
-  document.getElementById('ticketCount').textContent = calculatedTickets;
-  document.getElementById('results').style.display = 'block';
-
-  const boxNumber = parseInt(sessionStorage.getItem('currentBoxNumber'));
-  if (!boxNumber) return alert("Missing box number.");
-
-  let adjustedMoney = money;
-  if (rolloverActive && rolledMoney > 0) {
-    adjustedMoney = money - rolledMoney;
-    rolloverActive = false;
+  function clearFields() {
+    document.getElementById('moneyInput').value = '';
+    document.getElementById('results').style.display = 'none';
     sessionStorage.setItem('rolledMoney', "0");
+    rolloverActive = false;
+    rolledMoney = 0;
+    setActiveInput('moneyInput');
+    console.log("Cleared sale inputs and reset rollover.");
   }
 
-  let endpoint = '/api/game/sell';
-  let payload = { boxNumber, moneyInserted: adjustedMoney, ticketsSold: calculatedTickets };
+  function goToMainPage() {
+    sessionStorage.removeItem('currentBoxNumber');
+    window.location.href = "./Chanticlear.html";
+  }
 
-  // If rollover sale, skip cash adjustment but still update ticket counts
+  // --- CALCULATE (APPLY ROLLOVER + SELL) ---
+  async function calculateTickets() {
+    let money = parseFloat(document.getElementById('moneyInput').value);
+    const price = parseFloat(document.getElementById('ticketPrice').value);
+
+    if (isNaN(money) || isNaN(price) || price <= 0) {
+      alert("Please enter valid money and price. Ticket price must be more than zero.");
+      return;
+    }
+
+    // 🧠 Adjust money BEFORE clearing rollover flag
+    let adjustedMoney = money;
+    if (rolloverActive && rolledMoney > 0) {
+      console.log(`Rollover detected ($${rolledMoney.toFixed(2)}), not sending again to Worker.`);
+      adjustedMoney = money - rolledMoney; // remove from server-side sale request
+      rolloverActive = false;
+      sessionStorage.setItem('rolledMoney', "0");
+    }
+
+    const calculatedTickets = Math.floor(money / price);
+
+    document.getElementById('ticketCount').textContent = calculatedTickets;
+    document.getElementById('results').style.display = 'block';
+
+    const boxNumber = sessionStorage.getItem('currentBoxNumber');
+    if (!boxNumber) {
+      alert("Box number missing. Cannot record sale.");
+      return;
+    }
+
+    try {
+  let endpoint = '/api/game/sell';
+  let payload = {
+    boxNumber: parseInt(boxNumber),
+    moneyInserted: adjustedMoney,
+    ticketsSold: calculatedTickets
+  };
+
+  // If rollover sale — skip cash changes but still update ticket counts
   if (adjustedMoney <= 0) {
     endpoint = '/api/game/sell/rollover';
-    payload = { boxNumber, ticketsSold: calculatedTickets };
+    payload = {
+      boxNumber: parseInt(boxNumber),
+      ticketsSold: calculatedTickets
+    };
   }
 
-  try {
-    const res = await fetch(WORKER_URL + endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const result = await res.json();
+  const response = await fetch(WORKER_URL + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
 
-    if (result.success) {
-      if (endpoint.includes("rollover")) {
-        alert(`Rollover sale recorded — ${calculatedTickets} tickets sold.`);
-      } else {
+
+      const result = await response.json();
+
+      if (result.success) {
         console.log("Sale recorded successfully.");
+      } else {
+        alert(`Sale recording failed: ${result.error}`);
       }
-    } else {
-      alert(`Sale failed: ${result.error}`);
+    } catch (error) {
+      alert(`Error communicating with server: ${error.message}`);
+      console.error('Sale Error:', error);
     }
-  } catch (err) {
-    alert(`Error communicating with server: ${err.message}`);
   }
-}
 </script>
+
+
+<script src="/js/idle-tracker.js?v=20251013"></script>
 </body>
 </html>
