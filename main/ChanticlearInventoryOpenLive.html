@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Inventory & Open Games - Live Printable</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f0f0f0;
+    margin: 0;
+    padding: 10px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 5px;
+  }
+  h2 {
+    margin-top: 20px;
+    margin-bottom: 5px;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .toolbar button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #888;
+    background: #fff;
+    cursor: pointer;
+  }
+  .section {
+    margin-bottom: 20px;
+  }
+  .table-container {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 3px 5px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  th {
+    background: #e9ecef;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .small-note {
+    font-size: 0.75rem;
+    color: #555;
+  }
+
+  /* Print styling */
+  @media print {
+    body { background: #fff; }
+    .toolbar { display: none; }
+    .table-container {
+      box-shadow: none;
+      border-radius: 0;
+      padding: 0;
+    }
+    h1 { margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Chanticlear - Inventory & Open Games (Live)</h1>
+
+<div class="toolbar">
+  <div class="small-note">
+    Live data from <strong>Chanticlear_Inventory</strong> and <strong>Chanticlear_Open</strong>
+  </div>
+  <div>
+    <button onclick="loadAll()">Refresh</button>
+    <button onclick="window.print()">Print</button>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Inventory Games</h2>
+  <div class="table-container">
+    <table id="inventoryTable">
+      <thead>
+        <tr id="inventoryHeaderRow"></tr>
+      </thead>
+      <tbody id="inventoryBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Open Games</h2>
+  <div class="table-container">
+    <table id="openTable">
+      <thead>
+        <tr id="openHeaderRow"></tr>
+      </thead>
+      <tbody id="openBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
+
+  // We reuse the same column set for Inventory + Open
+  const COLUMNS = [
+    "Serial_MF_Part",
+    "Game_Name",
+    "Ticket_Price",
+    "Number_Tickets",
+    "Tickets_Sold",
+    "Current_Tickets",
+    "Number_Winners",
+    "Winners_Sold",
+    "Current_Winners",
+    "P_NP",
+    "Cash_Hand",
+    "Ideal_Gross",
+    "Ideal_Prize",
+    "Ideal_Net",
+    "Game_Cost",
+    "Status",
+    "Box_Number"
+  ];
+
+  function buildHeader(rowElem) {
+    rowElem.innerHTML = "";
+    COLUMNS.forEach(col => {
+      const th = document.createElement("th");
+      th.textContent = col;
+      rowElem.appendChild(th);
+    });
+  }
+
+  function addRows(tbody, rows) {
+    tbody.innerHTML = "";
+    (rows || []).forEach(row => {
+      const tr = document.createElement("tr");
+      COLUMNS.forEach(col => {
+        const td = document.createElement("td");
+        let val = row[col];
+        if (val === null || val === undefined) val = "";
+        if (typeof val === "number") {
+          if (["Ticket_Price","Cash_Hand","Ideal_Gross","Ideal_Prize","Ideal_Net","Game_Cost"].includes(col)) {
+            td.textContent = val.toFixed(2);
+          } else {
+            td.textContent = val;
+          }
+        } else {
+          td.textContent = val;
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function loadInventory() {
+    const headerRow = document.getElementById("inventoryHeaderRow");
+    const body = document.getElementById("inventoryBody");
+    buildHeader(headerRow);
+
+    try {
+      const res = await fetch(WORKER_URL + "/api/games/inventory");
+      const data = await res.json();
+      if (!data.success) {
+        alert("Error loading inventory: " + (data.error || "Unknown error"));
+        return;
+      }
+      addRows(body, data.rows);
+    } catch (err) {
+      console.error("Inventory load error:", err);
+      alert("Error loading inventory: " + err.message);
+    }
+  }
+
+  async function loadOpen() {
+    const headerRow = document.getElementById("openHeaderRow");
+    const body = document.getElementById("openBody");
+    buildHeader(headerRow);
+
+    try {
+      const res = await fetch(WORKER_URL + "/api/games/open");
+      const data = await res.json();
+      if (!data.success) {
+        alert("Error loading open games: " + (data.error || "Unknown error"));
+        return;
+      }
+      addRows(body, data.rows);
+    } catch (err) {
+      console.error("Open table load error:", err);
+      alert("Error loading open games: " + err.message);
+    }
+  }
+
+  function loadAll() {
+    loadInventory();
+    loadOpen();
+  }
+
+  window.onload = loadAll;
+</script>
+
+</body>
+</html>

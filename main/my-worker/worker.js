@@ -444,6 +444,74 @@ if (request.method === "POST" && path === "/api/game/sell") {
               { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 });
           }
         }
+// --- GET /api/games/inventory (full live inventory table) ---
+if (request.method === "GET" && path === "/api/games/inventory") {
+  try {
+    const query = `
+      SELECT ${ ALL_COLUMNS.join(", ") }
+      FROM ${INVENTORY_TABLE}
+      ORDER BY Serial_MF_Part ASC
+    `;
+    const { results } = await env.araa_testing.prepare(query).all();
+
+    return new Response(
+      JSON.stringify({ success: true, rows: results }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("Error fetching inventory games:", err);
+    return new Response(
+      JSON.stringify({ success: false, error: err.message }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+}
+
+// --- GET /api/games/open (full live open table) ---
+if (request.method === "GET" && path === "/api/games/open") {
+  try {
+    const query = `
+      SELECT ${ ALL_COLUMNS.join(", ") }
+      FROM ${OPEN_TABLE}
+      ORDER BY Box_Number ASC, Serial_MF_Part ASC
+    `;
+    const { results } = await env.araa_testing.prepare(query).all();
+
+    return new Response(
+      JSON.stringify({ success: true, rows: results }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("Error fetching open games (full):", err);
+    return new Response(
+      JSON.stringify({ success: false, error: err.message }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+}
+
+// --- GET /api/games/closed (full live closed table) ---
+if (request.method === "GET" && path === "/api/games/closed") {
+  try {
+    const query = `
+      SELECT ${ ALL_COLUMNS.join(", ") }
+      FROM ${CLOSED_TABLE}
+      ORDER BY Serial_MF_Part ASC
+    `;
+    const { results } = await env.araa_testing.prepare(query).all();
+
+    return new Response(
+      JSON.stringify({ success: true, rows: results }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("Error fetching closed games:", err);
+    return new Response(
+      JSON.stringify({ success: false, error: err.message }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+}
 
         // --- Default 404 ---
         return new Response("Not found", { status: 404, headers: corsHeaders() });

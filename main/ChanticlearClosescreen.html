@@ -1,43 +1,168 @@
 <!DOCTYPE html>
-<html>
-<div style="text-align: center;">
-  <img src="https://chanticlearpizza.com/wp-content/uploads/2019/09/chanticlear-logo.png" alt="Chanticlear Pizza" style="width: 200px; text-align: center;">
-</div>
-<table border="1" cellspacing="0" cellpadding="8">
-  <thead>
-    <tr>
-      <th>Game Name</th>
-      <th>Date Opened</th>
-      <th>Price of Ticket</th>
-      <th>Gross Profit</th>
-      <th>Number of Tickets</th>
-      <th>Number of Winners</th>
-      <th>Col 7</th>
-      <th>Col 8</th>
-      <th>Col 9</th>
-      <th>Col 10</th>
-      <th>Col 11</th>
-      <th>Col 12</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td>Game One</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Two</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Three</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Four</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Five</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td>Game Six</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-  </tbody>
-</table>
-<br>
-<br>
-<br>
-<br>
-<button class="return-btn" onclick="goToMainPage()" style="text-align: center;">Return</button>
-<script>
-function goToMainPage() {
-    window.location.href = "./Chanticlear.html";
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Closed Games - Live View</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f0f0f0;
+    margin: 0;
+    padding: 10px;
   }
-  </script>
-  <script src="/js/idle-tracker.js?v=20251013"></script>
+  h1 {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .toolbar button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #888;
+    background: #fff;
+    cursor: pointer;
+  }
+  .table-container {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  th {
+    background: #e9ecef;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  /* Print styles */
+  @media print {
+    body {
+      background: #fff;
+    }
+    .toolbar {
+      display: none;
+    }
+    .table-container {
+      box-shadow: none;
+      border-radius: 0;
+      padding: 0;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>Chanticlear - Closed Games (Live)</h1>
+
+<div class="toolbar">
+  <div>Showing live data from <strong>Chanticlear_Closed</strong></div>
+  <div>
+    <button onclick="loadClosedGames()">Refresh</button>
+    <button onclick="window.print()">Print</button>
+  </div>
+</div>
+
+<div class="table-container">
+  <table id="closedTable">
+    <thead>
+      <tr id="closedHeaderRow"></tr>
+    </thead>
+    <tbody id="closedBody"></tbody>
+  </table>
+</div>
+
+<script>
+  const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
+
+  // Define the columns we want to show (order matters)
+  const COLUMNS = [
+    "Serial_MF_Part",
+    "Game_Name",
+    "Ticket_Price",
+    "Number_Tickets",
+    "Tickets_Sold",
+    "Current_Tickets",
+    "Number_Winners",
+    "Winners_Sold",
+    "Current_Winners",
+    "P_NP",
+    "Cash_Hand",
+    "Ideal_Gross",
+    "Ideal_Prize",
+    "Ideal_Net",
+    "Game_Cost",
+    "Status",
+    "Box_Number"
+  ];
+
+  async function loadClosedGames() {
+    const headerRow = document.getElementById("closedHeaderRow");
+    const body = document.getElementById("closedBody");
+    headerRow.innerHTML = "";
+    body.innerHTML = "";
+
+    // Build header
+    COLUMNS.forEach(col => {
+      const th = document.createElement("th");
+      th.textContent = col;
+      headerRow.appendChild(th);
+    });
+
+    try {
+      const res = await fetch(WORKER_URL + "/api/games/closed");
+      const data = await res.json();
+      if (!data.success) {
+        alert("Error loading closed games: " + (data.error || "Unknown error"));
+        return;
+      }
+
+      (data.rows || []).forEach(row => {
+        const tr = document.createElement("tr");
+        COLUMNS.forEach(col => {
+          const td = document.createElement("td");
+          let val = row[col];
+          if (val === null || val === undefined) val = "";
+          if (typeof val === "number") {
+            // Format money-ish columns lightly
+            if (["Ticket_Price","Cash_Hand","Ideal_Gross","Ideal_Prize","Ideal_Net","Game_Cost"].includes(col)) {
+              td.textContent = val.toFixed(2);
+            } else {
+              td.textContent = val;
+            }
+          } else {
+            td.textContent = val;
+          }
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+    } catch (err) {
+      console.error("Closed table load error:", err);
+      alert("Error loading closed games: " + err.message);
+    }
+  }
+
+  window.onload = loadClosedGames;
+</script>
+
+</body>
 </html>
