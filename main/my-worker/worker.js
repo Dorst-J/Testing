@@ -259,105 +259,120 @@ export default {
             }
         }
 
-        // --- POST /api/game/sell (Sell tickets from an open game) ---
-        if (request.method === "POST" && path === "/api/game/sell") {
-          try {
-            const payload = await request.json();
-            let { serial, boxNumber, soldTickets, moneyInserted } = payload;
+       // --- POST /api/game/sell (Sell tickets from an open game) ---
+if (request.method === "POST" && path === "/api/game/sell") {
+  try {
+    const payload = await request.json();
+    let { serial, boxNumber, soldTickets, ticketsSold, moneyInserted } = payload;
 
-            if (typeof boxNumber === "string") boxNumber = parseInt(boxNumber, 10);
-            if (typeof soldTickets === "string") soldTickets = parseInt(soldTickets, 10);
-            if (typeof moneyInserted === "string") moneyInserted = parseFloat(moneyInserted);
+    // Allow either soldTickets or ticketsSold from the client
+    if (soldTickets == null && ticketsSold != null) {
+      soldTickets = ticketsSold;
+    }
 
-            let selectQuery, bindVal;
-            if (serial) {
-              selectQuery = `SELECT * FROM ${OPEN_TABLE} WHERE Serial_MF_Part = ?`;
-              bindVal = serial;
-            } else if (boxNumber) {
-              selectQuery = `SELECT * FROM ${OPEN_TABLE} WHERE Box_Number = ?`;
-              bindVal = boxNumber;
-            } else {
-              return new Response(
-                JSON.stringify({ success: false, error: "Missing serial or boxNumber" }),
-                { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
-              );
-            }
+    // Normalize numbers from strings
+    if (typeof boxNumber === "string") boxNumber = parseInt(boxNumber, 10);
+    if (typeof soldTickets === "string") soldTickets = parseInt(soldTickets, 10);
+    if (typeof moneyInserted === "string") moneyInserted = parseFloat(moneyInserted);
 
-            const { results } = await env.araa_testing.prepare(selectQuery).bind(bindVal).all();
-            if (results.length === 0) {
-              return new Response(
-                JSON.stringify({ success: false, error: "Game not found in Open table" }),
-                { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 404 }
-              );
-            }
-            const game = results[0];
+    // Identify the game by serial OR by boxNumber
+    let selectQuery, bindVal;
+    if (serial) {
+      selectQuery = `SELECT * FROM ${OPEN_TABLE} WHERE Serial_MF_Part = ?`;
+      bindVal = serial;
+    } else if (boxNumber) {
+      selectQuery = `SELECT * FROM ${OPEN_TABLE} WHERE Box_Number = ?`;
+      bindVal = boxNumber;
+    } else {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing serial or boxNumber" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
+      );
+    }
 
-            const ticketPrice = Number(game.Ticket_Price || 0);
-            const currentTickets = Number(game.Current_Tickets || 0);
-            const ticketsSoldSoFar = Number(game.Tickets_Sold || 0);
-            const cashHandSoFar = Number(game.Cash_Hand || 0);
+    const { results } = await env.araa_testing.prepare(selectQuery).bind(bindVal).all();
+    if (results.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Game not found in Open table" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 404 }
+      );
+    }
+    const game = results[0];
 
-            if (soldTickets == null) {
-              if (moneyInserted == null || !isFinite(ticketPrice) || ticketPrice <= 0) {
-                return new Response(
-                  JSON.stringify({ success: false, error: "Missing soldTickets and unable to derive from moneyInserted/Ticket_Price" }),
-                  { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
-                );
-              }
-              soldTickets = Math.floor(Number(moneyInserted) / ticketPrice);
-            }
+    // Coerce numeric columns we need
+    const ticketPrice = Number(game.Ticket_Price || 0);
+    const currentTickets = Number(game.Current_Tickets || 0);
+    const ticketsSoldSoFar = Number(game.Tickets_Sold || 0);
+    const cashHandSoFar = Number(game.Cash_Hand || 0);
 
-            soldTickets = Number(soldTickets);
-            if (!Number.isFinite(soldTickets) || soldTickets <= 0) {
-              return new Response(
-                JSON.stringify({ success: false, error: "soldTickets must be a positive integer" }),
-                { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
-              );
-            }
-            if (soldTickets > currentTickets) {
-              return new Response(
-                JSON.stringify({ success: false, error: `Not enough tickets left. Requested ${soldTickets}, only ${currentTickets} remaining.` }),
-                { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
-              );
-            }
+    // Determine soldTickets: prefer explicit, else derive from moneyInserted
+    if (soldTickets == null) {
+      if (moneyInserted == null || !isFinite(ticketPrice) || ticketPrice <= 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Missing soldTickets and unable to derive from moneyInserted/Ticket_Price" }),
+          { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+      soldTickets = Math.floor(Number(moneyInserted) / ticketPrice);
+    }
 
-            const newTicketsSold = ticketsSoldSoFar + soldTickets;
-            const newCurrentTickets = currentTickets - soldTickets;
-            const saleCash = soldTickets * ticketPrice;
-            const newCashHand = cashHandSoFar + saleCash;
+    // Guard rails
+    soldTickets = Number(soldTickets);
+    if (!Number.isFinite(soldTickets) || soldTickets <= 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "soldTickets must be a positive integer" }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+    if (soldTickets > currentTickets) {
+      return new Response(
+        JSON.stringify({ success: false, error: `Not enough tickets left. Requested ${soldTickets}, only ${currentTickets} remaining.` }),
+        { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 }
+      );
+    }
 
-            const updateQuery = `
-              UPDATE ${OPEN_TABLE}
-              SET Tickets_Sold = ?, Current_Tickets = ?, Cash_Hand = ?
-              WHERE Serial_MF_Part = ?
-            `;
-            await env.araa_testing
-              .prepare(updateQuery)
-              .bind(newTicketsSold, newCurrentTickets, newCashHand, game.Serial_MF_Part)
-              .run();
+    // Compute new values
+    const newTicketsSold = ticketsSoldSoFar + soldTickets;
+    const newCurrentTickets = currentTickets - soldTickets;
 
-            return new Response(
-              JSON.stringify({
-                success: true,
-                message: `Sold ${soldTickets} tickets.`,
-                serial: game.Serial_MF_Part,
-                boxNumber: game.Box_Number ?? null,
-                ticketPrice,
-                saleCash,
-                newTicketsSold,
-                newCurrentTickets,
-                newCashHand
-              }),
-              { headers: { ...corsHeaders(), "Content-Type": "application/json" } }
-            );
-          } catch (err) {
-            console.error("Sell route error:", err);
-            return new Response(
-              JSON.stringify({ success: false, error: err.message }),
-              { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
-            );
-          }
-        }
+    // 💰 IMPORTANT: only credit Cash_Hand with tickets * price (NOT the extra change)
+    const saleCash = soldTickets * ticketPrice;
+    const newCashHand = cashHandSoFar + saleCash;
+
+    // Update row
+    const updateQuery = `
+      UPDATE ${OPEN_TABLE}
+      SET Tickets_Sold = ?, Current_Tickets = ?, Cash_Hand = ?
+      WHERE Serial_MF_Part = ?
+    `;
+    await env.araa_testing
+      .prepare(updateQuery)
+      .bind(newTicketsSold, newCurrentTickets, newCashHand, game.Serial_MF_Part)
+      .run();
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: `Sold ${soldTickets} tickets.`,
+        serial: game.Serial_MF_Part,
+        boxNumber: game.Box_Number ?? null,
+        ticketPrice,
+        saleCash,
+        newTicketsSold,
+        newCurrentTickets,
+        newCashHand
+      }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("Sell route error:", err);
+    return new Response(
+      JSON.stringify({ success: false, error: err.message }),
+      { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+}
+
 
         // --- POST /api/game/winner (Record paid winning tickets and subtract payout) ---
         if (request.method === "POST" && path === "/api/game/winner") {

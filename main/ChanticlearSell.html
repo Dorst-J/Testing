@@ -62,7 +62,7 @@
 
   .results {
     margin-top: 20px;
-    font-size: 1.2em;
+    font-size: 1.1em;
     text-align: center;
     padding: 10px;
     border: 1px solid #ccc;
@@ -127,7 +127,14 @@
   </div>
 
   <div class="results" id="results" style="display:none;">
-    <strong>Number of Tickets to give:</strong> <span id="ticketCount"></span>
+    <div>
+      <strong>Number of Tickets to give:</strong>
+      <span id="ticketCount"></span>
+    </div>
+    <div style="margin-top: 5px;">
+      <strong>Change to give back:</strong>
+      $<span id="changeAmount"></span>
+    </div>
   </div>
 </div>
 
@@ -139,7 +146,6 @@
 
   // Fetch the ticket price and set up the active input
   window.onload = async function() {
-    const moneyInput = document.getElementById('moneyInput');
     currentBoxNumber = sessionStorage.getItem('currentBoxNumber');
 
     if (!currentBoxNumber) {
@@ -148,7 +154,6 @@
       return;
     }
 
-    // Fetch Ticket_Price
     try {
       const response = await fetch(WORKER_URL + '/api/open/games');
       const result = await response.json();
@@ -216,9 +221,9 @@
     window.location.href = "./Chanticlear.html";
   }
 
-  // --- CALCULATE (simple sale, no rollover) ---
+  // --- CALCULATE (with change) ---
   async function calculateTickets() {
-    let money = parseFloat(document.getElementById('moneyInput').value);
+    const money = parseFloat(document.getElementById('moneyInput').value);
     const price = parseFloat(document.getElementById('ticketPrice').value);
 
     if (isNaN(money) || isNaN(price) || price <= 0) {
@@ -226,9 +231,24 @@
       return;
     }
 
-    const calculatedTickets = Math.floor(money / price);
+    // If the amount is less than one ticket, don't record a sale
+    if (money < price) {
+      alert("Amount entered is less than the price of one ticket. No sale recorded.");
+      return;
+    }
 
-    document.getElementById('ticketCount').textContent = calculatedTickets;
+    // Tickets to give (max whole tickets)
+    const tickets = Math.floor(money / price);
+
+    // Money actually used for tickets
+    const usedMoney = tickets * price;
+
+    // Change to give back
+    const change = money - usedMoney;
+
+    // Update UI
+    document.getElementById('ticketCount').textContent = tickets;
+    document.getElementById('changeAmount').textContent = change.toFixed(2);
     document.getElementById('results').style.display = 'block';
 
     const boxNumber = sessionStorage.getItem('currentBoxNumber');
@@ -240,9 +260,9 @@
     try {
       const endpoint = '/api/game/sell';
       const payload = {
-        boxNumber: parseInt(boxNumber),
-        moneyInserted: money,
-        ticketsSold: calculatedTickets
+        boxNumber: parseInt(boxNumber, 10),
+        moneyInserted: usedMoney,   // 💰 only the amount actually used
+        ticketsSold: tickets        // send ticketsSold to match Worker
       };
 
       const response = await fetch(WORKER_URL + endpoint, {
