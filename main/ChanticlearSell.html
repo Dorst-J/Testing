@@ -2,93 +2,93 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <meta charset="UTF-8" />
-  <title>Calculator</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f0f0f0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
+<meta charset="UTF-8" />
+<title>Calculator</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
 
-    .calculator {
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 360px;
-    }
+  .calculator {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 360px;
+  }
 
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
 
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
+  label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+  }
 
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      font-size: 1.2em;
-      text-align: right;
-    }
+  input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    font-size: 1.2em;
+    text-align: right;
+  }
 
-    .button-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 20px;
-    }
+  .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+  }
 
-    button {
-      padding: 10px;
-      font-size: 1.1em;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+  button {
+    padding: 10px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
 
-    .calculate-btn { background-color: #007bff; color: white; }
-    .clear-btn { background-color: #ffc107; }
-    .return-btn { background-color: #dc3545; color: white; }
+  .calculate-btn { background-color: #007bff; color: white; }
+  .clear-btn { background-color: #ffc107; }
+  .return-btn { background-color: #dc3545; color: white; }
 
-    .results {
-      margin-top: 20px;
-      font-size: 1.2em;
-      text-align: center;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
+  .results {
+    margin-top: 20px;
+    font-size: 1.2em;
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
 
-    .numpad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 15px;
-    }
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+  }
 
-    .numpad button {
-      font-size: 1.2em;
-      background-color: #e0e0e0;
-    }
+  .numpad button {
+    font-size: 1.2em;
+    background-color: #e0e0e0;
+  }
 
-    .numpad .backspace {
-      background-color: #ff8888;
-    }
+  .numpad .backspace {
+    background-color: #ff8888;
+  }
 
-    .input-group {
-      margin-bottom: 10px;
-    }
-  </style>
+  .input-group {
+    margin-bottom: 10px;
+  }
+</style>
 </head>
 <body>
 
@@ -137,10 +137,6 @@
   let activeInputId = null;
   let currentBoxNumber = null;
 
-  // --- Rollover state ---
-  let rolledMoney = 0;
-  let rolloverActive = false;
-
   // Fetch the ticket price and set up the active input
   window.onload = async function() {
     const moneyInput = document.getElementById('moneyInput');
@@ -150,15 +146,6 @@
       alert("No box selected. Returning to main page.");
       goToMainPage();
       return;
-    }
-
-    // --- Handle ROLLED OVER MONEY ---
-    rolledMoney = parseFloat(sessionStorage.getItem('rolledMoney') || "0");
-    rolloverActive = rolledMoney > 0;
-    if (rolloverActive) {
-      console.log(`Rollover pending: $${rolledMoney.toFixed(2)}`);
-      // Prefill the input with rollover
-      moneyInput.value = rolledMoney.toFixed(2);
     }
 
     // Fetch Ticket_Price
@@ -221,11 +208,7 @@
   function clearFields() {
     document.getElementById('moneyInput').value = '';
     document.getElementById('results').style.display = 'none';
-    sessionStorage.setItem('rolledMoney', "0");
-    rolloverActive = false;
-    rolledMoney = 0;
     setActiveInput('moneyInput');
-    console.log("Cleared sale inputs and reset rollover.");
   }
 
   function goToMainPage() {
@@ -233,7 +216,7 @@
     window.location.href = "./Chanticlear.html";
   }
 
-  // --- CALCULATE (APPLY ROLLOVER + SELL) ---
+  // --- CALCULATE (simple sale, no rollover) ---
   async function calculateTickets() {
     let money = parseFloat(document.getElementById('moneyInput').value);
     const price = parseFloat(document.getElementById('ticketPrice').value);
@@ -241,15 +224,6 @@
     if (isNaN(money) || isNaN(price) || price <= 0) {
       alert("Please enter valid money and price. Ticket price must be more than zero.");
       return;
-    }
-
-    // 🧠 Adjust money BEFORE clearing rollover flag
-    let adjustedMoney = money;
-    if (rolloverActive && rolledMoney > 0) {
-      console.log(`Rollover detected ($${rolledMoney.toFixed(2)}), not sending again to Worker.`);
-      adjustedMoney = money - rolledMoney; // remove from server-side sale request
-      rolloverActive = false;
-      sessionStorage.setItem('rolledMoney', "0");
     }
 
     const calculatedTickets = Math.floor(money / price);
@@ -264,28 +238,18 @@
     }
 
     try {
-  let endpoint = '/api/game/sell';
-  let payload = {
-    boxNumber: parseInt(boxNumber),
-    moneyInserted: adjustedMoney,
-    ticketsSold: calculatedTickets
-  };
+      const endpoint = '/api/game/sell';
+      const payload = {
+        boxNumber: parseInt(boxNumber),
+        moneyInserted: money,
+        ticketsSold: calculatedTickets
+      };
 
-  // If rollover sale — skip cash changes but still update ticket counts
-  if (adjustedMoney <= 0) {
-    endpoint = '/api/game/sell/rollover';
-    payload = {
-      boxNumber: parseInt(boxNumber),
-      ticketsSold: calculatedTickets
-    };
-  }
-
-  const response = await fetch(WORKER_URL + endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
+      const response = await fetch(WORKER_URL + endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
       const result = await response.json();
 
@@ -300,7 +264,6 @@
     }
   }
 </script>
-
 
 <script src="/js/idle-tracker.js?v=20251013"></script>
 </body>

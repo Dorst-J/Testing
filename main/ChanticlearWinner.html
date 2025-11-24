@@ -2,120 +2,112 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <meta charset="UTF-8">
-  <title>winner</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f0f0f0;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding-top: 50px;
-    }
+<meta charset="UTF-8">
+<title>winner</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 50px;
+  }
 
-    .container {
-      display: flex;
-      gap: 30px;
-    }
+  .container {
+    display: flex;
+    gap: 30px;
+  }
 
-    .calculator {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 300px;
-    }
+  .calculator {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 300px;
+  }
 
-    .calculator h2 {
-      text-align: center;
-    }
+  .calculator h2 {
+    text-align: center;
+  }
 
-    /* Style for all text inputs in the calculator */
-    .calculator input[type="text"] {
-      width: 100%;
-      font-size: 1.5em;
-      padding: 10px;
-      margin-top: 5px;
-      margin-bottom: 10px; /* Reduced margin for closer input fields */
-      text-align: right;
-    }
+  .calculator input[type="text"] {
+    width: 100%;
+    font-size: 1.5em;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    text-align: right;
+  }
 
-    .input-group label {
-        display: block;
-        font-weight: bold;
-        margin-top: 15px;
-    }
+  .input-group label {
+    display: block;
+    font-weight: bold;
+    margin-top: 15px;
+  }
 
-    /* Override for money input to allow greater visual focus if needed, but not strictly required */
-    #moneyInput {
-        /* font-size: 1.5em; */
-        margin-bottom: 20px;
-    }
+  #moneyInput {
+    margin-bottom: 20px;
+  }
 
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
 
-    .numpad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
+  .numpad button {
+    font-size: 1.2em;
+    padding: 15px;
+    background: #e0e0e0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
 
-    .numpad button {
-      font-size: 1.2em;
-      padding: 15px;
-      background: #e0e0e0;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+  .numpad .enter {
+    grid-column: span 3;
+    background: #28a745;
+    color: white;
+  }
 
-    .numpad .enter {
-      grid-column: span 3;
-      background: #28a745;
-      color: white;
-    }
+  .numpad .backspace {
+    background: #ff6666;
+  }
 
-    .numpad .backspace {
-      background: #ff6666;
-    }
+  .actions {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-    .actions {
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+  .actions button {
+    padding: 12px;
+    font-size: 1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
 
-    .actions button {
-      padding: 12px;
-      font-size: 1em;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+  .return-btn {
+    background-color: #dc3545;
+    color: white;
+  }
 
-    .rollback-btn {
-      background-color: #ffc107;
-    }
+  .instructions {
+    width: 300px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: none;
+  }
 
-    .return-btn {
-      background-color: #dc3545;
-      color: white;
-    }
-
-    .instructions {
-      width: 300px;
-      padding: 20px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      display: none;
-    }
-
-    .instructions h3 {
-      margin-top: 0;
-    }
-  </style>
+  .instructions h3 {
+    margin-top: 0;
+  }
+</style>
 </head>
 <body>
 
@@ -150,15 +142,14 @@
     </div>
 
     <div class="actions">
-      <button class="rollback-btn" onclick="rollMoneyOver()">Roll Money Over</button>
+      <!-- Rollover button removed -->
       <button class="return-btn" onclick="returnToMain()">Return to Main Page</button>
     </div>
   </div>
 
   <div class="instructions" id="instructionsBox">
     <h3>Instructions</h3>
-    <div id="instructionText">
-      </div>
+    <div id="instructionText"></div>
   </div>
 </div>
 
@@ -242,8 +233,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           boxNumber: Number(boxNumber),
-          winnersPaid: tickets,     // winning tickets paid out
-          payoutCash: Number(money) // $$$ to subtract from Cash_Hand
+          winnersPaid: tickets,
+          payoutCash: Number(money)
         })
       });
 
@@ -279,77 +270,14 @@
     }
   }
 
-  // ✅ HANDLES full or partial rollovers
-  async function rollMoneyOver() {
-    const totalPayout = parseFloat(moneyInput.value || "0");
-    const boxNumber = sessionStorage.getItem('currentBoxNumber');
-
-    if (!boxNumber) {
-      alert("Box number missing. Cannot roll money over.");
-      return;
-    }
-
-    if (!Number.isFinite(totalPayout) || totalPayout <= 0) {
-      alert("No payout amount to roll over.");
-      return;
-    }
-
-    // Ask how much of the payout should be rolled over
-    let rolloverAmountStr = prompt(
-      `The player won $${totalPayout.toFixed(2)}.\n` +
-      `Enter amount to roll over (0 to ${totalPayout.toFixed(2)}):`,
-      totalPayout.toFixed(2)
-    );
-
-    if (rolloverAmountStr === null) {
-      // User cancelled
-      return;
-    }
-
-    let rolloverAmount = parseFloat(rolloverAmountStr);
-    if (isNaN(rolloverAmount) || rolloverAmount < 0 || rolloverAmount > totalPayout) {
-      alert("Invalid rollover amount.");
-      return;
-    }
-
-    try {
-      // Add the rollover amount back to Cash_Hand
-      const res = await fetch(WORKER_URL + '/api/game/winner/credit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          boxNumber: Number(boxNumber),
-          amount: rolloverAmount
-        })
-      });
-
-      const result = await res.json();
-      if (!result.success) {
-        alert(`Rollover failed: ${result.error}`);
-        return;
-      }
-
-      // Save the rolled-over amount for the Sell page
-      sessionStorage.setItem('rolledMoney', String(rolloverAmount));
-
-      // Go to the Sell page
-      window.location.href = "./ChanticlearSell.html";
-
-    } catch (err) {
-      alert(`Error communicating with server: ${err.message}`);
-      console.error("Roll Money Over Error:", err);
-    }
-  }
-
   function returnToMain() {
     moneyInput.value = "";
     ticketsInput.value = "";
     instructionsBox.style.display = "none";
-    sessionStorage.removeItem('currentBoxNumber'); // ok to clear when leaving flow
+    sessionStorage.removeItem('currentBoxNumber');
     window.location.href = "./Chanticlear.html";
   }
 </script>
-
 
 <script src="/js/idle-tracker.js?v=20251013"></script>
 </body>
