@@ -1,7 +1,7 @@
 (() => {
-  const MAX_IDLE_MS = 5 * 60_000;   // 1 minutes
+  const MAX_IDLE_MS = 10 * 60_000;   // 10 minutes
   const HEARTBEAT_INTERVAL = 60_000; // every 1 minute
-  const WARNING_MS = 60_000;         // 1 minute before logout
+  const WARNING_MS = 2 * 60_000;         // 1 minute before logout
 
   let lastActivity = Date.now();
   let sessionId = localStorage.getItem('sessionId');
