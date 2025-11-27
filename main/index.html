@@ -36,173 +36,244 @@
        data-logo_alignment="left">
   </div>
 
-  <script>
-    // Access control: map emails to their allowed page
-    const userAccess = {
-  "sedorst17@gmail.com": {
-    access: [
-      "./AdminMainPage.html",
-      "./Northwoods.html",
-      "./NorthwoodsLogout.html",
-      "./NorthwoodsClosescreen.html",
-      "./NorthwoodsOpenscreen.html",
-      "./NorthwoodsSell.html",
-      "./NorthwoodsShifthandoff.html",
-      "./NorthwoodsWinner.html",
-      "./UserLog.html",
-      "./McDuffs.html",
-      "./McDuffsLogout.html",
-      "./McDuffsClosescreen.html",
-      "./McDuffsOpenScreen.html",
-      "./McDuffsSell.html",
-      "./McDuffsShifthandoff.html",
-      "./McDuffsWinner.html",
-      "./Chanticlear.html",
-      "./ChanticlearLogout.html",
-      "./ChanticlearClosescreen.html",
-      "./ChanticlearOpenscreen.html",
-      "./ChanticlearSell.html",
-      "./ChanticlearShifthandoff.html",
-      "./ChanticlearWinner.html",
-      "./WillyMcCoys.html",
-      "./WillyMcCoysLogout.html",
-      "./WillyMcCoysClosescreen.html",
-      "./WillyMcCoysOpenscreen.html",
-      "./WillyMcCoysSell.html",
-      "./WillyMcCoysShifthandoff.html",
-      "./WillyMcCoysWinner.html"
-    ],
-    defaultPage: "./AdminMainPage.html"
-  },
-  "jenna.dorst@gmail.com": {
-    access: [
-      "./AdminMainPage.html",
-      "./Northwoods.html",
-      "./NorthwoodsLogout.html",
-      "./NorthwoodsClosescreen.html",
-      "./NorthwoodsOpenscreen.html",
-      "./NorthwoodsSell.html",
-      "./NorthwoodsShifthandoff.html",
-      "./NorthwoodsWinner.html",
-      "./UserLog.html",
-      "./McDuffs.html",
-      "./McDuffsLogout.html",
-      "./McDuffsClosescreen.html",
-      "./McDuffsOpenScreen.html",
-      "./McDuffsSell.html",
-      "./McDuffsShifthandoff.html",
-      "./McDuffsWinner.html",
-      "./Chanticlear.html",
-      "./ChanticlearLogout.html",
-      "./ChanticlearClosescreen.html",
-      "./ChanticlearOpenscreen.html",
-      "./ChanticlearSell.html",
-      "./ChanticlearShifthandoff.html",
-      "./ChanticlearWinner.html",
-      "./WillyMcCoys.html",
-      "./WillyMcCoysLogout.html",
-      "./WillyMcCoysClosescreen.html",
-      "./WillyMcCoysOpenscreen.html",
-      "./WillyMcCoysSell.html",
-      "./WillyMcCoysShifthandoff.html",
-      "./WillyMcCoysWinner.html"
-    ],
-    defaultPage: "./AdminMainPage.html"
-  },
-  "gambling@arsports.org": {
-    access: ["./AdminMainPage.html",
-      "./Northwoods.html",
-      "./NorthwoodsLogout.html",
-      "./NorthwoodsClosescreen.html",
-      "./NorthwoodsOpenscreen.html",
-      "./NorthwoodsSell.html",
-      "./NorthwoodsShifthandoff.html",
-      "./NorthwoodsWinner.html",
-      "./UserLog.html",
-      "./McDuffs.html",
-      "./McDuffsLogout.html",
-      "./McDuffsClosescreen.html",
-      "./McDuffsOpenScreen.html",
-      "./McDuffsSell.html",
-      "./McDuffsShifthandoff.html",
-      "./McDuffsWinner.html",
-      "./Chanticlear.html",
-      "./ChanticlearLogout.html",
-      "./ChanticlearClosescreen.html",
-      "./ChanticlearOpenscreen.html",
-      "./ChanticlearSell.html",
-      "./ChanticlearShifthandoff.html",
-      "./ChanticlearWinner.html",
-      "./WillyMcCoys.html",
-      "./WillyMcCoysLogout.html",
-      "./WillyMcCoysClosescreen.html",
-      "./WillyMcCoysOpenscreen.html",
-      "./WillyMcCoysSell.html",
-      "./WillyMcCoysShifthandoff.html",
-      "./WillyMcCoysWinner.html"],
-    defaultPage: "./adminDashboard.html"
+ <script>
+  // ---------- ROLES (CLASSES) ----------
+  const ROLES = {
+    ADMIN: "admin",
+    OFFICE: "office",
+    BOOTH_MANAGER: "booth_manager",
+    SELLER: "seller"
+  };
+
+  // ---------- LOCATIONS ----------
+  const LOCATIONS = {
+    NORTHWOODS: "Northwoods",
+    MCDUFFS: "McDuffs",
+    CHANTICLEAR: "Chanticlear",
+    WILLY: "WillyMcCoys"
+  };
+
+  // Build standard page names for each location
+  function buildLocationPages(base) {
+    return {
+      main: `./${base}.html`,
+      logout: `./${base}Logout.html`,
+      close: `./${base}Closescreen.html`,
+      open: `./${base}Openscreen.html`,
+      sell: `./${base}Sell.html`,
+      shifthandoff: `./${base}Shifthandoff.html`,
+      winner: `./${base}Winner.html`
+    };
   }
-};
 
-    function handleCredentialResponse(response) {
-  const tokenData = parseJwt(response.credential);
-  const email = tokenData.email;
-  console.log("Signed in user:", email);
-  isSignedIn = true;
+  const locationPages = {
+    [LOCATIONS.NORTHWOODS]: buildLocationPages("Northwoods"),
+    [LOCATIONS.MCDUFFS]: buildLocationPages("McDuffs"),
+    [LOCATIONS.CHANTICLEAR]: buildLocationPages("Chanticlear"),
+    [LOCATIONS.WILLY]: buildLocationPages("WillyMcCoys")
+  };
 
-  // Send sign-in info to Cloudflare Worker log
-  logSignIn(tokenData.name || email, email);
+  const GLOBAL_PAGES = {
+    ADMIN_MAIN: "./AdminMainPage.html",
+    USER_LOG: "./UserLog.html"
+  };
 
-  // Redirect to assigned page
-  const config = userAccess[email];
-if (config && config.defaultPage) {
-  window.location.href = config.defaultPage;
-} else {
-  alert("You are not authorized to access this site.");
-}
+  // ---------- EMAIL → ROLE + LOCATIONS ----------
+  // This is the only place you need to touch when adding people.
+  // Admins/Office: locations are optional (they see all locations by default).
+  const userConfig = {
+    "sedorst17@gmail.com": {
+      role: ROLES.ADMIN
+      // locations not needed; admin sees everything
+    },
+    "jenna.dorst@gmail.com": {
+      role: ROLES.ADMIN
+    },
+    "gambling@arsports.org": {
+      role: ROLES.ADMIN,
+      defaultPage: "./adminDashboard.html"
+    },
 
-}
+    // ---- EXAMPLES FOR LOCATION-BASED USERS ----
+    // Seller ONLY at Northwoods:
+    // "northwoods.seller@example.com": {
+    //   role: ROLES.SELLER,
+    //   locations: [LOCATIONS.NORTHWOODS]
+    // },
+    // Booth manager at Northwoods + McDuffs:
+    // "manager@example.com": {
+    //   role: ROLES.BOOTH_MANAGER,
+    //   locations: [LOCATIONS.NORTHWOODS, LOCATIONS.MCDUFFS]
+    // },
+    // Office role seeing all locations:
+    // "office@example.com": {
+    //   role: ROLES.OFFICE
+    // }
+  };
 
-const API_URL = "https://thedatatab.jenna-dorst.workers.dev"; // replace with your Cloudflare Worker URL
-    let isSignedIn = false;
+  // ---------- BUILD ACCESS LIST FROM ROLE + LOCATIONS ----------
+  function computeAccess(role, locations) {
+    const pages = new Set();
+    const allLocationKeys = Object.values(LOCATIONS);
+    const locs = (locations && locations.length) ? locations : allLocationKeys;
+    let defaultPage = "";
 
-    function parseJwt(token) {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+    if (role === ROLES.ADMIN) {
+      // Admin can see everything
+      pages.add(GLOBAL_PAGES.ADMIN_MAIN);
+      pages.add(GLOBAL_PAGES.USER_LOG);
+
+      locs.forEach(locKey => {
+        const lp = locationPages[locKey];
+        if (!lp) return;
+        pages.add(lp.main);
+        pages.add(lp.logout);
+        pages.add(lp.close);
+        pages.add(lp.open);
+        pages.add(lp.sell);
+        pages.add(lp.shifthandoff);
+        pages.add(lp.winner);
+      });
+
+      defaultPage = GLOBAL_PAGES.ADMIN_MAIN;
+    } else if (role === ROLES.OFFICE) {
+      // Office can see all locations, but you can trim this if needed
+      pages.add(GLOBAL_PAGES.ADMIN_MAIN);
+      // If you don't want office to see user log, remove the next line:
+      pages.add(GLOBAL_PAGES.USER_LOG);
+
+      locs.forEach(locKey => {
+        const lp = locationPages[locKey];
+        if (!lp) return;
+        pages.add(lp.main);
+        pages.add(lp.logout);
+        pages.add(lp.close);
+        pages.add(lp.open);
+        pages.add(lp.sell);
+        pages.add(lp.shifthandoff);
+        pages.add(lp.winner);
+      });
+
+      defaultPage = GLOBAL_PAGES.ADMIN_MAIN;
+    } else if (role === ROLES.BOOTH_MANAGER) {
+      // Booth managers: full control for their locations
+      locs.forEach(locKey => {
+        const lp = locationPages[locKey];
+        if (!lp) return;
+        pages.add(lp.main);
+        pages.add(lp.logout);
+        pages.add(lp.close);
+        pages.add(lp.open);
+        pages.add(lp.sell);
+        pages.add(lp.shifthandoff);
+        pages.add(lp.winner);
+      });
+
+      const firstLoc = locs[0];
+      defaultPage = firstLoc ? locationPages[firstLoc].main : "";
+    } else if (role === ROLES.SELLER) {
+      // Sellers: limited pages for their locations
+      locs.forEach(locKey => {
+        const lp = locationPages[locKey];
+        if (!lp) return;
+        pages.add(lp.sell);
+        pages.add(lp.winner);
+        pages.add(lp.logout); // they still need to log out
+      });
+
+      const firstLoc = locs[0];
+      defaultPage = firstLoc ? locationPages[firstLoc].sell : "";
+    }
+
+    return { pages, defaultPage };
+  }
+
+  // ---------- SIGN-IN + REDIRECT LOGIC ----------
+  const API_URL = "https://thedatatab.jenna-dorst.workers.dev"; // your Worker URL
+  let isSignedIn = false;
+
+  function handleCredentialResponse(response) {
+    const tokenData = parseJwt(response.credential);
+    const email = (tokenData.email || "").toLowerCase();
+    console.log("Signed in user:", email);
+    isSignedIn = true;
+
+    // Log sign-in
+    logSignIn(tokenData.name || email, email);
+
+    const user = userConfig[email];
+    if (!user) {
+      alert("You are not authorized to access this site.");
+      return;
+    }
+
+    const role = user.role;
+    const locations = user.locations || []; // may be empty for admin/office
+    const { pages, defaultPage: roleDefault } = computeAccess(role, locations);
+
+    if (!roleDefault && !user.defaultPage) {
+      alert("No default page configured for your role/locations. Contact an administrator.");
+      return;
+    }
+
+    // Save user info for other pages
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userRole", role);
+    localStorage.setItem("userLocations", JSON.stringify(locations));
+    localStorage.setItem("allowedPages", JSON.stringify(Array.from(pages)));
+
+    // Use user-specific defaultPage if set, otherwise role-based default
+    const redirectPage = user.defaultPage || roleDefault;
+    window.location.href = redirectPage;
+  }
+
+  function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64).split('').map(c =>
         '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-      ).join(''));
-      return JSON.parse(jsonPayload);
-    }
+      ).join('')
+    );
+    return JSON.parse(jsonPayload);
+  }
 
-    async function logSignIn(name, email) {
-      try {
-        const res = await fetch(`${API_URL}/signin`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email })
-        });
-        const data = await res.json();
-        if (!data.success) {
-          console.error("Log sign-in failed:", data.error);
-        }
-      } catch (err) {
-        console.error("Error logging sign-in:", err);
+  async function logSignIn(name, email) {
+    try {
+      const res = await fetch(`${API_URL}/signin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error("Log sign-in failed:", data.error);
       }
+    } catch (err) {
+      console.error("Error logging sign-in:", err);
     }
+  }
 
-    function navigateToPage(selectElement) {
-      if (!isSignedIn) {
-        alert("Please sign in with Google first.");
-        selectElement.selectedIndex = 0;
-        return;
-      }
-      const page = selectElement.value;
-      if (page) {
-        window.location.href = page;
-      }
+  // If you still use a dropdown on the index page for navigation:
+  function navigateToPage(selectElement) {
+    if (!isSignedIn) {
+      alert("Please sign in with Google first.");
+      selectElement.selectedIndex = 0;
+      return;
     }
-  </script>
+    const page = selectElement.value;
+    if (!page) return;
+
+    const allowedPages = JSON.parse(localStorage.getItem("allowedPages") || "[]");
+    if (allowedPages.includes(page)) {
+      window.location.href = page;
+    } else {
+      alert("You are not authorized to access that page.");
+      selectElement.selectedIndex = 0;
+    }
+  }
+</script>
+
 
 </body>
 </html>
