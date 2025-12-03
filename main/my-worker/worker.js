@@ -21,12 +21,14 @@ const DB_NAME = "araa_testing";
 
 // CRITICAL: Standardized Column Names (Number_Tickets, Game_Cost)
 const ALL_COLUMNS = [
-    "Serial_MF_Part", "Game_Name", "Ticket_Price", "Number_Tickets",
-    "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold",
-    "Current_Winners", "P_NP", "Cash_Hand", "Ideal_Gross",
-    "Ideal_Prize", "Ideal_Net", "Game_Cost", 
-    "Status", "Box_Number"
+  "Serial_MF_Part", "Game_Name", "Ticket_Price", "Number_Tickets",
+  "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold",
+  "Current_Winners", "P_NP", "Cash_Hand", "Ideal_Gross",
+  "Ideal_Prize", "Ideal_Net", "Game_Cost",
+  "Status", "Box_Number",
+  "Date_Opened", "Date_Closed"
 ];
+
 
 // Columns to show in the Main Page pop-up (Ticket_Price added for Sell page logic)
 const POPUP_COLUMNS = [
@@ -113,7 +115,8 @@ export default {
                     }), { headers: { ...corsHeaders(), "Content-Type": "application/json" }, status: 400 });
                 }
                 
-                const columns = ALL_COLUMNS.filter(col => col !== 'Box_Number');
+                const columns = ALL_COLUMNS.filter(
+                col => !["Box_Number", "Date_Opened", "Date_Closed"].includes(col));
                 const placeholders = columns.map(() => '?').join(", ");
                 
                 const values = columns.map(col => newGame[col]); 
@@ -172,37 +175,72 @@ export default {
 
                 // Set Box_Number (Required for Open, Null otherwise)
                 if (newTable === OPEN_TABLE) {
-                    if (!boxNumber || isNaN(parseInt(boxNumber)) || parseInt(boxNumber) < 1 || parseInt(boxNumber) > 7) {
-                        throw new Error("Missing or invalid Box Number for Open status");
-                    }
-                    row['Box_Number'] = parseInt(boxNumber);
-                } else {
-                    row['Box_Number'] = null;
-                }
-                
-                NUMERICAL_COLUMNS.forEach(col => {
-                    const value = row[col];
-                    if (value !== null && value !== undefined) {
-                        const parsedValue = parseFloat(value);
-                        if (isNaN(parsedValue)) {
-                            row[col] = null; 
-                        } else {
-                            if (["Number_Tickets", "Tickets_Sold", "Current_Tickets", "Number_Winners", "Winners_Sold", "Current_Winners"].includes(col)) {
-                                row[col] = parseInt(parsedValue);
-                            } else {
-                                row[col] = parsedValue;
-                            }
-                        }
-                    }
-                });
+  if (
+    !boxNumber ||
+    isNaN(parseInt(boxNumber)) ||
+    parseInt(boxNumber) < 1 ||
+    parseInt(boxNumber) > 7
+  ) {
+    throw new Error("Missing or invalid Box Number for Open status");
+  }
+  row["Box_Number"] = parseInt(boxNumber);
+} else {
+  row["Box_Number"] = null;
+}
+
+// --- NEW: set Date_Opened / Date_Closed ---
+const nowIso = new Date().toISOString();
+
+// If moving to Open and there's no Date_Opened yet, set it
+if (newStatus === "Open" && !row.Date_Opened) {
+  row.Date_Opened = nowIso;
+}
+
+// If moving to Closed, always set Date_Closed (and keep existing Date_Opened)
+if (newStatus === "Closed") {
+  if (!row.Date_Opened) {
+    // Optional: if you want to backfill old games with no open date,
+    // you could also set Date_Opened = nowIso here.
+    // For now we leave Date_Opened as whatever it was.
+  }
+  row.Date_Closed = nowIso;
+}
+
+NUMERICAL_COLUMNS.forEach(col => {
+  const value = row[col];
+  if (value !== null && value !== undefined) {
+    const parsedValue = parseFloat(value);
+    if (isNaN(parsedValue)) {
+      row[col] = null;
+    } else {
+      if (
+        [
+          "Number_Tickets",
+          "Tickets_Sold",
+          "Current_Tickets",
+          "Number_Winners",
+          "Winners_Sold",
+          "Current_Winners",
+        ].includes(col)
+      ) {
+        row[col] = parseInt(parsedValue);
+      } else {
+        row[col] = parsedValue;
+      }
+    }
+  }
+});
+
 
                 const finalValues = [
-                    row.Serial_MF_Part, row.Game_Name, row.Ticket_Price, row.Number_Tickets,
-                    row.Tickets_Sold, row.Current_Tickets, row.Number_Winners, row.Winners_Sold,
-                    row.Current_Winners, row.P_NP, row.Cash_Hand, row.Ideal_Gross,
-                    row.Ideal_Prize, row.Ideal_Net, row.Game_Cost,
-                    row.Status, row.Box_Number 
-                ];
+  row.Serial_MF_Part, row.Game_Name, row.Ticket_Price, row.Number_Tickets,
+  row.Tickets_Sold, row.Current_Tickets, row.Number_Winners, row.Winners_Sold,
+  row.Current_Winners, row.P_NP, row.Cash_Hand, row.Ideal_Gross,
+  row.Ideal_Prize, row.Ideal_Net, row.Game_Cost,
+  row.Status, row.Box_Number,
+  row.Date_Opened ?? null, row.Date_Closed ?? null
+];
+
 
                 await moveRow(serial, oldTable, newTable, finalValues, env.araa_testing);
 
