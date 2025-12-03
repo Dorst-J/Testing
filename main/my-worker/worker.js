@@ -32,7 +32,7 @@ const ALL_COLUMNS = [
 
 // Columns to show in the Main Page pop-up (Ticket_Price added for Sell page logic)
 const POPUP_COLUMNS = [
-    "Serial_MF_Part", "Game_Name", "Cash_Hand", "Current_Tickets", "Current_Winners", "Ticket_Price", "Box_Number"
+    "Serial_MF_Part", "Game_Name", "Cash_Hand", "Current_Tickets", "Current_Winners", "Ticket_Price", "Box_Number", "Date_Opened"
 ];
 
 /**

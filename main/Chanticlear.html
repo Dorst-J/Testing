@@ -91,6 +91,17 @@
     // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
     const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
     
+    function formatDateOnly(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (isNaN(d)) return isoString;  // fallback if not a valid date
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const day   = d.getDate().toString().padStart(2, "0");
+  const year  = d.getFullYear();
+  return `${month}/${day}/${year}`;  // e.g. 01/25/2025
+}
+
+
     let isOpen = false;
     let currentBoxNumber = null;
 
@@ -135,37 +146,59 @@
             const game = result.games.find(g => g.Box_Number === currentBoxNumber);
             
             if (game) {
-                // 3. Create and populate the table
-                table = document.createElement('table');
-                table.id = gameTableId;
-                table.style.width = '100%';
-                table.style.borderCollapse = 'collapse';
-                
-                const thead = table.createTHead();
-                const headerRow = thead.insertRow();
-                // Columns: Serial_MF_Part, Game_Name, Cash_Hand, Current_Tickets, Current_Winners
-                ['Serial ID', 'Game', 'Cash Hand', 'Tickets Left', 'Winners Left'].forEach(text => {
-                    let th = document.createElement('th');
-                    th.textContent = text;
-                    th.style.border = '1px solid black';
-                    th.style.padding = '8px';
-                    th.style.backgroundColor = '#f2f2f2';
-                    headerRow.appendChild(th);
-                });
-                
-                const tbody = table.createTBody();
-                const dataRow = tbody.insertRow();
-                // Ensure data is inserted in the correct order
-                ['Serial_MF_Part', 'Game_Name', 'Cash_Hand', 'Current_Tickets', 'Current_Winners'].forEach(col => {
-                    let td = dataRow.insertCell();
-                    td.textContent = game[col];
-                    td.style.border = '1px solid black';
-                    td.style.padding = '8px';
-                    td.style.textAlign = 'center';
-                });
-                
-                // Insert the table just before the close button
-                popupContent.insertBefore(table, document.getElementById('center-popup'));
+               // 3. Create and populate the table
+table = document.createElement("table");
+table.id = gameTableId;
+table.style.width = "100%";
+table.style.borderCollapse = "collapse";
+
+const thead = table.createTHead();
+const headerRow = thead.insertRow();
+
+// Columns now include Open Date at the end
+["Serial ID", "Game", "Cash Hand", "Tickets Left", "Winners Left", "Open Date"].forEach(
+  (text) => {
+    const th = document.createElement("th");
+    th.textContent = text;
+    th.style.border = "1px solid black";
+    th.style.padding = "8px";
+    th.style.backgroundColor = "#f2f2f2";
+    headerRow.appendChild(th);
+  }
+);
+
+const tbody = table.createTBody();
+const dataRow = tbody.insertRow();
+
+// Make sure order matches the headers above
+["Serial_MF_Part", "Game_Name", "Cash_Hand", "Current_Tickets", "Current_Winners", "Date_Opened"].forEach(
+  (col) => {
+    const td = dataRow.insertCell();
+    let val = game[col];
+
+    // Pretty formatting for money
+    if (col === "Cash_Hand" && val != null && !isNaN(Number(val))) {
+      val = Number(val).toFixed(2);
+    }
+
+    // Pretty formatting for the Open Date
+    if (col === "Date_Opened") {
+      val = formatDateOnly(val);
+      // Let it wrap if the popup is narrow
+      td.style.whiteSpace = "normal";
+    }
+
+    if (val === null || val === undefined) val = "";
+    td.textContent = val;
+    td.style.border = "1px solid black";
+    td.style.padding = "8px";
+    td.style.textAlign = "center";
+  }
+);
+
+// Insert the table just before the close button
+popupContent.insertBefore(table, document.getElementById("center-popup"));
+
             } else {
                 // Display message if no game is in the box
                 const msg = document.createElement('p');
