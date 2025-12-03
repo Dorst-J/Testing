@@ -67,6 +67,26 @@
   <a href="./ChanticlearLogout.html">Sing Out</a>
 </div>
 
+<!-- Floating admin button -->
+<div id="admin-float-btn" style="display:none;">
+  <button onclick="window.location.href='./AdminMainPage.html'"
+          style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 14px 22px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+          ">
+    Admin Dashboard
+  </button>
+</div>
+
 <script>
     // ** IMPORTANT: REPLACE WITH YOUR WORKER URL **
     const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
@@ -203,6 +223,13 @@
          setTimeout(() => notif.remove(), 10000);
      }
     }
+
+    (function() {
+    const role = localStorage.getItem("userRole");
+    if (role === "admin") {
+      document.getElementById("admin-float-btn").style.display = "block";
+    }
+  })();
 </script>
 <script src="/js/idle-tracker.js?v=20251013"></script>
 </body>
