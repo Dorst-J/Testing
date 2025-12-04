@@ -51,7 +51,7 @@
     border: 1px solid #ccc;
     padding: 3px 5px;
     text-align: left;
-    white-space: nowrap;
+    white-space: nowrap; /* nowrap on screen */
   }
   th {
     background: #e9ecef;
@@ -64,16 +64,63 @@
     color: #555;
   }
 
+  .back-btn {
+    margin-top: 10px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #888;
+    background: #fff;
+    cursor: pointer;
+  }
+
   /* Print styling */
   @media print {
-    body { background: #fff; }
-    .toolbar { display: none; }
+    @page {
+      size: landscape;           /* more horizontal room for columns */
+      margin: 10mm;
+    }
+
+    body {
+      background: #fff;
+      font-size: 0.7rem;         /* slightly smaller base font when printing */
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 4px;
+      font-size: 1rem;
+    }
+
+    h2 {
+      margin-top: 8px;
+      margin-bottom: 3px;
+      font-size: 0.9rem;
+    }
+
+    .toolbar,
+    .back-btn {
+      display: none;             /* don’t print controls/buttons */
+    }
+
     .table-container {
       box-shadow: none;
       border-radius: 0;
       padding: 0;
     }
-    h1 { margin-top: 0; }
+
+    table {
+      font-size: 0.6rem;         /* tighter table text */
+    }
+
+    th, td {
+      padding: 2px 3px;          /* tighter cells */
+      white-space: normal;       /* allow wrapping for long text */
+      word-break: break-word;    /* wrap long words like game names */
+    }
+
+    tr {
+      page-break-inside: avoid;  /* reduce splitting rows across pages */
+    }
   }
 </style>
 </head>
@@ -114,7 +161,11 @@
     </table>
   </div>
 </div>
-<button class="back-btn" onclick="window.location.href='./Chanticlear.html'">Return to Main</button>
+
+<button class="back-btn" onclick="window.location.href='./Chanticlear.html'">
+  Return to Main
+</button>
+
 <script>
   const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
 
