@@ -4,16 +4,38 @@
   <meta charset="UTF-8">
   <title>Chanticlear Shift Handoff</title>
   <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 10px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
     .entry {
       border: 1px solid #ccc;
       padding: 10px;
       margin-bottom: 15px;
       background-color: #f9f9f9;
     }
+
     .timestamp {
       font-size: 0.9em;
       color: #555;
+      margin-bottom: 8px;
     }
+
     button {
       padding: 10px 20px;
       font-size: 16px;
@@ -22,47 +44,129 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      margin-bottom: 20px;
     }
+
     button:hover {
       background-color: #005A9E;
+    }
+
+    /* Print styles */
+    @media print {
+      @page {
+        size: landscape;  /* more room left/right for text */
+        margin: 10mm;
+      }
+
+      body {
+        background-color: #fff;
+        font-size: 0.8rem;
+        padding: 0;
+      }
+
+      h1 {
+        margin: 0 0 8px 0;
+        font-size: 1rem;
+      }
+
+      .controls {
+        display: none; /* hide buttons while printing */
+      }
+
+      .entry {
+        page-break-inside: avoid; /* keep whole entry together */
+        margin-bottom: 8px;
+        padding: 6px;
+        background-color: #fff;
+        border: 1px solid #000;
+      }
+
+      .timestamp {
+        font-size: 0.75rem;
+      }
+
+      p {
+        margin: 2px 0;
+      }
     }
   </style>
 </head>
 <body>
   <h1>Sign-Out Submission Log</h1>
+
+  <div class="controls">
+    <button onclick="window.print()">🖨 Print</button>
+    <button onclick="window.location.href='./Chanticlear.html'">🏠 Return to Home</button>
+  </div>
+
   <div id="log"></div>
 
   <script>
-  const entries = JSON.parse(localStorage.getItem('ChanticlearFormResponses')) || [];
+    const entries = JSON.parse(localStorage.getItem('ChanticlearFormResponses')) || [];
 
-const logContainer = document.getElementById('log');
-if (entries.length === 0) {
-  logContainer.innerText = 'No submissions yet.';
-} else {
-  entries.forEach(entry => {
-    const div = document.createElement('div');
-    div.className = 'entry';
-    div.innerHTML = `
-      <div class="timestamp"><strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
-      <p><strong>Weight of Box 1:</strong> ${entry.WeightBox1},  <strong>Cash of Box 1:</strong> ${entry.WeightBox1},  <strong>Tickets Left in Box 1:</strong> ${entry.LeftBox1},  <strong>Tickets Sold From Box 1:</strong> ${entry.SoldBox1},  <strong>Winning Tickets From Box 1:</strong> ${entry.WinnerBox1}</p>
-      <p><strong>Weight of Box 2:</strong> ${entry.WeightBox2},  <strong>Cash of Box 2:</strong> ${entry.WeightBox2},  <strong>Tickets Left in Box 2:</strong> ${entry.LeftBox2},  <strong>Tickets Sold From Box 2:</strong> ${entry.SoldBox2},  <strong>Winning Tickets From Box 2:</strong> ${entry.WinnerBox2}</p>
-      <p><strong>Weight of Box 3:</strong> ${entry.WeightBox3},  <strong>Cash of Box 3:</strong> ${entry.WeightBox3},  <strong>Tickets Left in Box 3:</strong> ${entry.LeftBox3},  <strong>Tickets Sold From Box 3:</strong> ${entry.SoldBox3},  <strong>Winning Tickets From Box 3:</strong> ${entry.WinnerBox3}</p>
-      <p><strong>Weight of Box 4:</strong> ${entry.WeightBox4},  <strong>Cash of Box 4:</strong> ${entry.WeightBox4},  <strong>Tickets Left in Box 4:</strong> ${entry.LeftBox4},  <strong>Tickets Sold From Box 4:</strong> ${entry.SoldBox4},  <strong>Winning Tickets From Box 4:</strong> ${entry.WinnerBox4}</p>
-      <p><strong>Weight of Box 5:</strong> ${entry.WeightBox5},  <strong>Cash of Box 5:</strong> ${entry.WeightBox5},  <strong>Tickets Left in Box 5:</strong> ${entry.LeftBox5},  <strong>Tickets Sold From Box 5:</strong> ${entry.SoldBox5},  <strong>Winning Tickets From Box 5:</strong> ${entry.WinnerBox5}</p>
-      <p><strong>Weight of Box 6:</strong> ${entry.WeightBox6},  <strong>Cash of Box 6:</strong> ${entry.WeightBox6},  <strong>Tickets Left in Box 6:</strong> ${entry.LeftBox6},  <strong>Tickets Sold From Box 6:</strong> ${entry.SoldBox6},  <strong>Winning Tickets From Box 6:</strong> ${entry.WinnerBox6}</p>
-      <p><strong>Weight of Box 7:</strong> ${entry.WeightBox7},  <strong>Cash of Box 7:</strong> ${entry.WeightBox7},  <strong>Tickets Left in Box 7:</strong> ${entry.LeftBox7},  <strong>Tickets Sold From Box 7:</strong> ${entry.SoldBox7},  <strong>Winning Tickets From Box 7:</strong> ${entry.WinnerBox7}</p>
-      <p><strong>Comments</strong> ${entry.comments}</p>
-    `;
-    logContainer.appendChild(div);
-  });
-};
+    const logContainer = document.getElementById('log');
+    if (entries.length === 0) {
+      logContainer.innerText = 'No submissions yet.';
+    } else {
+      entries.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `
+          <div class="timestamp">
+            <strong>Submitted:</strong> ${new Date(entry.timestamp).toLocaleString()}
+          </div>
+          <p><strong>Weight of Box 1:</strong> ${entry.WeightBox1},
+             <strong>Cash of Box 1:</strong> ${entry.WeightBox1},
+             <strong>Tickets Left in Box 1:</strong> ${entry.LeftBox1},
+             <strong>Tickets Sold From Box 1:</strong> ${entry.SoldBox1},
+             <strong>Winning Tickets From Box 1:</strong> ${entry.WinnerBox1}</p>
+
+          <p><strong>Weight of Box 2:</strong> ${entry.WeightBox2},
+             <strong>Cash of Box 2:</strong> ${entry.WeightBox2},
+             <strong>Tickets Left in Box 2:</strong> ${entry.LeftBox2},
+             <strong>Tickets Sold From Box 2:</strong> ${entry.SoldBox2},
+             <strong>Winning Tickets From Box 2:</strong> ${entry.WinnerBox2}</p>
+
+          <p><strong>Weight of Box 3:</strong> ${entry.WeightBox3},
+             <strong>Cash of Box 3:</strong> ${entry.WeightBox3},
+             <strong>Tickets Left in Box 3:</strong> ${entry.LeftBox3},
+             <strong>Tickets Sold From Box 3:</strong> ${entry.SoldBox3},
+             <strong>Winning Tickets From Box 3:</strong> ${entry.WinnerBox3}</p>
+
+          <p><strong>Weight of Box 4:</strong> ${entry.WeightBox4},
+             <strong>Cash of Box 4:</strong> ${entry.WeightBox4},
+             <strong>Tickets Left in Box 4:</strong> ${entry.LeftBox4},
+             <strong>Tickets Sold From Box 4:</strong> ${entry.SoldBox4},
+             <strong>Winning Tickets From Box 4:</strong> ${entry.WinnerBox4}</p>
+
+          <p><strong>Weight of Box 5:</strong> ${entry.WeightBox5},
+             <strong>Cash of Box 5:</strong> ${entry.WeightBox5},
+             <strong>Tickets Left in Box 5:</strong> ${entry.LeftBox5},
+             <strong>Tickets Sold From Box 5:</strong> ${entry.SoldBox5},
+             <strong>Winning Tickets From Box 5:</strong> ${entry.WinnerBox5}</p>
+
+          <p><strong>Weight of Box 6:</strong> ${entry.WeightBox6},
+             <strong>Cash of Box 6:</strong> ${entry.WeightBox6},
+             <strong>Tickets Left in Box 6:</strong> ${entry.LeftBox6},
+             <strong>Tickets Sold From Box 6:</strong> ${entry.SoldBox6},
+             <strong>Winning Tickets From Box 6:</strong> ${entry.WinnerBox6}</p>
+
+          <p><strong>Weight of Box 7:</strong> ${entry.WeightBox7},
+             <strong>Cash of Box 7:</strong> ${entry.WeightBox7},
+             <strong>Tickets Left in Box 7:</strong> ${entry.LeftBox7},
+             <strong>Tickets Sold From Box 7:</strong> ${entry.SoldBox7},
+             <strong>Winning Tickets From Box 7:</strong> ${entry.WinnerBox7}</p>
+
+          <p><strong>Comments:</strong> ${entry.comments}</p>
+        `;
+        logContainer.appendChild(div);
+      });
+    }
+
+    // mark as viewed
     localStorage.setItem('ChanticlearLastViewed', new Date().toISOString());
-</script>
+  </script>
 
-
-  <button onclick="window.location.href='./Chanticlear.html'">🏠 Return to Home</button>
+  <script src="/js/idle-tracker.js?v=20251013"></script>
+  <script src="/js/adminButton.js"></script>
 </body>
-<script src="/js/idle-tracker.js?v=20251013"></script>
-<script src="/js/adminButton.js"></script>
 </html>
