@@ -44,7 +44,7 @@
     border: 1px solid #ccc;
     padding: 4px 6px;
     text-align: left;
-    white-space: nowrap;
+    white-space: nowrap; /* normal on screen (easier to read) */
   }
   th {
     background: #e9ecef;
@@ -53,18 +53,55 @@
     z-index: 1;
   }
 
+  .back-btn {
+    margin-top: 10px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #888;
+    background: #fff;
+    cursor: pointer;
+  }
+
   /* Print styles */
   @media print {
+    @page {
+      size: landscape;           /* use landscape to gain width */
+      margin: 10mm;
+    }
+
     body {
       background: #fff;
+      font-size: 0.7rem;         /* shrink base font a bit for print */
     }
-    .toolbar {
-      display: none;
+
+    h1 {
+      margin-bottom: 5px;
+      font-size: 1rem;
     }
+
+    .toolbar,
+    .back-btn {
+      display: none;             /* don't print controls */
+    }
+
     .table-container {
       box-shadow: none;
       border-radius: 0;
       padding: 0;
+    }
+
+    table {
+      font-size: 0.6rem;         /* smaller table text for print */
+    }
+
+    th, td {
+      padding: 2px 3px;          /* tighter padding */
+      white-space: normal;       /* allow wrapping so columns can fit */
+      word-break: break-word;    /* wrap long text like Game_Name */
+    }
+
+    tr {
+      page-break-inside: avoid;  /* try to keep each row on one page */
     }
   }
 </style>
@@ -89,33 +126,36 @@
     <tbody id="closedBody"></tbody>
   </table>
 </div>
-<button class="back-btn" onclick="window.location.href='./Chanticlear.html'">Return to Main</button>
+
+<button class="back-btn" onclick="window.location.href='./Chanticlear.html'">
+  Return to Main
+</button>
+
 <script>
   const WORKER_URL = "https://thedatatab.jenna-dorst.workers.dev";
 
   // Define the columns we want to show (order matters)
   const COLUMNS = [
-  "Serial_MF_Part",
-  "Game_Name",
-  "Ticket_Price",
-  "Number_Tickets",
-  "Tickets_Sold",
-  "Current_Tickets",
-  "Number_Winners",
-  "Winners_Sold",
-  "Current_Winners",
-  "P_NP",
-  "Cash_Hand",
-  "Ideal_Gross",
-  "Ideal_Prize",
-  "Ideal_Net",
-  "Game_Cost",
-  "Status",
-  "Box_Number",
-  "Date_Opened",
-  "Date_Closed"
-];
-
+    "Serial_MF_Part",
+    "Game_Name",
+    "Ticket_Price",
+    "Number_Tickets",
+    "Tickets_Sold",
+    "Current_Tickets",
+    "Number_Winners",
+    "Winners_Sold",
+    "Current_Winners",
+    "P_NP",
+    "Cash_Hand",
+    "Ideal_Gross",
+    "Ideal_Prize",
+    "Ideal_Net",
+    "Game_Cost",
+    "Status",
+    "Box_Number",
+    "Date_Opened",
+    "Date_Closed"
+  ];
 
   async function loadClosedGames() {
     const headerRow = document.getElementById("closedHeaderRow");
