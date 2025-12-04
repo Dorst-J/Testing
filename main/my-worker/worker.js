@@ -71,6 +71,25 @@ async function moveRow(serial, currentTable, newTable, values, db) {
     }
 }
 
+// --- Sign-in logging helper (KV) ---
+async function writeSignInLog(env, { name, email }) {
+  try {
+    const timestamp = Date.now();               // numeric ms
+    const key = `signin:${timestamp}:${email}`; // unique-ish key
+
+    const entry = {
+      name,
+      email,
+      timestamp
+    };
+
+    await env.SIGNIN_LOGS.put(key, JSON.stringify(entry));
+  } catch (err) {
+    console.error("Failed to write sign-in log:", err);
+    // Don't throw; we don't want logging to break sign-in
+  }
+}
+
 // --- Main Worker Export ---
 export default {
     async fetch(request, env) {
@@ -548,6 +567,54 @@ export default {
           }
         }
 
+        // --- POST /signin (log a sign-in event to KV) ---
+        if (request.method === "POST" && path === "/signin") {
+          try {
+            const { name, email } = await request.json();
+
+            if (!email) {
+              return new Response(
+                JSON.stringify({ success: false, error: "Missing email" }),
+                {
+                  status: 400,
+                  headers: {
+                    ...corsHeaders(),
+                    "Content-Type": "application/json"
+                  }
+                }
+              );
+            }
+
+            await writeSignInLog(env, {
+              name: name || email,
+              email: email.toLowerCase()
+            });
+
+            return new Response(
+              JSON.stringify({ success: true }),
+              {
+                status: 200,
+                headers: {
+                  ...corsHeaders(),
+                  "Content-Type": "application/json"
+                }
+              }
+            );
+          } catch (err) {
+            console.error("Error in /signin:", err);
+            return new Response(
+              JSON.stringify({ success: false, error: "Failed to log sign-in" }),
+              {
+                status: 500,
+                headers: {
+                  ...corsHeaders(),
+                  "Content-Type": "application/json"
+                }
+              }
+            );
+          }
+        }
+
         // --- GET /logs (return all sign-in logs from KV) ---
         if (request.method === "GET" && path === "/logs") {
           try {
@@ -560,8 +627,10 @@ export default {
               if (value) logs.push(value);
             }
 
-            // newest first, assuming each has a numeric timestamp
-            logs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            // newest first
+            logs.sort(
+              (a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0)
+            );
 
             return new Response(JSON.stringify(logs), {
               status: 200,
