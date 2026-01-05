@@ -101,6 +101,11 @@
   </div>
 
   <div class="input-group">
+    <label for="ticketsRequested">Tickets Requested:</label>
+    <input type="text" id="ticketsRequested" onclick="setActiveInput('ticketsRequested')" readonly placeholder="0">
+  </div>
+
+  <div class="input-group">
     <label for="ticketPrice">Price per Ticket ($):</label>
     <input type="text" id="ticketPrice" onclick="setActiveInput('ticketPrice')" readonly placeholder="0.00">
   </div>
@@ -126,16 +131,23 @@
     <button class="return-btn" onclick="goToMainPage()">Return</button>
   </div>
 
-  <div class="results" id="results" style="display:none;">
+   <div class="results" id="results" style="display:none;">
     <div>
-      <strong>Number of Tickets to give:</strong>
+      <strong>Number of Tickets:</strong>
       <span id="ticketCount"></span>
     </div>
-    <div style="margin-top: 5px;">
+
+    <div id="changeRow" style="margin-top: 5px;">
       <strong>Change to give back:</strong>
       $<span id="changeAmount"></span>
     </div>
+
+    <div id="moneyNeededRow" style="margin-top: 5px; display:none;">
+      <strong>Money needed:</strong>
+      $<span id="moneyNeeded"></span>
+    </div>
   </div>
+
 </div>
 
 <script>
@@ -185,6 +197,13 @@
   // --- INPUT CONTROL ---
   function setActiveInput(id) {
     activeInputId = id;
+    if (id === "moneyInput") {
+  document.getElementById("ticketsRequested").value = "";
+}
+if (id === "ticketsRequested") {
+  document.getElementById("moneyInput").value = "";
+}
+
     document.querySelectorAll('.input-group input').forEach(input => {
       input.style.border = '1px solid #ccc';
     });
@@ -199,8 +218,17 @@
     const activeInput = document.getElementById(activeInputId);
     if (activeInputId === 'ticketPrice') return;
 
-    if (val === '.' && activeInput.value.includes('.')) return;
-    activeInput.value += val;
+// ticketsRequested should be whole numbers only
+if (activeInputId === 'ticketsRequested') {
+  if (val === '.') return;
+  activeInput.value += val;
+  return;
+}
+
+// moneyInput: allow decimals
+if (val === '.' && activeInput.value.includes('.')) return;
+activeInput.value += val;
+
   }
 
   function backspace() {
@@ -211,9 +239,11 @@
   }
 
   function clearFields() {
-    document.getElementById('moneyInput').value = '';
-    document.getElementById('results').style.display = 'none';
-    setActiveInput('moneyInput');
+  document.getElementById('moneyInput').value = '';
+  document.getElementById('ticketsRequested').value = '';
+  document.getElementById('results').style.display = 'none';
+  setActiveInput('moneyInput');
+
   }
 
   function goToMainPage() {
@@ -221,68 +251,135 @@
     window.location.href = "./Chanticlear.html";
   }
 
-  // --- CALCULATE (with change) ---
   async function calculateTickets() {
-    const money = parseFloat(document.getElementById('moneyInput').value);
-    const price = parseFloat(document.getElementById('ticketPrice').value);
+  const moneyStr = document.getElementById('moneyInput').value.trim();
+  const ticketsStr = document.getElementById('ticketsRequested').value.trim();
+  const price = parseFloat(document.getElementById('ticketPrice').value);
 
-    if (isNaN(money) || isNaN(price) || price <= 0) {
-      alert("Please enter valid money and price. Ticket price must be more than zero.");
+  if (isNaN(price) || price <= 0) {
+    alert("Ticket price is invalid. Must be more than zero.");
+    return;
+  }
+
+  const hasMoney = moneyStr !== "" && !isNaN(parseFloat(moneyStr));
+  const hasTickets = ticketsStr !== "" && !isNaN(parseInt(ticketsStr, 10));
+
+  if (!hasMoney && !hasTickets) {
+    alert("Enter Money Inserted OR Tickets Requested.");
+    return;
+  }
+
+  let mode = "money";
+  if (hasMoney && hasTickets) {
+    mode = (activeInputId === "ticketsRequested") ? "tickets" : "money";
+  } else if (hasTickets) {
+    mode = "tickets";
+  }
+
+  const changeRow = document.getElementById("changeRow");
+  const moneyNeededRow = document.getElementById("moneyNeededRow");
+
+  const boxNumber = sessionStorage.getItem('currentBoxNumber');
+  if (!boxNumber) {
+    alert("Box number missing. Cannot record sale.");
+    return;
+  }
+
+  /* =========================
+     MODE 1: MONEY → TICKETS
+     ========================= */
+  if (mode === "money") {
+    const money = parseFloat(moneyStr);
+
+    if (isNaN(money) || money <= 0) {
+      alert("Please enter a valid money amount.");
       return;
     }
 
-    // If the amount is less than one ticket, don't record a sale
     if (money < price) {
       alert("Amount entered is less than the price of one ticket. No sale recorded.");
       return;
     }
 
-    // Tickets to give (max whole tickets)
     const tickets = Math.floor(money / price);
-
-    // Money actually used for tickets
     const usedMoney = tickets * price;
-
-    // Change to give back
     const change = money - usedMoney;
 
-    // Update UI
+    // ✅ UI (cleans old values safely)
     document.getElementById('ticketCount').textContent = tickets;
     document.getElementById('changeAmount').textContent = change.toFixed(2);
+    document.getElementById('moneyNeeded').textContent = "";   // ✅ FIX
+    changeRow.style.display = "block";
+    moneyNeededRow.style.display = "none";
     document.getElementById('results').style.display = 'block';
 
-    const boxNumber = sessionStorage.getItem('currentBoxNumber');
-    if (!boxNumber) {
-      alert("Box number missing. Cannot record sale.");
-      return;
-    }
-
     try {
-      const endpoint = '/api/game/sell';
       const payload = {
         boxNumber: parseInt(boxNumber, 10),
-        moneyInserted: usedMoney,   // 💰 only the amount actually used
-        ticketsSold: tickets        // send ticketsSold to match Worker
+        moneyInserted: usedMoney,
+        ticketsSold: tickets
       };
 
-      const response = await fetch(WORKER_URL + endpoint, {
+      const response = await fetch(WORKER_URL + '/api/game/sell', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       const result = await response.json();
-
-      if (result.success) {
-        console.log("Sale recorded successfully.");
-      } else {
+      if (!result.success) {
         alert(`Sale recording failed: ${result.error}`);
       }
     } catch (error) {
       alert(`Error communicating with server: ${error.message}`);
-      console.error('Sale Error:', error);
+      console.error(error);
     }
+
+    return;
   }
+
+  /* =========================
+     MODE 2: TICKETS → MONEY
+     ========================= */
+  const ticketsRequested = parseInt(ticketsStr, 10);
+
+  if (!Number.isFinite(ticketsRequested) || ticketsRequested <= 0) {
+    alert("Tickets Requested must be a positive whole number.");
+    return;
+  }
+
+  const moneyNeeded = ticketsRequested * price;
+
+  // ✅ UI (cleans old values safely)
+  document.getElementById('ticketCount').textContent = ticketsRequested;
+  document.getElementById('moneyNeeded').textContent = moneyNeeded.toFixed(2);
+  document.getElementById('changeAmount').textContent = "";   // ✅ FIX
+  changeRow.style.display = "none";
+  moneyNeededRow.style.display = "block";
+  document.getElementById('results').style.display = 'block';
+
+  try {
+    const payload = {
+      boxNumber: parseInt(boxNumber, 10),
+      ticketsRequested: ticketsRequested
+    };
+
+    const response = await fetch(WORKER_URL + '/api/game/sell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    if (!result.success) {
+      alert(`Sale recording failed: ${result.error}`);
+    }
+  } catch (error) {
+    alert(`Error communicating with server: ${error.message}`);
+    console.error(error);
+  }
+}
+
 </script>
 
 <script src="/js/idle-tracker.js?v=20251013"></script>
