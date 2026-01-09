@@ -2,12 +2,13 @@
   "name": "overview",
   "version": "1.0.0",
   "description": "Cloudflare Worker that makes a log",
-  "private": true,
+ "private": true,
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "dev:overview": "wrangler dev --config Overview/newworker/wrangler.toml",
+    "deploy:overview": "wrangler deploy --config Overview/newworker/wrangler.toml"
   },
   "devDependencies": {
     "wrangler": "^4.32.0"
   }
 }
+
