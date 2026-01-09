@@ -1,287 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta charset="UTF-8">
-  <title>Login with Google</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding-top: 100px;
-      margin: 0;
-    }
+    body { font-family: Arial, sans-serif; text-align:center; padding-top:100px; margin:0; }
+    .small { color:#666; font-size: 0.95rem; margin-top: 14px; }
   </style>
 </head>
-
 <body>
   <h2>Sign in with Google to continue</h2>
 
-  <!-- Google Sign-In button -->
   <div id="g_id_onload"
-       data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
-       data-callback="handleCredentialResponse"
-       data-auto_prompt="false"></div>
+    data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
+    data-callback="handleCredentialResponse"
+    data-auto_prompt="false"></div>
 
   <div class="g_id_signin"
-       data-type="standard"
-       data-size="large"
-       data-theme="outline"
-       data-text="sign_in_with"
-       data-shape="rectangular"
-       data-logo_alignment="left"></div>
+    data-type="standard"
+    data-size="large"
+    data-theme="outline"
+    data-text="sign_in_with"
+    data-shape="rectangular"
+    data-logo_alignment="left"></div>
+
+  <div class="small" id="msg"></div>
 
 <script>
-/** =========================
- *  1) QUICK CONFIG SECTION
- *  ========================= */
-const ROLES = {
-  ADMIN: "admin",
-  OFFICE: "office",
-  BOOTH_MANAGER: "booth_manager",
-  SELLER: "seller",
+/**
+ * =========================================================
+ * EDIT ONLY THIS USERS OBJECT
+ * =========================================================
+ *
+ * allow:
+ *   - Use ["*"] to allow all pages
+ *   - Or list specific pages: ["./SimonsAdminDash.html", "./Dashboard.html"]
+ *
+ * deny:
+ *   - Optional list of pages to block even if allow is ["*"]
+ */
+const USERS = {
+  "sedorst17@gmail.com": {
+    defaultPage: "./SimonsAdminDash.html",
+    allow: ["*"],
+    // deny: ["./SomeSecretPage.html"]
+  },
+
+  "gambling@arsports.org": {
+    defaultPage: "./SimonsAdminDash.html",
+    allow: ["./SimonsAdminDash.html", "./Dashboard.html"]
+  },
+
+  "jenna.dorst@gmail.com": {
+    defaultPage: "./ChanticlearSeller.html",
+    allow: ["./ChanticlearSeller.html", "./Dashboard.html"]
+  }
 };
 
-const CONFIG = {
-  // Change this later in ONE spot when you make a new Worker
-  workerUrl: "https://overview.jenna-dorst.workers.dev",
+// OPTIONAL: where to send unauthorized users
+const UNAUTHORIZED_REDIRECT = ""; // e.g. "./NotAllowed.html" or leave "" to just alert
 
-  // Global pages (not location-specific)
-  globalPages: {
-    ADMIN_HOME: "./SimonsAdminDash.html",
-  },
-
-  /**
-   * Locations + their page file names.
-   * Edit/add/remove locations here.
-   *
-   * Each location has a "pages" object where you can rename file paths freely.
-   */
-  locations: {
-    Chanticlear: {
-      label: "Chanticlear",
-      pages: {
-        main: "./Chanticlear.html",
-        logout: "./ChanticlearLogout.html",
-        close: "./ChanticlearClosescreen.html",
-        open: "./ChanticlearOpenscreen.html",
-        sell: "./ChanticlearSell.html",
-        shifthandoff: "./ChanticlearShifthandoff.html",
-        winner: "./ChanticlearWinner.html",
-      },
-    },
-
-    Northwoods: {
-      label: "Northwoods",
-      pages: {
-        main: "./Northwoods.html",
-        logout: "./NorthwoodsLogout.html",
-        close: "./NorthwoodsClosescreen.html",
-        open: "./NorthwoodsOpenscreen.html",
-        sell: "./NorthwoodsSell.html",
-        shifthandoff: "./NorthwoodsShifthandoff.html",
-        winner: "./NorthwoodsWinner.html",
-      },
-    },
-
-    McDuffs: {
-      label: "McDuffs",
-      pages: {
-        main: "./McDuffs.html",
-        logout: "./McDuffsLogout.html",
-        close: "./McDuffsClosescreen.html",
-        open: "./McDuffsOpenscreen.html",
-        sell: "./McDuffsSell.html",
-        shifthandoff: "./McDuffsShifthandoff.html",
-        winner: "./McDuffsWinner.html",
-      },
-    },
-
-    WillyMcCoys: {
-      label: "Willy McCoys",
-      pages: {
-        main: "./WillyMcCoys.html",
-        logout: "./WillyMcCoysLogout.html",
-        close: "./WillyMcCoysClosescreen.html",
-        open: "./WillyMcCoysOpenscreen.html",
-        sell: "./WillyMcCoysSell.html",
-        shifthandoff: "./WillyMcCoysShifthandoff.html",
-        winner: "./WillyMcCoysWinner.html",
-      },
-    },
-  },
-
-  /**
-   * Users: change this list anytime.
-   * locations: if omitted for admin/office, they get ALL locations.
-   * defaultPage: optional override.
-   */
-  users: {
-    "sedorst17@gmail.com": { role: ROLES.ADMIN, defaultPage: "./SimonsAdminDash.html" },
-    "gambling@arsports.org": { role: ROLES.ADMIN },
-
-    "jenna.dorst@gmail.com": {
-      role: ROLES.SELLER,
-      locations: ["Chanticlear"],
-      defaultPage: "./Chanticlear.html"
-    },
-  },
-};
-
-/** =====================================
- *  2) ROLE RULES (what pages each role gets)
- *  ===================================== */
-const ROLE_RULES = {
-  [ROLES.ADMIN]: {
-    includeGlobals: ["ADMIN_HOME"],
-    includeLocationPages: [],
-    default: () => CONFIG.globalPages.ADMIN_HOME,
-  },
-
-  [ROLES.OFFICE]: {
-    includeGlobals: ["ADMIN_HOME","USER_LOG"],
-    includeLocationPages: ["main","logout","close","open","sell","shifthandoff","winner"],
-    default: () => CONFIG.globalPages.ADMIN_HOME,
-  },
-
-  [ROLES.BOOTH_MANAGER]: {
-    includeGlobals: [],
-    includeLocationPages: ["main","logout","close","open","sell","shifthandoff","winner"],
-    default: (locKeys) => (locKeys[0] ? CONFIG.locations[locKeys[0]].pages.main : ""),
-  },
-
-  [ROLES.SELLER]: {
-    includeGlobals: [],
-    includeLocationPages: ["sell","winner","shifthandoff","logout"],
-    default: (locKeys) => (locKeys[0] ? CONFIG.locations[locKeys[0]].pages.sell : ""),
-  },
-};
-
-/** =========================
- *  3) ACCESS BUILDER
- *  ========================= */
-function computeAccess(role, userLocations) {
-  const rule = ROLE_RULES[role];
-  if (!rule) return { pages: new Set(), defaultPage: "" };
-
-  const pages = new Set();
-
-  // Globals
-  (rule.includeGlobals || []).forEach(key => {
-    const p = CONFIG.globalPages[key];
-    if (p) pages.add(p);
-  });
-
-  // Locations: if userLocations omitted and role is admin/office => all locations
-  const allLocKeys = Object.keys(CONFIG.locations);
-  const locKeys = (userLocations && userLocations.length)
-    ? userLocations
-    : ((role === ROLES.ADMIN || role === ROLES.OFFICE) ? allLocKeys : []);
-
-  // Location pages
-  locKeys.forEach(locKey => {
-    const loc = CONFIG.locations[locKey];
-    if (!loc) return;
-    (rule.includeLocationPages || []).forEach(pageKey => {
-      const path = loc.pages[pageKey];
-      if (path) pages.add(path);
-    });
-  });
-
-  const defaultPage = rule.default ? rule.default(locKeys) : "";
-  return { pages, defaultPage };
-}
-
-/** =========================
- *  4) GOOGLE SIGN-IN FLOW
- *  ========================= */
-let isSignedIn = false;
+const msg = document.getElementById("msg");
 
 function handleCredentialResponse(response) {
   const tokenData = parseJwt(response.credential);
   const email = (tokenData.email || "").toLowerCase();
-  const name = tokenData.name || email;
+  const name  = tokenData.name || email;
 
-  isSignedIn = true;
-
-  // user lookup
-  const user = CONFIG.users[email];
+  const user = USERS[email];
   if (!user) {
     alert("You are not authorized to access this site.");
+    if (UNAUTHORIZED_REDIRECT) window.location.href = UNAUTHORIZED_REDIRECT;
     return;
   }
 
-  // Build access
-  const role = user.role;
-  const locs = user.locations || [];
-  const { pages, defaultPage: roleDefault } = computeAccess(role, locs);
-
-  const redirectPage = user.defaultPage || roleDefault;
-  if (!redirectPage) {
-    alert("No default page configured. Contact an administrator.");
-    return;
-  }
-
-  // Save session-ish info
+  // Save identity + permissions
   localStorage.setItem("userEmail", email);
   localStorage.setItem("userName", name);
-  localStorage.setItem("userRole", role);
-  localStorage.setItem("userLocations", JSON.stringify(locs));
-  localStorage.setItem("allowedPages", JSON.stringify(Array.from(pages)));
+  localStorage.setItem("defaultPage", user.defaultPage || "");
+  localStorage.setItem("allowedPages", JSON.stringify(user.allow || []));
+  localStorage.setItem("deniedPages", JSON.stringify(user.deny || []));
 
-  // Optional: log sign-in (won’t block redirect if it fails)
-  logSignIn(name, email).finally(() => {
-    window.location.href = redirectPage;
-  });
+  const dest = user.defaultPage;
+  if (!dest) {
+    alert("This user has no defaultPage set yet.");
+    return;
+  }
+
+  window.location.href = dest;
 }
 
+/** Decode Google JWT */
 function parseJwt(token) {
   const base64Url = token.split('.')[1];
   const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
   const jsonPayload = decodeURIComponent(
-    atob(base64).split('').map(c =>
-      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-    ).join('')
+    atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
   );
   return JSON.parse(jsonPayload);
 }
 
-async function logSignIn(name, email) {
-  try {
-    const res = await fetch(`${CONFIG.workerUrl}/signin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email }),
-    });
-    // If you don’t care about the response, you can skip parsing:
-    await res.json().catch(() => null);
-  } catch (err) {
-    console.error("Error logging sign-in:", err);
-  }
+/**
+ * =========================================================
+ * OPTIONAL NAVIGATION ENFORCER
+ * =========================================================
+ * Use this on any page:
+ *   go("./Dashboard.html")
+ */
+function canAccess(page) {
+  const allow = JSON.parse(localStorage.getItem("allowedPages") || "[]");
+  const deny  = JSON.parse(localStorage.getItem("deniedPages") || "[]");
+
+  // normalize (support "Dashboard.html" or "./Dashboard.html")
+  const norm = (p) => {
+    if (!p) return "";
+    return p.startsWith("./") ? p : ("./" + p);
+  };
+
+  const target = norm(page);
+
+  if (deny.map(norm).includes(target)) return false;
+  if (allow.includes("*")) return true;
+
+  const allowedNorm = allow.map(norm);
+  return allowedNorm.includes(target);
 }
 
-/** If you ever re-add a dropdown later, this still works */
-function navigateToPage(selectElement) {
-  if (!isSignedIn) {
-    alert("Please sign in with Google first.");
-    selectElement.selectedIndex = 0;
+window.go = function(page) {
+  if (!localStorage.getItem("userEmail")) {
+    alert("Please sign in first.");
+    window.location.href = "./Index.html";
     return;
   }
-  const page = selectElement.value;
-  if (!page) return;
-
-  const allowedPages = JSON.parse(localStorage.getItem("allowedPages") || "[]");
-  if (allowedPages.includes(page)) {
-    window.location.href = page;
-  } else {
-    alert("You are not authorized to access that page.");
-    selectElement.selectedIndex = 0;
+  if (!canAccess(page)) {
+    alert("You are not allowed to view that page.");
+    return;
   }
-}
+  window.location.href = page;
+};
 </script>
-
 </body>
 </html>
