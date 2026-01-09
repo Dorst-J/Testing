@@ -84,7 +84,7 @@ const CONFIG = {
  *  ========================================== */
 const ROLE_RULES = {
   [ROLES.ADMIN]: {
-    includeGlobals: ["ADMIN_HOME", "USER_LOG"],
+    includeGlobals: ["ADMIN_HOME"],
     includeLocationPages: ["main","logout","close","open","sell","shifthandoff","winner"],
     default: () => CONFIG.globalPages.ADMIN_HOME,
   },
