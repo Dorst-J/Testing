@@ -1,5 +1,6 @@
 {
   "name": "overview",
+  "main": "workernew.js",
   "version": "1.0.0",
   "description": "Cloudflare Worker that makes a log",
  "private": true,
