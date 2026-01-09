@@ -1,7 +1,10 @@
 name = "overview"
 main = "workernew.js"
 compatibility_date = "2025-08-11"
-type = "javascript"
-account_id = "85221db225a51b1c70076848e8c20111"
 workers_dev = true
 
+account_id = "85221db225a51b1c70076848e8c20111"
+
+kv_namespaces = [
+  { binding = "SIGNIN_LOGS", id = "21170895129f4be28c3f40ca676dc1ea", preview_id = "21170895129f4be28c3f40ca676dc1ea" }
+]
