@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta charset="UTF-8" />
-  <title>Login</title>
+  <meta charset="UTF-8">
+  <title>Login with Google</title>
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
@@ -19,6 +20,7 @@
 <body>
   <h2>Sign in with Google to continue</h2>
 
+  <!-- Google Sign-In button -->
   <div id="g_id_onload"
        data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
        data-callback="handleCredentialResponse"
@@ -34,7 +36,7 @@
 
 <script>
 /** =========================
- *  ROLES (keep these)
+ *  1) QUICK CONFIG SECTION
  *  ========================= */
 const ROLES = {
   ADMIN: "admin",
@@ -43,90 +45,138 @@ const ROLES = {
   SELLER: "seller",
 };
 
-/** ==========================================
- *  CONFIG (EDIT THIS ONLY — ALL PLACEHOLDERS)
- *  ========================================== */
 const CONFIG = {
-  // Optional: Worker endpoint for /signin logging (leave "" to disable)
-  workerUrl: "",
+  // Change this later in ONE spot when you make a new Worker
+  workerUrl: "https://thedatatab.jenna-dorst.workers.dev",
 
-  // Global pages (not location-based) — fill in later if you want
+  // Global pages (not location-specific)
   globalPages: {
-    ADMIN_HOME: "./SimonsAdminDash.html",   // e.g. "./AdminHome.html"
+    ADMIN_HOME: "./AdminMainPage.html",
+    USER_LOG: "./UserLog.html",
   },
 
   /**
-   * Locations — completely empty placeholders.
-   * Add as many as you want like:
-   *   "LocationKey": { pages: { main:"...", sell:"...", ... } }
+   * Locations + their page file names.
+   * Edit/add/remove locations here.
+   *
+   * Each location has a "pages" object where you can rename file paths freely.
    */
   locations: {
-    // Example placeholder (DELETE if you want)
-    // "Location1": { pages: { main:"", sell:"", logout:"" } },
+    Chanticlear: {
+      label: "Chanticlear",
+      pages: {
+        main: "./Chanticlear.html",
+        logout: "./ChanticlearLogout.html",
+        close: "./ChanticlearClosescreen.html",
+        open: "./ChanticlearOpenscreen.html",
+        sell: "./ChanticlearSell.html",
+        shifthandoff: "./ChanticlearShifthandoff.html",
+        winner: "./ChanticlearWinner.html",
+      },
+    },
+
+    Northwoods: {
+      label: "Northwoods",
+      pages: {
+        main: "./Northwoods.html",
+        logout: "./NorthwoodsLogout.html",
+        close: "./NorthwoodsClosescreen.html",
+        open: "./NorthwoodsOpenscreen.html",
+        sell: "./NorthwoodsSell.html",
+        shifthandoff: "./NorthwoodsShifthandoff.html",
+        winner: "./NorthwoodsWinner.html",
+      },
+    },
+
+    McDuffs: {
+      label: "McDuffs",
+      pages: {
+        main: "./McDuffs.html",
+        logout: "./McDuffsLogout.html",
+        close: "./McDuffsClosescreen.html",
+        open: "./McDuffsOpenscreen.html",
+        sell: "./McDuffsSell.html",
+        shifthandoff: "./McDuffsShifthandoff.html",
+        winner: "./McDuffsWinner.html",
+      },
+    },
+
+    WillyMcCoys: {
+      label: "Willy McCoys",
+      pages: {
+        main: "./WillyMcCoys.html",
+        logout: "./WillyMcCoysLogout.html",
+        close: "./WillyMcCoysClosescreen.html",
+        open: "./WillyMcCoysOpenscreen.html",
+        sell: "./WillyMcCoysSell.html",
+        shifthandoff: "./WillyMcCoysShifthandoff.html",
+        winner: "./WillyMcCoysWinner.html",
+      },
+    },
   },
 
   /**
-   * Users:
-   * - Put allowed emails here
-   * - role is required
-   * - locations optional (admins/office can be given all by leaving blank)
-   * - defaultPage optional (overrides role default)
+   * Users: change this list anytime.
+   * locations: if omitted for admin/office, they get ALL locations.
+   * defaultPage: optional override.
    */
   users: {
-    "sedorst17@gmail.com": { role: ROLES.ADMIN }, defaultPage: "./SimonsAdminDash.html"
-    // "seller@gmail.com": { role: ROLES.SELLER, locations: ["Location1"], defaultPage: "" },
-  }
+    "sedorst17@gmail.com": { role: ROLES.ADMIN },
+    "gambling@arsports.org": { role: ROLES.ADMIN },
+
+    "jenna.dorst@gmail.com": {
+      role: ROLES.SELLER,
+      locations: ["Chanticlear"],
+      defaultPage: "./Chanticlear.html"
+    },
+  },
 };
 
-/** ==========================================
- *  ROLE RULES (what each role can access)
- *  - Edit these arrays if you change your page keys
- *  ========================================== */
+/** =====================================
+ *  2) ROLE RULES (what pages each role gets)
+ *  ===================================== */
 const ROLE_RULES = {
   [ROLES.ADMIN]: {
-    includeGlobals: ["ADMIN_HOME"],
-    includeLocationPages: ["main","logout","close","open","sell","shifthandoff","winner"],
-    default: () => CONFIG.globalPages.ADMIN_HOME,
-  },
-  [ROLES.OFFICE]: {
     includeGlobals: ["ADMIN_HOME", "USER_LOG"],
     includeLocationPages: ["main","logout","close","open","sell","shifthandoff","winner"],
     default: () => CONFIG.globalPages.ADMIN_HOME,
   },
+
+  [ROLES.OFFICE]: {
+    includeGlobals: ["ADMIN_HOME","USER_LOG"],
+    includeLocationPages: ["main","logout","close","open","sell","shifthandoff","winner"],
+    default: () => CONFIG.globalPages.ADMIN_HOME,
+  },
+
   [ROLES.BOOTH_MANAGER]: {
     includeGlobals: [],
     includeLocationPages: ["main","logout","close","open","sell","shifthandoff","winner"],
-    default: (locKeys) => {
-      const first = locKeys[0];
-      return first ? (CONFIG.locations[first]?.pages?.main || "") : "";
-    },
+    default: (locKeys) => (locKeys[0] ? CONFIG.locations[locKeys[0]].pages.main : ""),
   },
+
   [ROLES.SELLER]: {
     includeGlobals: [],
     includeLocationPages: ["sell","winner","shifthandoff","logout"],
-    default: (locKeys) => {
-      const first = locKeys[0];
-      return first ? (CONFIG.locations[first]?.pages?.sell || "") : "";
-    },
+    default: (locKeys) => (locKeys[0] ? CONFIG.locations[locKeys[0]].pages.sell : ""),
   },
 };
 
 /** =========================
- *  ACCESS BUILDER
+ *  3) ACCESS BUILDER
  *  ========================= */
 function computeAccess(role, userLocations) {
   const rule = ROLE_RULES[role];
+  if (!rule) return { pages: new Set(), defaultPage: "" };
+
   const pages = new Set();
-  if (!rule) return { pages, defaultPage: "" };
 
   // Globals
-  (rule.includeGlobals || []).forEach(k => {
-    const p = CONFIG.globalPages[k];
+  (rule.includeGlobals || []).forEach(key => {
+    const p = CONFIG.globalPages[key];
     if (p) pages.add(p);
   });
 
-  // Locations:
-  // If userLocations is empty AND role is admin/office -> use ALL configured locations
+  // Locations: if userLocations omitted and role is admin/office => all locations
   const allLocKeys = Object.keys(CONFIG.locations);
   const locKeys = (userLocations && userLocations.length)
     ? userLocations
@@ -135,7 +185,7 @@ function computeAccess(role, userLocations) {
   // Location pages
   locKeys.forEach(locKey => {
     const loc = CONFIG.locations[locKey];
-    if (!loc || !loc.pages) return;
+    if (!loc) return;
     (rule.includeLocationPages || []).forEach(pageKey => {
       const path = loc.pages[pageKey];
       if (path) pages.add(path);
@@ -147,42 +197,43 @@ function computeAccess(role, userLocations) {
 }
 
 /** =========================
- *  SIGN-IN FLOW
+ *  4) GOOGLE SIGN-IN FLOW
  *  ========================= */
 let isSignedIn = false;
 
 function handleCredentialResponse(response) {
   const tokenData = parseJwt(response.credential);
   const email = (tokenData.email || "").toLowerCase();
-  const name  = tokenData.name || email;
+  const name = tokenData.name || email;
 
   isSignedIn = true;
 
+  // user lookup
   const user = CONFIG.users[email];
   if (!user) {
     alert("You are not authorized to access this site.");
     return;
   }
 
+  // Build access
   const role = user.role;
-  const locations = user.locations || [];
+  const locs = user.locations || [];
+  const { pages, defaultPage: roleDefault } = computeAccess(role, locs);
 
-  const { pages, defaultPage: roleDefault } = computeAccess(role, locations);
   const redirectPage = user.defaultPage || roleDefault;
-
   if (!redirectPage) {
-    alert("No default page configured for this user/role yet.");
+    alert("No default page configured. Contact an administrator.");
     return;
   }
 
-  // Save access info for other pages to use
+  // Save session-ish info
   localStorage.setItem("userEmail", email);
   localStorage.setItem("userName", name);
   localStorage.setItem("userRole", role);
-  localStorage.setItem("userLocations", JSON.stringify(locations));
+  localStorage.setItem("userLocations", JSON.stringify(locs));
   localStorage.setItem("allowedPages", JSON.stringify(Array.from(pages)));
 
-  // Optional sign-in logging
+  // Optional: log sign-in (won’t block redirect if it fails)
   logSignIn(name, email).finally(() => {
     window.location.href = redirectPage;
   });
@@ -200,15 +251,35 @@ function parseJwt(token) {
 }
 
 async function logSignIn(name, email) {
-  if (!CONFIG.workerUrl) return; // disabled
   try {
-    await fetch(`${CONFIG.workerUrl}/signin`, {
+    const res = await fetch(`${CONFIG.workerUrl}/signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email })
+      body: JSON.stringify({ name, email }),
     });
+    // If you don’t care about the response, you can skip parsing:
+    await res.json().catch(() => null);
   } catch (err) {
-    console.error("Sign-in log failed:", err);
+    console.error("Error logging sign-in:", err);
+  }
+}
+
+/** If you ever re-add a dropdown later, this still works */
+function navigateToPage(selectElement) {
+  if (!isSignedIn) {
+    alert("Please sign in with Google first.");
+    selectElement.selectedIndex = 0;
+    return;
+  }
+  const page = selectElement.value;
+  if (!page) return;
+
+  const allowedPages = JSON.parse(localStorage.getItem("allowedPages") || "[]");
+  if (allowedPages.includes(page)) {
+    window.location.href = page;
+  } else {
+    alert("You are not authorized to access that page.");
+    selectElement.selectedIndex = 0;
   }
 }
 </script>
