@@ -14,6 +14,10 @@
 </head>
 <body>
   <h2>Sign in with Google to continue</h2>
+  <button onclick="resetAuth()" style="margin-top:20px;padding:10px 16px;">
+  Reset / Clear Login Storage
+</button>
+
 
   <div id="g_id_onload"
     data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
@@ -31,6 +35,19 @@
   <div class="small" id="msg"></div>
 
 <script>
+  function resetAuth() {
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // also clear Google’s remembered account prompt state (optional)
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
+
+  alert("Cleared localStorage + sessionStorage. Refreshing...");
+  location.reload();
+}
+
 /**
  * =========================================================
  * EDIT ONLY THIS USERS OBJECT

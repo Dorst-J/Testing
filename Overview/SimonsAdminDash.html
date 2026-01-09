@@ -15,6 +15,28 @@
     </header>
 
     
-    <script src="/js/idle-tracker.js?v=20251013"></script>
+   <script>
+(function() {
+  const deny = JSON.parse(localStorage.getItem("deniedPages") || "[]");
+  const here = "./" + location.pathname.split("/").pop();
+
+  // if this page is denied, kick back to login (or defaultPage if allowed)
+  if (deny.includes(here)) {
+    alert("Access denied to " + here);
+    window.location.href = "./Index.html";
+    return;
+  }
+
+  // If someone is trying to redirect you to AdminMainPage, block it:
+  const blocked = "./AdminMainPage.html";
+  const defaultPage = localStorage.getItem("defaultPage") || "./Index.html";
+
+  // OPTIONAL: if you land on AdminMainPage, bounce away
+  if (here === blocked) {
+    window.location.href = defaultPage;
+  }
+})();
+</script>
+
 </body>
 </html>
