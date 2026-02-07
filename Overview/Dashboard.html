@@ -4,134 +4,148 @@
   <meta charset="utf-8" />
   <title>Dashboard</title>
   <style>
-    body{font-family:Arial;margin:0}
-    header{padding:16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px}
-    .box{border:1px solid #ddd;border-radius:12px;padding:12px;text-align:center}
-    .big{font-size:28px;font-weight:bold}
-    .mid{font-size:16px;color:#555}
-    .section{padding:0 16px 16px 16px}
-    .card{border:1px solid #ddd;border-radius:12px;padding:12px}
-    .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
-    ul{margin:0;padding-left:18px}
-    li{margin:8px 0;display:flex;justify-content:space-between;gap:12px}
-    .check{cursor:pointer;border:1px solid #16a34a;color:#16a34a;border-radius:10px;padding:4px 10px}
-    .modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
-    .modal{background:#fff;width:min(720px,92vw);border-radius:14px;padding:18px}
-    .dangerX{position:absolute;right:18px;top:14px;background:#d64545;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .modalHeader{position:relative;padding-right:60px}
+    body { font-family: Arial; margin:0; padding:0; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
+    h1 { margin:0; font-size:34px; }
+    .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
+    .wrap { padding:18px; }
+    .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+    .card { border:1px solid #ddd; border-radius:14px; padding:18px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .big { font-size:34px; font-weight:700; margin:0; }
+    .label { margin-top:6px; color:#444; }
+    .grid2 { display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px; }
+    .sectionTitle { margin:28px 0 10px; text-align:center; font-size:22px; font-weight:700; }
+    .issuesBox { border:1px solid #ddd; border-radius:14px; padding:14px; min-height:46px; }
+    .issueRow { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #eee; }
+    .issueRow:last-child { border-bottom:none; }
+    .muted { color:#666; font-size:14px; }
+    .pill { display:inline-block; font-size:12px; padding:2px 8px; border:1px solid #ddd; border-radius:999px; margin-right:8px; }
+    .links { border:1px solid #ddd; border-radius:14px; padding:14px; }
+    .btnRow { display:flex; gap:12px; flex-wrap:wrap; }
   </style>
 </head>
 <body>
   <header>
-    <h2 style="margin:0">Dashboard</h2>
+    <h1>Dashboard</h1>
     <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
   </header>
 
-  <div class="grid">
-    <div class="box"><div class="big" id="cCh">0</div><div class="mid">Chanticlear waiting pickup</div></div>
-    <div class="box"><div class="big" id="cMc">0</div><div class="mid">McDuffs waiting pickup</div></div>
-    <div class="box"><div class="big" id="cWi">0</div><div class="mid">Willies waiting pickup</div></div>
-    <div class="box"><div class="big" id="cNo">0</div><div class="mid">Northwoods waiting pickup</div></div>
-  </div>
-
-  <div class="section">
-    <div class="box" style="max-width:260px">
-      <div class="big" id="dep">0</div>
-      <div class="mid">deposits pending</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h3 style="text-align:center">Game Issues</h3>
-    <div class="card">
-      <ul id="issues"></ul>
-    </div>
-  </div>
-
-  <div class="section">
-    <h3>Page Links</h3>
-    <div class="card" style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="smallBtn" onclick="location.href='/UploadDbf.html'">DBF Upload</button>
-      <button class="smallBtn" onclick="location.href='/Transportation.html'">Transportation</button>
-      <button class="smallBtn" onclick="location.href='/Deposit.html'">Deposit</button>
-      <button class="smallBtn" onclick="location.href='/OfficeLocation.html'">OfficeLocation</button>
-      <button class="smallBtn" onclick="location.href='/SimonsAdminDash.html'">SimonsAdminDash</button>
-    </div>
-  </div>
-
-  <div id="backdrop" class="modalBackdrop">
-    <div class="modal">
-      <div class="modalHeader">
-        <h3 id="modalTitle" style="margin:0">Modal</h3>
-        <button id="modalX" class="dangerX">X</button>
+  <div class="wrap">
+    <div class="grid">
+      <div class="card">
+        <div id="c_chant" class="big">–</div>
+        <div class="label">Chanticlear waiting pickup</div>
       </div>
-      <div id="modalBody" style="margin-top:10px"></div>
+      <div class="card">
+        <div id="c_mcd" class="big">–</div>
+        <div class="label">McDuffs waiting pickup</div>
+      </div>
+      <div class="card">
+        <div id="c_will" class="big">–</div>
+        <div class="label">Willies waiting pickup</div>
+      </div>
+      <div class="card">
+        <div id="c_north" class="big">–</div>
+        <div class="label">Northwoods waiting pickup</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card" style="align-items:flex-start; justify-content:center;">
+        <div id="c_dep" class="big" style="align-self:center;">–</div>
+        <div class="label" style="align-self:center;">deposits pending</div>
+        <div id="apiHint" class="muted" style="margin-top:10px; width:100%; text-align:center;"></div>
+      </div>
+    </div>
+
+    <div class="sectionTitle">Game Issues</div>
+    <div class="issuesBox" id="issues"></div>
+
+    <div class="sectionTitle" style="text-align:left;">Page Links</div>
+    <div class="links">
+      <div class="btnRow">
+        <button class="smallBtn" onclick="location.href='/UploadDbf.html'">DBF Upload</button>
+        <button class="smallBtn" onclick="location.href='/Transportation.html'">Transportation</button>
+        <button class="smallBtn" onclick="location.href='/Pickup.html'">Pickup</button>
+        <button class="smallBtn" onclick="location.href='/Deposit.html'">Deposit</button>
+        <button class="smallBtn" onclick="location.href='/OfficeLocation.html'">OfficeLocation</button>
+        <button class="smallBtn" onclick="location.href='/SimonsAdminDash.html'">SimonsAdminDash</button>
+      </div>
     </div>
   </div>
 
 <script>
-const backdrop = document.getElementById("backdrop");
-const modalTitle = document.getElementById("modalTitle");
-const modalBody = document.getElementById("modalBody");
-document.getElementById("modalX").onclick = ()=> backdrop.style.display="none";
-backdrop.addEventListener("click", e=>{ if(e.target===backdrop) backdrop.style.display="none"; });
-function openModal(title, html){ modalTitle.textContent=title; modalBody.innerHTML=html; backdrop.style.display="flex"; }
+const apiBase = "https://overview.jenna-dorst.workers.dev";
 
-async function loadCounts(){
-  const r = await fetch("/api/dashboard/counts").then(r=>r.json());
-  if(!r.ok) return;
-
-  document.getElementById("cCh").textContent = r.perLoc.Chanticlear ?? 0;
-  document.getElementById("cMc").textContent = r.perLoc.McDuffs ?? 0;
-  document.getElementById("cWi").textContent = r.perLoc.Willies ?? 0;
-  document.getElementById("cNo").textContent = r.perLoc.Northwoods ?? 0;
-  document.getElementById("dep").textContent = r.depositsPending ?? 0;
+async function api(path, options = {}) {
+  const resp = await fetch(`${apiBase}${path}`, options);
+  const txt = await resp.text();
+  try { return JSON.parse(txt); }
+  catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
 }
 
-async function loadIssues(){
-  const r = await fetch("/api/issues/live").then(r=>r.json());
-  if(!r.ok) return;
+function setText(id, val){ document.getElementById(id).textContent = String(val); }
 
-  const ul = document.getElementById("issues");
-  ul.innerHTML = "";
-  for(const it of (r.results||[])){
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span>${it.MFCID_PARTNO_SERNO} — ${it.ISSUE_TEXT}</span>
-      <button class="check" data-id="${it.ID}">✓</button>
-    `;
-    ul.appendChild(li);
+async function loadCounts() {
+  const r = await api("/api/dashboard/summary");
+  document.getElementById("apiHint").textContent = `API: ${apiBase}/api/dashboard/summary`;
+
+  if (!r.ok) {
+    setText("c_chant", "0");
+    setText("c_mcd", "0");
+    setText("c_will", "0");
+    setText("c_north", "0");
+    setText("c_dep", "0");
+    document.getElementById("apiHint").textContent = `API ERROR: ${r.error}`;
+    return;
   }
 
-  ul.querySelectorAll(".check").forEach(btn=>{
-    btn.onclick = ()=>{
-      const id = Number(btn.getAttribute("data-id"));
-      openModal("Problem fixed?", `
-        <p>Is the problem fixed?</p>
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-          <button class="smallBtn" id="cancel">Cancel</button>
-          <button class="smallBtn" id="fixed">fixed</button>
-        </div>
-      `);
-      document.getElementById("cancel").onclick = ()=> backdrop.style.display="none";
-      document.getElementById("fixed").onclick = async ()=>{
-        const r2 = await fetch("/api/issues/fix",{
-          method:"POST",
-          headers:{ "content-type":"application/json" },
-          body: JSON.stringify({ id })
-        }).then(r=>r.json());
-        if(!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
-        backdrop.style.display="none";
-        loadIssues();
-      };
-    };
+  const c = r.closedCounts || {};
+  setText("c_chant", c.Chanticlear ?? 0);
+  setText("c_mcd", c.McDuffs ?? 0);
+  setText("c_will", c.Willies ?? 0);
+  setText("c_north", c.Northwoods ?? 0);
+  setText("c_dep", r.depositPending ?? 0);
+}
+
+async function loadIssues() {
+  const box = document.getElementById("issues");
+  const r = await api("/api/issues/list");
+  if (!r.ok) {
+    box.innerHTML = `<div class="muted">Error loading issues: ${r.error}</div>`;
+    return;
+  }
+  const items = r.results || [];
+  if (items.length === 0) {
+    box.innerHTML = `<div class="muted">(none)</div>`;
+    return;
+  }
+
+  box.innerHTML = items.slice(0, 30).map(x => `
+    <div class="issueRow">
+      <div>
+        <div><span class="pill">#${x.id}</span><b>${x.MFCID_PARTNO_SERNO}</b></div>
+        <div class="muted">${x.issue}</div>
+        <div class="muted">${x.created_at}</div>
+      </div>
+      <button class="smallBtn" onclick="fixIssue(${x.id})">Fixed</button>
+    </div>
+  `).join("");
+}
+
+async function fixIssue(id){
+  const r = await api("/api/issues/fix", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body: JSON.stringify({ id })
   });
+  if (!r.ok) alert(r.error || "Failed");
+  await loadIssues();
 }
 
 loadCounts();
 loadIssues();
-setInterval(()=>{ loadCounts(); loadIssues(); }, 5000);
+setInterval(loadCounts, 5000);
 </script>
 </body>
 </html>
