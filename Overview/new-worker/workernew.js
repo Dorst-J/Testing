@@ -1,11 +1,17 @@
 import * as shapefile from "shapefile";
 
-function corsHeaders() {
+function corsHeaders(request) {
+  const origin = request.headers.get("Origin");
+  const allowed = ["https://thedatatab.com"];
+
+  const o = allowed.includes(origin) ? origin : "https://thedatatab.com";
+
   return {
-    "Access-Control-Allow-Origin": "https://thedatatab.com",
+    "Access-Control-Allow-Origin": o,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Allow-Credentials": "true",
+    "Vary": "Origin",
   };
 }
 
