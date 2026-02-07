@@ -5,7 +5,7 @@ import * as shapefile from "shapefile";
 ========================= */
 
 function corsHeaders(request) {
-  const origin = request.headers.get("Origin") || "";
+  const origin = request.headers.get("Origin");
   const allowed = ["https://thedatatab.com"];
   const o = allowed.includes(origin) ? origin : "https://thedatatab.com";
 
@@ -13,6 +13,7 @@ function corsHeaders(request) {
     "Access-Control-Allow-Origin": o,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true",
     "Vary": "Origin",
   };
 }
@@ -27,6 +28,7 @@ function json(request, data, status = 200) {
 function text(request, msg, status = 200) {
   return new Response(msg, { status, headers: corsHeaders(request) });
 }
+
 
 /* =========================
    CONFIG
