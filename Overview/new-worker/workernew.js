@@ -39,8 +39,8 @@ const SITE_LAST3_TO_LOCATION = {
 };
 
 // Who is picking up (used when pickup button is pressed)
-const JOSH_EMAIL = "sedorst17@gmail.com";     // <-- replace
-const STEVE_EMAIL = "jenna.dorst@gmail.com";   // <-- replace
+const JOSH_EMAIL = "sedorst17@gmail.com";      // <-- replace if needed
+const STEVE_EMAIL = "jenna.dorst@gmail.com";   // <-- replace if needed
 
 /* =========================
    Helpers
@@ -61,6 +61,14 @@ function last3FromSiteno(siteno) {
   const s = String(siteno || "").trim();
   const last3 = s.slice(-3);
   return /^\d{3}$/.test(last3) ? last3 : null;
+}
+
+// ✅ Convert DBF values into types D1 accepts (string/number/null)
+function toSqlValue(v) {
+  if (v === undefined || v === null) return null;
+  if (v instanceof Date) return v.toISOString().slice(0, 10); // YYYY-MM-DD
+  if (typeof v === "object") return String(v); // last-resort safety
+  return v;
 }
 
 async function parseDbfRows(arrayBuffer) {
@@ -88,7 +96,9 @@ async function moveRow(env, fromTable, toTable, row) {
     "PLCOST","PLNOS","IDLGRS","IDLPRZ","DPURCH",
     "CASH_HAND","DATE_OPEN","DATE_CLOSED"
   ];
-  const values = cols.map(c => row[c] ?? null);
+
+  // ✅ convert everything to SQL-safe values
+  const values = cols.map(c => toSqlValue(row[c]));
 
   const insert = env.DB.prepare(`
     INSERT OR REPLACE INTO ${toTable} (${cols.join(",")})
@@ -96,7 +106,7 @@ async function moveRow(env, fromTable, toTable, row) {
   `).bind(...values);
 
   const del = env.DB.prepare(`DELETE FROM ${fromTable} WHERE MFCID_PARTNO_SERNO = ?`)
-    .bind(row.MFCID_PARTNO_SERNO);
+    .bind(toSqlValue(row.MFCID_PARTNO_SERNO));
 
   await env.DB.batch([insert, del]);
 }
@@ -110,18 +120,18 @@ async function insertInventory(env, loc, row) {
       CASH_HAND, DATE_OPEN, DATE_CLOSED
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL)
   `).bind(
-    row.MFCID_PARTNO_SERNO,
-    row.GNAME ?? null,
-    row.DIST_ID ?? null,
-    row.GTYPE ?? null,
-    row.GCOST ?? null,
-    row.SITENO ?? null,
-    row.INV_NUM ?? null,
-    row.PLCOST ?? null,
-    row.PLNOS ?? null,
-    row.IDLGRS ?? null,
-    row.IDLPRZ ?? null,
-    row.DPURCH ?? null
+    toSqlValue(row.MFCID_PARTNO_SERNO),
+    toSqlValue(row.GNAME),
+    toSqlValue(row.DIST_ID),
+    toSqlValue(row.GTYPE),
+    toSqlValue(row.GCOST),
+    toSqlValue(row.SITENO),
+    toSqlValue(row.INV_NUM),
+    toSqlValue(row.PLCOST),
+    toSqlValue(row.PLNOS),
+    toSqlValue(row.IDLGRS),
+    toSqlValue(row.IDLPRZ),
+    toSqlValue(row.DPURCH)
   ).run();
 }
 
@@ -134,20 +144,25 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    // ✅ Debug route list
     if (request.method === "GET" && path === "/api/debug/routes") {
-  return json({
-    ok: true,
-    routes: [
-      "/health",
-      "/signin",
-      "/logs",
-      "/api/inventory/live",
-      "/api/upload-dbf",
-      "/api/emergency/lookup",
-      "/api/emergency/move"
-    ]
-  });
-}
+      return json({
+        ok: true,
+        hasDb: !!env.DB,
+        hasKV: !!env.SIGNIN_LOGS,
+        routes: [
+          "/health",
+          "/signin",
+          "/logs",
+          "/api/debug/routes",
+          "/api/inventory/live",
+          "/api/upload-dbf",
+          "/api/emergency/lookup",
+          "/api/emergency/move",
+        ],
+      });
+    }
+
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
@@ -218,15 +233,6 @@ export default {
        POST /api/upload-dbf
        multipart/form-data field "file"
     ========================= */
-    function toSqlValue(v) {
-  if (v === undefined || v === null) return null;
-  // Convert Date objects to ISO date string
-  if (v instanceof Date) return v.toISOString().slice(0, 10); // "YYYY-MM-DD"
-  // Some DBF parsers return objects that stringify like Date
-  if (typeof v === "object") return String(v);
-  return v;
-}
-
     if (request.method === "POST" && path === "/api/upload-dbf") {
       try {
         if (!env.DB) return json({ ok:false, error:"Missing D1 binding env.DB" }, 500);
@@ -258,34 +264,45 @@ export default {
 
           if (!targetLoc) targetLoc = loc;
           if (targetLoc !== loc) {
-            return json({ ok: false, error: "Each DBF must be for exactly one location (mixed SITENO codes found)." }, 400);
+            return json(
+              { ok: false, error: "Each DBF must be for exactly one location (mixed SITENO codes found)." },
+              400
+            );
           }
 
+          // ✅ convert ALL values (prevents D1_TYPE_ERROR)
           converted.push({
             MFCID_PARTNO_SERNO: key,
-            GNAME: r.GNAME ?? null,
-            DIST_ID: r.DIST_ID ?? null,
-            GTYPE: r.GTYPE ?? null,
-            GCOST: r.GCOST ?? null,
-            SITENO: r.SITENO ?? null,
-            INV_NUM: r.INV_NUM ?? null,
-            PLCOST: r.PLCOST ?? null,
-            PLNOS: r.PLNOS ?? null,
-            IDLGRS: r.IDLGRS ?? null,
-            IDLPRZ: r.IDLPRZ ?? null,
-            DPURCH: r.DPURCH ?? null,
+            GNAME: toSqlValue(r.GNAME),
+            DIST_ID: toSqlValue(r.DIST_ID),
+            GTYPE: toSqlValue(r.GTYPE),
+            GCOST: toSqlValue(r.GCOST),
+            SITENO: toSqlValue(r.SITENO),
+            INV_NUM: toSqlValue(r.INV_NUM),
+            PLCOST: toSqlValue(r.PLCOST),
+            PLNOS: toSqlValue(r.PLNOS),
+            IDLGRS: toSqlValue(r.IDLGRS),
+            IDLPRZ: toSqlValue(r.IDLPRZ),
+            DPURCH: toSqlValue(r.DPURCH),
           });
         }
 
         if (!targetLoc) {
-          return json({
-            ok: false,
-            error: "Could not determine location from SITENO last 3 digits. Check SITE_LAST3_TO_LOCATION mapping and DBF SITENO values."
-          }, 400);
+          return json(
+            {
+              ok: false,
+              error:
+                "Could not determine location from SITENO last 3 digits. Check SITE_LAST3_TO_LOCATION mapping and DBF SITENO values.",
+            },
+            400
+          );
         }
 
         if (converted.length === 0) {
-          return json({ ok: false, error: "No usable rows found in DBF (missing required fields or SITENO mapping)." }, 400);
+          return json(
+            { ok: false, error: "No usable rows found in DBF (missing required fields or SITENO mapping)." },
+            400
+          );
         }
 
         for (const row of converted) {
@@ -345,7 +362,6 @@ export default {
         return json({ ok:false, error:String(e) }, 500);
       }
     }
-
 
     return new Response("Not found", { status: 404, headers: corsHeaders() });
   },
