@@ -4,19 +4,19 @@
   <meta charset="utf-8" />
   <title>Pickup</title>
   <style>
-    body { font-family: Arial; margin:0; padding:0; }
-    header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fafafa; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; background:#fff; }
     .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
     h1 { margin:0; font-size:34px; }
     .wrap { padding:18px; }
     .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
-    .col { border:1px solid #ddd; border-radius:14px; padding:14px; min-height:60vh; }
+    .col { border:1px solid #ddd; border-radius:14px; padding:14px; min-height:60vh; background:#fff; }
     .col h3 { margin:0 0 10px; }
     .item { display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #eee; }
     .item:last-child { border-bottom:none; }
     .key { font-weight:700; }
     .muted { color:#666; font-size:13px; margin-top:2px; }
-    .topRow { display:flex; justify-content:flex-end; margin:10px 0 0; }
+    .topRow { display:flex; justify-content:flex-end; margin:10px 0 0; gap:10px; }
     .pickupBtn { padding:14px 18px; border-radius:12px; border:none; cursor:pointer; font-size:16px; }
     .pickupBtn:disabled { opacity:.5; cursor:not-allowed; }
     .blue { background:#2f57ff; color:#fff; }
@@ -50,15 +50,18 @@
 <script>
 const apiBase = "https://overview.jenna-dorst.workers.dev";
 const LOCS = ["Chanticlear","McDuffs","Willies","Northwoods"];
+
+// store "location|key"
 const selected = new Set();
 
 function setStatus(msg){ document.getElementById("status").textContent = msg || ""; }
-function syncBtn(){
-  document.getElementById("pickupBtn").disabled = selected.size === 0;
-}
+function syncBtn(){ document.getElementById("pickupBtn").disabled = selected.size === 0; }
 
 async function api(path, options = {}) {
-  const resp = await fetch(`${apiBase}${path}`, options);
+  const resp = await fetch(`${apiBase}${path}`, {
+    credentials: "include",
+    ...options
+  });
   const txt = await resp.text();
   try { return JSON.parse(txt); }
   catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
@@ -66,6 +69,7 @@ async function api(path, options = {}) {
 
 function renderLocation(loc, rows){
   const host = document.getElementById(loc);
+
   if (!rows || rows.length === 0){
     host.innerHTML = `<div class="muted">(none)</div>`;
     return;
@@ -75,11 +79,12 @@ function renderLocation(loc, rows){
     const key = r.MFCID_PARTNO_SERNO;
     const gname = r.GNAME || "";
     const cash = (r.CASH_HAND === null || r.CASH_HAND === undefined) ? "" : `Cash: ${r.CASH_HAND}`;
-    const id = `cb_${loc}_${key.replaceAll(" ","_").replaceAll("/","_")}`;
+    const token = `${loc}|${key}`;
+    const id = `cb_${token.replaceAll(" ","_").replaceAll("/","_")}`;
 
     return `
       <label class="item" for="${id}">
-        <input type="checkbox" id="${id}" data-key="${key}" style="margin-top:2px;">
+        <input type="checkbox" id="${id}" data-token="${token}" style="margin-top:2px;">
         <div>
           <div class="key">${key}</div>
           <div class="muted">${gname}</div>
@@ -91,9 +96,9 @@ function renderLocation(loc, rows){
 
   host.querySelectorAll("input[type=checkbox]").forEach(cb => {
     cb.addEventListener("change", () => {
-      const key = cb.dataset.key;
-      if (cb.checked) selected.add(key);
-      else selected.delete(key);
+      const token = cb.dataset.token;
+      if (cb.checked) selected.add(token);
+      else selected.delete(token);
       syncBtn();
     });
   });
@@ -116,23 +121,19 @@ async function load(){
 }
 
 document.getElementById("pickupBtn").onclick = async () => {
-  // Your site should already know the signed-in email.
-  // For now we’ll ask once, then reuse it:
-  let email = localStorage.getItem("pickupEmail") || "";
-  if (!email) {
-    email = prompt("Enter your email (Josh or Steve):") || "";
-    email = email.trim().toLowerCase();
-    if (email) localStorage.setItem("pickupEmail", email);
-  }
-  if (!email) return;
+  const items = Array.from(selected).map(token => {
+    const [location, key] = token.split("|");
+    return { location, key };
+  });
 
-  const keys = Array.from(selected);
+  if (items.length === 0) return;
+
   setStatus("Picking up...");
 
   const r = await api("/api/pickup/confirm", {
-    method:"POST",
-    headers:{ "content-type":"application/json" },
-    body: JSON.stringify({ email, keys })
+    method: "POST",
+    headers: { "content-type":"application/json" },
+    body: JSON.stringify({ keys: items })
   });
 
   if (!r.ok){
@@ -142,12 +143,7 @@ document.getElementById("pickupBtn").onclick = async () => {
 
   selected.clear();
   syncBtn();
-
-  if (r.errors && r.errors.length){
-    setStatus(`Picked up ${r.moved}. Some errors: ${r.errors.length}`);
-  } else {
-    setStatus(`Picked up ${r.moved} for ${r.picker}.`);
-  }
+  setStatus(`Picked up by ${r.pickName}.`);
 
   await load();
 };

@@ -5,6 +5,7 @@ function corsHeaders() {
     "Access-Control-Allow-Origin": "https://thedatatab.com",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true",
   };
 }
 
@@ -80,11 +81,12 @@ function toSqlValue(v) {
 }
 
 function pickupNameFromEmail(emailRaw) {
-  const email = String(emailRaw || "").toLowerCase();
-  if (email === JOSH_EMAIL.toLowerCase()) return "Josh";
-  if (email === STEVE_EMAIL.toLowerCase()) return "Steve";
+  const e = String(emailRaw || "").toLowerCase().trim();
+  if (e === JOSH_EMAIL.toLowerCase()) return "Josh";
+  if (e === STEVE_EMAIL.toLowerCase()) return "Steve";
   return null;
 }
+
 
 async function parseDbfRows(arrayBuffer) {
   const source = await shapefile.openDbf(arrayBuffer);
@@ -150,6 +152,17 @@ async function insertInventory(env, loc, row) {
 /* =========================
    Worker
 ========================= */
+async function getUserFromSession(request, env) {
+  const cookie = request.headers.get("cookie") || "";
+  const match = cookie.match(/SESSION=([^;]+)/);
+  if (!match) return null;
+
+  const sessionId = match[1];
+
+  const session = await env.SIGNIN_LOGS.get(`session:${sessionId}`, "json");
+  return session || null;
+}
+
 
 export default {
   async fetch(request, env) {
@@ -199,33 +212,38 @@ export default {
 
     // Signin logs (your existing)
     if (request.method === "POST" && path === "/signin") {
-      try {
-        const body = await request.json();
-        const email = (body.email || "").toLowerCase();
-        const name = body.name || email;
-        if (!email) return json({ success: false, error: "Missing email" }, 400);
-        await writeSignInLog(env, { name, email });
-        return json({ success: true });
-      } catch (e) {
-        return json({ success: false, error: String(e) }, 500);
-      }
-    }
+  try {
+    const body = await request.json();
+    const email = (body.email || "").toLowerCase().trim();
+    const name = (body.name || email).trim();
 
-    if (request.method === "GET" && path === "/logs") {
-      try {
-        if (!env.SIGNIN_LOGS) return json([]);
-        const list = await env.SIGNIN_LOGS.list({ limit: 1000 });
-        const logs = [];
-        for (const k of list.keys) {
-          const v = await env.SIGNIN_LOGS.get(k.name, "json");
-          if (v) logs.push(v);
-        }
-        logs.sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
-        return json(logs);
-      } catch {
-        return json({ success: false, error: "Failed to load logs" }, 500);
+    if (!email) return json({ success:false, error:"Missing email" }, 400);
+
+    // create session id
+    const sessionId = crypto.randomUUID();
+
+    // store session in KV (24 hours)
+    await env.SIGNIN_LOGS.put(
+      `session:${sessionId}`,
+      JSON.stringify({ email, name }),
+      { expirationTtl: 60 * 60 * 24 } // 24 hours
+    );
+
+    // set cookie in browser
+    return new Response(JSON.stringify({ success:true }), {
+      headers: {
+        ...corsHeaders(),
+        "Content-Type":"application/json",
+        "Set-Cookie":
+          `SESSION=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`
       }
-    }
+    });
+
+  } catch(e){
+    return json({ success:false, error:String(e) }, 500);
+  }
+}
+
 
     /* =========================
        Live inventory list (all)
@@ -487,71 +505,79 @@ export default {
        - Insert into Transportation (key, gname, cash, pick_up)
        - Move from location_Closed -> Final_Closed
     ========================= */
-    if (request.method === "POST" && path === "/api/pickup/confirm") {
-      try {
-        const body = await request.json();
-        const pickName = pickupNameFromEmail(body.email);
-        if (!pickName) return json({ ok:false, error:"Email not authorized for pickup" }, 403);
+   if (request.method === "POST" && path === "/api/pickup/confirm") {
+  try {
+    const user = await getUserFromSession(request, env);
+    if (!user) return json({ ok:false, error:"Not logged in" }, 401);
 
-        const keys = Array.isArray(body.keys) ? body.keys : [];
-        if (keys.length === 0) return json({ ok:false, error:"No games selected" }, 400);
+    const pickName = pickupNameFromEmail(user.email);
+    if (!pickName) return json({ ok:false, error:"Email not authorized for pickup" }, 403);
 
-        const batch = [];
+    const body = await request.json();
 
-        for (const item of keys) {
-          const loc = requireLocation(String(item.location || ""));
-          const key = String(item.key || "").trim();
-          if (!key) continue;
+    // expects: { keys: [{ location, key }, ...] }
+    const keys = Array.isArray(body.keys) ? body.keys : [];
+    if (keys.length === 0) return json({ ok:false, error:"No games selected" }, 400);
 
-          const row = await findRow(env, tClosed(loc), key);
-          if (!row) continue;
+    const batch = [];
 
-          // insert into Transportation
-          batch.push(env.DB.prepare(`
-            INSERT OR REPLACE INTO Transportation (MFCID_PARTNO_SERNO, GNAME, CASH_HAND, PICK_UP)
-            VALUES (?, ?, ?, ?)
-          `).bind(
-            toSqlValue(row.MFCID_PARTNO_SERNO),
-            toSqlValue(row.GNAME),
-            toSqlValue(row.CASH_HAND),
-            pickName
-          ));
+    for (const item of keys) {
+      const loc = requireLocation(String(item.location || ""));
+      const key = String(item.key || "").trim();
+      if (!key) continue;
 
-          // move row to Final_Closed (archive) and delete from location_Closed
-          batch.push(env.DB.prepare(`
-            INSERT OR REPLACE INTO Final_Closed (
-              MFCID_PARTNO_SERNO, GNAME, DIST_ID, GTYPE, GCOST, SITENO, INV_NUM,
-              PLCOST, PLNOS, IDLGRS, IDLPRZ, DPURCH, CASH_HAND, DATE_OPEN, DATE_CLOSED
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(
-            toSqlValue(row.MFCID_PARTNO_SERNO),
-            toSqlValue(row.GNAME),
-            toSqlValue(row.DIST_ID),
-            toSqlValue(row.GTYPE),
-            toSqlValue(row.GCOST),
-            toSqlValue(row.SITENO),
-            toSqlValue(row.INV_NUM),
-            toSqlValue(row.PLCOST),
-            toSqlValue(row.PLNOS),
-            toSqlValue(row.IDLGRS),
-            toSqlValue(row.IDLPRZ),
-            toSqlValue(row.DPURCH),
-            toSqlValue(row.CASH_HAND),
-            toSqlValue(row.DATE_OPEN),
-            toSqlValue(row.DATE_CLOSED)
-          ));
+      const row = await findRow(env, tClosed(loc), key);
+      if (!row) continue;
 
-          batch.push(env.DB.prepare(`DELETE FROM ${tClosed(loc)} WHERE MFCID_PARTNO_SERNO = ?`).bind(key));
-        }
+      batch.push(env.DB.prepare(`
+        INSERT OR REPLACE INTO Transportation (MFCID_PARTNO_SERNO, GNAME, CASH_HAND, PICK_UP)
+        VALUES (?, ?, ?, ?)
+      `).bind(
+        toSqlValue(row.MFCID_PARTNO_SERNO),
+        toSqlValue(row.GNAME),
+        toSqlValue(row.CASH_HAND),
+        pickName
+      ));
 
-        if (batch.length === 0) return json({ ok:false, error:"Nothing moved" }, 400);
-        await env.DB.batch(batch);
+      batch.push(env.DB.prepare(`
+        INSERT OR REPLACE INTO Final_Closed (
+          MFCID_PARTNO_SERNO, GNAME, DIST_ID, GTYPE, GCOST, SITENO, INV_NUM,
+          PLCOST, PLNOS, IDLGRS, IDLPRZ, DPURCH, CASH_HAND, DATE_OPEN, DATE_CLOSED
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        toSqlValue(row.MFCID_PARTNO_SERNO),
+        toSqlValue(row.GNAME),
+        toSqlValue(row.DIST_ID),
+        toSqlValue(row.GTYPE),
+        toSqlValue(row.GCOST),
+        toSqlValue(row.SITENO),
+        toSqlValue(row.INV_NUM),
+        toSqlValue(row.PLCOST),
+        toSqlValue(row.PLNOS),
+        toSqlValue(row.IDLGRS),
+        toSqlValue(row.IDLPRZ),
+        toSqlValue(row.DPURCH),
+        toSqlValue(row.CASH_HAND),
+        toSqlValue(row.DATE_OPEN),
+        toSqlValue(row.DATE_CLOSED)
+      ));
 
-        return json({ ok:true });
-      } catch (e) {
-        return json({ ok:false, error:String(e) }, 500);
-      }
+      batch.push(env.DB.prepare(
+        `DELETE FROM ${tClosed(loc)} WHERE MFCID_PARTNO_SERNO = ?`
+      ).bind(key));
     }
+
+    if (batch.length === 0) return json({ ok:false, error:"Nothing moved" }, 400);
+
+    await env.DB.batch(batch);
+    return json({ ok:true, pickName });
+
+  } catch (e) {
+    return json({ ok:false, error:String(e) }, 500);
+  }
+}
+
+
 
     /* =========================
        TRANSPORTATION: drop off confirm
