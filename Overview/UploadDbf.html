@@ -4,289 +4,245 @@
   <meta charset="utf-8" />
   <title>DBF Upload</title>
   <style>
-    body { font-family: Arial; margin: 0; }
+    body { font-family: Arial; margin:0; padding:0; }
     header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
     .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
-    .wrap { display:grid; grid-template-columns: 1fr 1fr; gap:16px; padding:16px; }
-    .card { border:1px solid #ddd; border-radius:12px; padding:12px; min-height: 520px; }
-    .title { margin:0 0 10px 0; }
-    #dropZone {
-      border:2px dashed #999; border-radius:12px; padding:28px; text-align:center;
-      font-size:18px; color:#444; user-select:none;
-    }
-    #dropZone.drag { opacity: .7; }
-    .list { max-height: 520px; overflow:auto; border:1px solid #eee; border-radius:10px; padding:10px; }
-    .item { padding:8px; border-bottom:1px solid #f0f0f0; }
-    .meta { color:#666; font-size:13px; }
-    .btn { padding:12px 18px; border:none; border-radius:10px; cursor:pointer; }
-    .blue { background:#2563eb; color:#fff; }
-    .gray { background:#eee; }
-    .row { display:flex; gap:10px; align-items:center; }
-    input, select { width:100%; padding:12px; font-size:16px; border:1px solid #ccc; border-radius:10px; }
-
-    /* Popup */
+    .layout { display:grid; grid-template-columns: 1fr 1fr; gap:18px; padding:18px; }
+    .card { border:1px solid #ddd; border-radius:14px; padding:16px; }
+    .drop { border:2px dashed #999; border-radius:14px; padding:34px; text-align:center; cursor:pointer; }
+    .muted { color:#666; font-size:14px; }
+    .list { margin-top:12px; max-height:520px; overflow:auto; border:1px solid #eee; border-radius:12px; padding:10px; }
+    .row { padding:8px; border-bottom:1px solid #f2f2f2; }
+    .row:last-child{ border-bottom:none; }
+    .pill { display:inline-block; font-size:12px; padding:2px 8px; border:1px solid #ddd; border-radius:999px; margin-right:8px; }
+    .danger { background:#d64545; color:white; border:none; }
+    .ok { background:#1f9d55; color:white; border:none; }
     #popup { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; }
-    #popupBox { background:#fff; padding:18px; border-radius:12px; width:min(720px, 92vw); }
-    #popupHead { display:flex; justify-content:space-between; align-items:center; }
-    #popupX { border:1px solid #bbb; background:#fff; border-radius:10px; padding:6px 10px; cursor:pointer; }
-    #popupBody { margin-top:10px; }
-    #popupActions { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
-    pre { white-space:pre-wrap; border:1px solid #ddd; padding:10px; border-radius:10px; max-height:240px; overflow:auto; }
+    .modal { background:#fff; padding:18px; border-radius:12px; width:min(720px, 92vw); }
+    .modalTop { display:flex; justify-content:space-between; align-items:center; }
+    input, select { width:100%; padding:12px; font-size:16px; margin-top:10px; }
+    .btnRow { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
   </style>
 </head>
 <body>
+  <header>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back to Dashboard</button>
+      <h2 style="margin:0;">DBF Upload</h2>
+    </div>
+    <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
+  </header>
 
-<header>
-  <div class="row">
-    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back to Dashboard</button>
-    <h2 style="margin:0 0 0 12px;">DBF Upload</h2>
-  </div>
-  <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
-</header>
-
-<div class="wrap">
-  <!-- Left: Live Inventory -->
-  <div class="card">
-    <h3 class="title">Live Inventory Keys (All Locations)</h3>
-    <div class="meta">Newest at top. Updates every 5 seconds.</div>
-    <div id="liveList" class="list" style="margin-top:10px;"></div>
-  </div>
-
-  <!-- Right: Upload + Emergency -->
-  <div class="card">
-    <h3 class="title">Upload DBF</h3>
-    <div class="meta">Drag & drop a DBF file for a single location. Worker determines location from SITENO last 3 digits.</div>
-
-    <div id="dropZone" style="margin-top:12px;">
-      Drag & Drop DBF here<br><br>
-      <span class="meta">or click to choose file</span>
-      <input id="filePicker" type="file" accept=".dbf" style="display:none;">
+  <div class="layout">
+    <div class="card">
+      <h3 style="margin:0;">Live Inventory Keys (All Locations)</h3>
+      <div class="muted" style="margin-top:6px;">Newest at top. Updates every 5 seconds.</div>
+      <div id="live" class="list"></div>
     </div>
 
-    <div style="margin-top:14px;">
-      <button id="emergencyBtn" class="btn gray">Emergency move</button>
-    </div>
-  </div>
-</div>
+    <div class="card">
+      <h3 style="margin:0;">Upload DBF</h3>
+      <div class="muted" style="margin-top:6px;">
+        Drag & drop a DBF file for a single location. Worker determines location from SITENO last 3 digits.
+      </div>
 
-<!-- Popup -->
-<div id="popup">
-  <div id="popupBox">
-    <div id="popupHead">
-      <h3 id="popupTitle" style="margin:0;">Popup</h3>
-      <button id="popupX">X</button>
-    </div>
-    <div id="popupBody"></div>
-    <div id="popupActions">
-      <button id="popupCancel" class="smallBtn">Cancel</button>
+      <div id="drop" class="drop" style="margin-top:14px;">
+        <div style="font-size:20px;">Drag & Drop DBF here</div>
+        <div class="muted" style="margin-top:8px;">or click to choose file</div>
+      </div>
+      <input id="filePick" type="file" accept=".dbf" style="display:none;">
+
+      <div style="margin-top:14px;">
+        <button class="smallBtn danger" id="emergencyBtn">Emergency move</button>
+      </div>
     </div>
   </div>
-</div>
+
+  <div id="popup">
+    <div class="modal">
+      <div class="modalTop">
+        <h3 id="pTitle" style="margin:0;">Uploading</h3>
+        <button id="pX" class="smallBtn">X</button>
+      </div>
+      <div id="pBody" style="margin-top:10px;"></div>
+      <div class="btnRow">
+        <button id="pCancel" class="smallBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
 
 <script>
-  // ✅ IMPORTANT: set this to your Worker URL
-  const apiBase = "https://overview.jenna-dorst.workers.dev";
+const apiBase = "https://overview.jenna-dorst.workers.dev";
 
-  let aborter = null;
-  const LOCATIONS = ["Chanticlear","McDuffs","Willies","Northwoods"];
+async function api(path, options = {}) {
+  const resp = await fetch(`${apiBase}${path}`, options);
+  const txt = await resp.text();
+  try { return JSON.parse(txt); } catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
+}
 
-  const popup = document.getElementById("popup");
-  const popupTitle = document.getElementById("popupTitle");
-  const popupBody = document.getElementById("popupBody");
-  const popupCancel = document.getElementById("popupCancel");
-  const popupX = document.getElementById("popupX");
+const liveEl = document.getElementById("live");
+const drop = document.getElementById("drop");
+const filePick = document.getElementById("filePick");
 
-  function showPopup(title, bodyHtml, canCancel=true) {
-    popupTitle.textContent = title;
-    popupBody.innerHTML = bodyHtml;
-    popupCancel.style.display = canCancel ? "inline-block" : "none";
-    popup.style.display = "flex";
+let aborter = null;
+
+function showPopup(title, bodyHtml, canCancel=true){
+  document.getElementById("pTitle").textContent = title;
+  document.getElementById("pBody").innerHTML = bodyHtml;
+  document.getElementById("pCancel").style.display = canCancel ? "inline-block" : "none";
+  document.getElementById("popup").style.display = "flex";
+}
+function hidePopup(){ document.getElementById("popup").style.display="none"; }
+
+document.getElementById("pX").onclick = hidePopup;
+document.getElementById("pCancel").onclick = () => {
+  if (aborter) aborter.abort();
+  hidePopup();
+};
+
+async function refreshLive(){
+  const r = await api("/api/inventory/live");
+  if (!r.ok) {
+    liveEl.innerHTML = `<div class="row"><b>Error:</b> ${r.error}</div>`;
+    return;
   }
-  function hidePopup() { popup.style.display = "none"; }
-
-  popupX.onclick = hidePopup;
-  popupCancel.onclick = () => { if (aborter) aborter.abort(); hidePopup(); };
-  popup.addEventListener("click", (e)=>{ if(e.target===popup) hidePopup(); });
-
-  async function safeJson(resp) {
-    const text = await resp.text();
-    let j = null;
-    try { j = JSON.parse(text); } catch {}
-    return { text, j };
+  const items = r.results || [];
+  if (items.length === 0) {
+    liveEl.innerHTML = `<div class="row">(empty)</div>`;
+    return;
   }
+  liveEl.innerHTML = items.map(x => `
+    <div class="row">
+      <span class="pill">${x.location}</span>
+      <b>${x.key}</b>
+      <div class="muted">${x.gname || ""}</div>
+    </div>
+  `).join("");
+}
 
-  async function refreshLive() {
-    const list = document.getElementById("liveList");
-    const r = await fetch(`${apiBase}/api/inventory/live`);
-    const { j, text } = await safeJson(r);
+function wireFile(file){
+  if (!file) return;
+  doUpload(file);
+}
 
-    if (!r.ok || !j?.ok) {
-      list.innerHTML = `<div class="item"><b>Error loading live list</b><pre>${(j?.error || text || "Unknown error")}</pre></div>`;
+drop.addEventListener("click", ()=> filePick.click());
+filePick.addEventListener("change", ()=> wireFile(filePick.files?.[0]));
+
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.style.opacity=.7; });
+drop.addEventListener("dragleave", () => drop.style.opacity=1);
+drop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  drop.style.opacity=1;
+  const file = e.dataTransfer.files?.[0];
+  wireFile(file);
+});
+
+async function doUpload(file){
+  aborter = new AbortController();
+  showPopup("Uploading games", "<p>Uploading games…</p>", true);
+
+  const fd = new FormData();
+  fd.append("file", file);
+
+  try {
+    const resp = await fetch(`${apiBase}/api/upload-dbf`, { method:"POST", body: fd, signal: aborter.signal });
+    const txt = await resp.text();
+    let j; try { j = JSON.parse(txt); } catch { j = { ok:false, error: txt }; }
+
+    aborter = null;
+
+    if (!j.ok) {
+      showPopup("Upload failed", `<p>something went wrong, couldn’t upload the game</p><pre>${j.error||""}</pre>`, false);
       return;
     }
 
-    const items = j.results || [];
-    list.innerHTML = items.map(it => `
-      <div class="item">
-        <div><b>${it.key}</b></div>
-        <div class="meta">${it.location}${it.gname ? " — " + it.gname : ""}</div>
-      </div>
-    `).join("") || `<div class="item">(empty)</div>`;
-  }
-
-  // Drag & Drop + click picker
-  const dropZone = document.getElementById("dropZone");
-  const filePicker = document.getElementById("filePicker");
-
-  dropZone.addEventListener("click", ()=> filePicker.click());
-
-  dropZone.addEventListener("dragover", (e)=>{ e.preventDefault(); dropZone.classList.add("drag"); });
-  dropZone.addEventListener("dragleave", ()=> dropZone.classList.remove("drag"));
-  dropZone.addEventListener("drop", async (e)=>{
-    e.preventDefault();
-    dropZone.classList.remove("drag");
-    const file = e.dataTransfer.files?.[0];
-    if (file) await uploadFile(file);
-  });
-
-  filePicker.addEventListener("change", async ()=>{
-    const file = filePicker.files?.[0];
-    filePicker.value = "";
-    if (file) await uploadFile(file);
-  });
-
-  async function uploadFile(file) {
-    aborter = new AbortController();
-    showPopup("Uploading games", `<p>Uploading <b>${file.name}</b>…</p>`, true);
-
-    const fd = new FormData();
-    fd.append("file", file);
-
-    try {
-      const resp = await fetch(`${apiBase}/api/upload-dbf`, {
-        method: "POST",
-        body: fd,
-        signal: aborter.signal
-      });
-
-      const { j, text } = await safeJson(resp);
-      aborter = null;
-
-      if (!resp.ok || !j?.ok) {
-        showPopup("Upload failed", `
-          <p>something went wrong, couldn’t upload the game</p>
-          <pre>${(j?.error || text || "Unknown error")}</pre>
-        `, false);
-        return;
-      }
-
-      showPopup("Games uploaded", `
-        <p>Uploaded <b>${j.inserted}</b> games to <b>${j.location}_Inventory</b>.</p>
-      `, false);
-
-      await refreshLive();
-    } catch (err) {
-      const msg = String(err || "");
-      aborter = null;
-
-      if (msg.includes("AbortError")) {
-        showPopup("Cancelled", `<p>Upload cancelled.</p>`, false);
-      } else {
-        showPopup("Upload failed", `<p>${msg}</p>`, false);
-      }
+    showPopup("Done", `<p>Games have been uploaded (${j.inserted}) to ${j.location}_Inventory</p>`, false);
+    await refreshLive();
+  } catch (err) {
+    aborter = null;
+    if (String(err).includes("AbortError")) {
+      showPopup("Cancelled", "<p>Upload cancelled.</p>", false);
+    } else {
+      showPopup("Upload failed", `<p>something went wrong, couldn’t upload the game</p><pre>${String(err)}</pre>`, false);
     }
   }
+}
 
-  // Emergency Move UI
-  document.getElementById("emergencyBtn").onclick = () => {
+/* Emergency move */
+document.getElementById("emergencyBtn").onclick = () => {
+  showPopup("Emergency move", `
+    <div class="muted">Enter a MFCID_PARTNO_SERNO to search ALL inventory tables.</div>
+    <input id="eKey" placeholder="IG FLMG01 3144629">
+    <div class="btnRow">
+      <button class="smallBtn" id="eCancel">Cancel</button>
+      <button class="smallBtn ok" id="eGo" disabled>Move</button>
+    </div>
+  `, false);
+
+  const eKey = document.getElementById("eKey");
+  const eGo = document.getElementById("eGo");
+
+  function sync(){
+    const ok = eKey.value.trim();
+    eGo.disabled = !ok;
+  }
+  eKey.addEventListener("input", sync);
+  sync();
+
+  document.getElementById("eCancel").onclick = hidePopup;
+
+  eGo.onclick = async () => {
+    const key = eKey.value.trim();
+    const r = await api("/api/emergency/lookup", {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ key })
+    });
+
+    if (!r.ok) return showPopup("Error", `<pre>${r.error}</pre>`, false);
+    if (!r.found) return showPopup("Not found", `<p>can’t be found</p>`, false);
+
     showPopup("Emergency move", `
-      <p>Enter MFCID_PARTNO_SERNO</p>
-      <input id="emKey" placeholder="IG FLMG01 3144629" autocomplete="off">
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-        <button class="smallBtn" id="emCancel">Cancel</button>
-        <button class="smallBtn" id="emFind" disabled>Move</button>
+      <p>Found <b>${key}</b> in <b>${r.fromLocation}_Inventory</b></p>
+      <div class="muted">Where would you like to move this game?</div>
+      <select id="toLoc">
+        <option value="">Select inventory table…</option>
+        <option>Chanticlear</option>
+        <option>McDuffs</option>
+        <option>Willies</option>
+        <option>Northwoods</option>
+      </select>
+      <div class="btnRow">
+        <button class="smallBtn" id="c2">Cancel</button>
+        <button class="smallBtn ok" id="m2" disabled>Move</button>
       </div>
     `, false);
 
-    const emKey = document.getElementById("emKey");
-    const emFind = document.getElementById("emFind");
+    const toLoc = document.getElementById("toLoc");
+    const m2 = document.getElementById("m2");
 
-    function sync() { emFind.disabled = !emKey.value.trim(); }
-    emKey.addEventListener("input", sync);
-    sync();
-    emKey.focus();
+    toLoc.addEventListener("change", ()=> {
+      m2.disabled = !toLoc.value;
+    });
 
-    document.getElementById("emCancel").onclick = hidePopup;
+    document.getElementById("c2").onclick = hidePopup;
 
-    emFind.onclick = async () => {
-      const key = emKey.value.trim();
-
-      const resp = await fetch(`${apiBase}/api/emergency/lookup`, {
+    m2.onclick = async () => {
+      const toLocation = toLoc.value;
+      const r2 = await api("/api/emergency/move", {
         method:"POST",
         headers:{ "content-type":"application/json" },
-        body: JSON.stringify({ key })
+        body: JSON.stringify({ key, toLocation })
       });
-      const { j, text } = await safeJson(resp);
-
-      if (!resp.ok || !j?.ok) {
-        showPopup("Error", `<pre>${(j?.error || text || "Unknown error")}</pre>`, false);
-        return;
-      }
-
-      if (!j.found) {
-        showPopup("Not found", `<p>can’t be found</p>`, false);
-        return;
-      }
-
-      const fromLoc = j.fromLocation;
-
-      // Step 2: choose destination inventory
-      showPopup("Emergency move", `
-        <p>Found <b>${key}</b> in <b>${fromLoc}_Inventory</b>.</p>
-        <p>Where would you like to move this game?</p>
-        <select id="toLoc">
-          <option value="">Select inventory table</option>
-          ${LOCATIONS.map(l => `<option value="${l}">${l}_Inventory</option>`).join("")}
-        </select>
-
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-          <button class="smallBtn" id="emCancel2">Cancel</button>
-          <button class="smallBtn" id="emMove" disabled>Move</button>
-        </div>
-      `, false);
-
-      const toLoc = document.getElementById("toLoc");
-      const emMove = document.getElementById("emMove");
-
-      function sync2(){ emMove.disabled = !toLoc.value; }
-      toLoc.addEventListener("change", sync2);
-      sync2();
-
-      document.getElementById("emCancel2").onclick = hidePopup;
-
-      emMove.onclick = async () => {
-        const dest = toLoc.value;
-
-        const resp2 = await fetch(`${apiBase}/api/emergency/move`, {
-          method:"POST",
-          headers:{ "content-type":"application/json" },
-          body: JSON.stringify({ key, toLocation: dest })
-        });
-        const { j: j2, text: t2 } = await safeJson(resp2);
-
-        if (!resp2.ok || !j2?.ok) {
-          showPopup("Error", `<pre>${(j2?.error || t2 || "Unknown error")}</pre>`, false);
-          return;
-        }
-
-        showPopup("Moved", `<p>Moved <b>${key}</b> to <b>${dest}_Inventory</b>.</p>`, false);
-        await refreshLive();
-      };
+      if (!r2.ok) return showPopup("Error", `<pre>${r2.error}</pre>`, false);
+      hidePopup();
+      await refreshLive();
     };
   };
+};
 
-  refreshLive();
-  setInterval(refreshLive, 5000);
+refreshLive();
+setInterval(refreshLive, 5000);
 </script>
 </body>
 </html>
