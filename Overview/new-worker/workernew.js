@@ -37,6 +37,11 @@ const SITE_LAST3_TO_LOCATION = {
   "009": "Northwoods",
 };
 
+// Who is picking up (used when pickup button is pressed)
+const JOSH_EMAIL = "sedorst17@gmail.com";     // <-- replace
+const STEVE_EMAIL = "jenna.dorst@gmail.com";   // <-- replace
+
+
 function requireLocation(loc) {
   if (!LOCATIONS.includes(loc)) throw new Error("BAD_LOCATION");
   return loc;
@@ -226,7 +231,7 @@ export default {
 
           const loc = SITE_LAST3_TO_LOCATION[last3];
           if (!loc) continue;
-          
+
 
           if (!targetLoc) targetLoc = loc;
           if (targetLoc !== loc) {
