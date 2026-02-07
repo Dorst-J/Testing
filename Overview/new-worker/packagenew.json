@@ -9,7 +9,7 @@
     "deploy:overview": "wrangler deploy --config Overview/newworker/wrangler.toml"
   },
   "devDependencies": {
-    "wrangler": "^4.32.0"
+    "wrangler": "^4.63.0"
   }
 }
 
