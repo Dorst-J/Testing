@@ -2,19 +2,19 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Seller</title>
+  <title>Chanticlear Seller</title>
   <style>
-    body { font-family: Arial; margin: 0; padding: 0; }
+    body { font-family: Arial; margin:0; padding:0; }
     header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
     .btn { padding:18px 28px; font-size:22px; border:none; border-radius:10px; cursor:pointer; }
     .open { background:#1f9d55; color:white; }
     .close { background:#d64545; color:white; }
     .wrap { padding:24px; display:flex; gap:20px; justify-content:center; }
+    .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
     .modalBackdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; }
     .modal { background:#fff; width:min(720px, 92vw); border-radius:14px; padding:18px; }
     .row { display:flex; gap:12px; margin-top:12px; }
     input { width:100%; padding:14px; font-size:18px; }
-    .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
     .dangerX { position:absolute; right:18px; top:14px; background:#d64545; color:#fff; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; }
     .modalHeader { position:relative; padding-right:60px; }
     .disabled { opacity:.5; cursor:not-allowed; }
@@ -23,10 +23,10 @@
 <body>
   <header>
     <div>
-      <h2 id="title" style="margin:0;">Seller</h2>
-      <div id="subtitle" style="color:#666;"></div>
+      <h2 style="margin:0;">Chanticlear Seller</h2>
+      <div style="color:#666;">Inventory → Open → Closed</div>
     </div>
-    <button id="signOut" class="smallBtn">Sign out</button>
+    <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
   </header>
 
   <div class="wrap">
@@ -45,172 +45,167 @@
   </div>
 
 <script>
-  window.LOCATION="McDuffs";
-  // For ChanticlearSeller.html just set window.LOCATION="Chanticlear" and include this same file.
-  const LOCATION = window.LOCATION;
-  if (!LOCATION) alert("Missing LOCATION");
+const LOCATION = "McDuffs";
+const apiBase = "https://overview.jenna-dorst.workers.dev";
 
-  const apiBase = ""; // same origin
-  const backdrop = document.getElementById("backdrop");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalBody = document.getElementById("modalBody");
-  const modalX = document.getElementById("modalX");
+async function api(path, options = {}) {
+  const resp = await fetch(`${apiBase}${path}`, options);
+  const txt = await resp.text();
+  try { return JSON.parse(txt); } catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
+}
 
-  document.getElementById("title").textContent = `${LOCATION} Seller`;
-  document.getElementById("subtitle").textContent = "Inventory → Open → Closed";
+const backdrop = document.getElementById("backdrop");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+const modalX = document.getElementById("modalX");
 
-  function openModal(title, html, showX=true){
-    modalTitle.textContent = title;
-    modalBody.innerHTML = html;
-    modalX.style.display = showX ? "block" : "none";
-    backdrop.style.display = "flex";
+function openModal(title, html){
+  modalTitle.textContent = title;
+  modalBody.innerHTML = html;
+  backdrop.style.display = "flex";
+}
+function closeModal(){ backdrop.style.display = "none"; }
+
+modalX.onclick = closeModal;
+backdrop.addEventListener("click", (e)=>{ if(e.target === backdrop) closeModal(); });
+
+/* OPEN */
+document.getElementById("openBtn").onclick = () => {
+  openModal("Open Game", `
+    <div class="row"><input id="key" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off"></div>
+    <div class="row"><input id="name" placeholder="Type your name" autocomplete="off"></div>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="smallBtn" id="cancel">Cancel</button>
+      <button class="smallBtn disabled" id="go" disabled>Open</button>
+    </div>
+  `);
+
+  const keyEl = document.getElementById("key");
+  const nameEl = document.getElementById("name");
+  const go = document.getElementById("go");
+
+  function sync(){
+    const ok = keyEl.value.trim() && nameEl.value.trim();
+    go.disabled = !ok;
+    go.classList.toggle("disabled", !ok);
   }
-  function closeModal(){ backdrop.style.display = "none"; }
+  keyEl.addEventListener("input", sync);
+  nameEl.addEventListener("input", sync);
+  sync();
 
-  modalX.onclick = closeModal;
-  backdrop.addEventListener("click", (e)=>{ if(e.target === backdrop) closeModal(); });
+  document.getElementById("cancel").onclick = closeModal;
 
-  // TODO: wire to your sign-out route
-  document.getElementById("signOut").onclick = () => window.location.href = "/signout";
+  go.onclick = async () => {
+    const key = keyEl.value.trim();
+    const employeeName = nameEl.value.trim();
 
-  // OPEN FLOW
-  document.getElementById("openBtn").onclick = () => {
-    openModal("Open Game", `
-      <div class="row"><input id="key" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off"></div>
-      <div class="row"><input id="name" placeholder="Type your name" autocomplete="off"></div>
-      <div class="row" style="justify-content:flex-end;">
-        <button class="smallBtn" id="cancel">Cancel</button>
-        <button class="smallBtn" id="go" disabled>Open</button>
+    const r = await api(`/api/location/${encodeURIComponent(LOCATION)}/open/check`, {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ key, employeeName })
+    });
+
+    if (!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
+    if (!r.found) return openModal("Not Found", `<p>can’t find the game, please enter a new game.</p>`);
+
+    openModal("Found Game", `
+      <p>Found the game. Would you like to open the game?</p>
+      <div style="padding:10px;border:1px solid #ddd;border-radius:10px;">
+        <div><b>${r.row.MFCID_PARTNO_SERNO}</b></div>
+        <div>${r.row.GNAME||""}</div>
       </div>
-    `, false);
+      <div class="row" style="justify-content:flex-end;">
+        <button class="smallBtn" id="cancel2">Cancel</button>
+        <button class="smallBtn" id="confirm">Open</button>
+      </div>
+    `);
 
-    const keyEl = document.getElementById("key");
-    const nameEl = document.getElementById("name");
-    const go = document.getElementById("go");
-
-    function sync(){
-      const ok = keyEl.value.trim() && nameEl.value.trim();
-      go.disabled = !ok;
-      go.classList.toggle("disabled", !ok);
-    }
-    keyEl.addEventListener("input", sync);
-    nameEl.addEventListener("input", sync);
-    sync();
-
-    document.getElementById("cancel").onclick = closeModal;
-
-    go.onclick = async () => {
-      const key = keyEl.value.trim();
-      const employeeName = nameEl.value.trim();
-
-      const r = await fetch(`${apiBase}/api/location/${LOCATION}/open/check`, {
+    document.getElementById("cancel2").onclick = closeModal;
+    document.getElementById("confirm").onclick = async () => {
+      const r2 = await api(`/api/location/${encodeURIComponent(LOCATION)}/open/confirm`, {
         method:"POST",
         headers:{ "content-type":"application/json" },
         body: JSON.stringify({ key, employeeName })
-      }).then(r=>r.json());
+      });
 
-      if (!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
-      if (!r.found) return openModal("Not Found", `<p>can’t find the game, please enter a new game.</p><button class="smallBtn" onclick="location.reload()">Close</button>`);
-
-      openModal("Found Game", `
-        <p>Found the game. Would you like to open the game?</p>
-        <div style="padding:10px;border:1px solid #ddd;border-radius:10px;">
-          <div><b>${r.row.MFCID_PARTNO_SERNO}</b></div>
-          <div>${r.row.GNAME||""}</div>
-        </div>
-        <div class="row" style="justify-content:flex-end;">
-          <button class="smallBtn" id="cancel2">Cancel</button>
-          <button class="smallBtn" id="confirm">Open</button>
-        </div>
-      `);
-
-      document.getElementById("cancel2").onclick = closeModal;
-      document.getElementById("confirm").onclick = async () => {
-        const r2 = await fetch(`${apiBase}/api/location/${LOCATION}/open/confirm`, {
-          method:"POST",
-          headers:{ "content-type":"application/json" },
-          body: JSON.stringify({ key, employeeName })
-        }).then(r=>r.json());
-
-        if (!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
-        closeModal();
-      };
+      if (!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+      closeModal();
     };
-
-    // scanners often "type" + press Enter
-    keyEl.addEventListener("keydown", (e)=>{ if(e.key==="Enter" && !go.disabled) go.click(); });
   };
 
-  // CLOSE FLOW
-  document.getElementById("closeBtn").onclick = () => {
-    openModal("Close Game", `
-      <div class="row"><input id="key" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off"></div>
-      <div class="row"><input id="cash" type="number" step="0.01" placeholder="Money on hand" autocomplete="off"></div>
-      <div class="row"><input id="name" placeholder="Type your name" autocomplete="off"></div>
-      <div class="row" style="justify-content:flex-end;">
-        <button class="smallBtn" id="cancel">Cancel</button>
-        <button class="smallBtn" id="go" disabled>Close</button>
+  keyEl.addEventListener("keydown", (e)=>{ if(e.key==="Enter" && !go.disabled) go.click(); });
+};
+
+/* CLOSE */
+document.getElementById("closeBtn").onclick = () => {
+  openModal("Close Game", `
+    <div class="row"><input id="key" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off"></div>
+    <div class="row"><input id="cash" type="number" step="0.01" placeholder="Money on hand" autocomplete="off"></div>
+    <div class="row"><input id="name" placeholder="Type your name" autocomplete="off"></div>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="smallBtn" id="cancel">Cancel</button>
+      <button class="smallBtn disabled" id="go" disabled>Close</button>
+    </div>
+  `);
+
+  const keyEl = document.getElementById("key");
+  const cashEl = document.getElementById("cash");
+  const nameEl = document.getElementById("name");
+  const go = document.getElementById("go");
+
+  function sync(){
+    const ok = keyEl.value.trim() && nameEl.value.trim() && cashEl.value.trim();
+    go.disabled = !ok;
+    go.classList.toggle("disabled", !ok);
+  }
+  keyEl.addEventListener("input", sync);
+  cashEl.addEventListener("input", sync);
+  nameEl.addEventListener("input", sync);
+  sync();
+
+  document.getElementById("cancel").onclick = closeModal;
+
+  go.onclick = async () => {
+    const key = keyEl.value.trim();
+    const cashHand = Number(cashEl.value);
+    const employeeName = nameEl.value.trim();
+
+    const r = await api(`/api/location/${encodeURIComponent(LOCATION)}/close/check`, {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ key })
+    });
+
+    if (!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
+    if (!r.found) return openModal("Not Found", `<p>can’t find the game, please enter a new game.</p>`);
+
+    openModal("Found Game", `
+      <p>Found the game. Would you like to close the game?</p>
+      <div style="padding:10px;border:1px solid #ddd;border-radius:10px;">
+        <div><b>${r.row.MFCID_PARTNO_SERNO}</b></div>
+        <div>${r.row.GNAME||""}</div>
       </div>
-    `, false);
+      <div class="row" style="justify-content:flex-end;">
+        <button class="smallBtn" id="cancel2">Cancel</button>
+        <button class="smallBtn" id="confirm">Close</button>
+      </div>
+    `);
 
-    const keyEl = document.getElementById("key");
-    const cashEl = document.getElementById("cash");
-    const nameEl = document.getElementById("name");
-    const go = document.getElementById("go");
-
-    function sync(){
-      const ok = keyEl.value.trim() && nameEl.value.trim() && cashEl.value.trim();
-      go.disabled = !ok;
-      go.classList.toggle("disabled", !ok);
-    }
-    keyEl.addEventListener("input", sync);
-    cashEl.addEventListener("input", sync);
-    nameEl.addEventListener("input", sync);
-    sync();
-
-    document.getElementById("cancel").onclick = closeModal;
-
-    go.onclick = async () => {
-      const key = keyEl.value.trim();
-      const cashHand = Number(cashEl.value);
-      const employeeName = nameEl.value.trim();
-
-      const r = await fetch(`${apiBase}/api/location/${LOCATION}/close/check`, {
+    document.getElementById("cancel2").onclick = closeModal;
+    document.getElementById("confirm").onclick = async () => {
+      const r2 = await api(`/api/location/${encodeURIComponent(LOCATION)}/close/confirm`, {
         method:"POST",
         headers:{ "content-type":"application/json" },
-        body: JSON.stringify({ key })
-      }).then(r=>r.json());
+        body: JSON.stringify({ key, cashHand, employeeName })
+      });
 
-      if (!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
-      if (!r.found) return openModal("Not Found", `<p>can’t find the game, please enter a new game.</p>`);
-
-      openModal("Found Game", `
-        <p>Found the game. Would you like to close the game?</p>
-        <div style="padding:10px;border:1px solid #ddd;border-radius:10px;">
-          <div><b>${r.row.MFCID_PARTNO_SERNO}</b></div>
-          <div>${r.row.GNAME||""}</div>
-        </div>
-        <div class="row" style="justify-content:flex-end;">
-          <button class="smallBtn" id="cancel2">Cancel</button>
-          <button class="smallBtn" id="confirm">Close</button>
-        </div>
-      `);
-
-      document.getElementById("cancel2").onclick = closeModal;
-      document.getElementById("confirm").onclick = async () => {
-        const r2 = await fetch(`${apiBase}/api/location/${LOCATION}/close/confirm`, {
-          method:"POST",
-          headers:{ "content-type":"application/json" },
-          body: JSON.stringify({ key, cashHand, employeeName })
-        }).then(r=>r.json());
-
-        if (!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
-        closeModal();
-      };
+      if (!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+      closeModal();
     };
-
-    keyEl.addEventListener("keydown", (e)=>{ if(e.key==="Enter" && !go.disabled) go.click(); });
   };
+
+  keyEl.addEventListener("keydown", (e)=>{ if(e.key==="Enter" && !go.disabled) go.click(); });
+};
 </script>
 </body>
 </html>
