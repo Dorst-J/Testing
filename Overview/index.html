@@ -8,93 +8,47 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
-    body { font-family: Arial, sans-serif; text-align:center; padding-top:100px; margin:0; }
-    .small { color:#666; font-size: 0.95rem; margin-top: 14px; }
-    #debugBar{
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 999999;
-  background: #fff;
-  border: 2px solid #000;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.2);
-}
-#resetBtn{
-  padding: 10px 14px;
-  font-size: 14px;
-  cursor: pointer;
-}
-#debugText{
-  margin-top: 6px;
-  font-size: 12px;
-  color: #444;
-}
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 100px;
+      margin: 0;
+    }
 
+    .small {
+      color: #666;
+      font-size: 0.95rem;
+      margin-top: 14px;
+    }
   </style>
 </head>
 <body>
- <h2>Sign in with Google to continue</h2>
 
-<div id="debugBar">
-  <button id="resetBtn" type="button" onclick="resetAuth()">
-    ✅ Reset / Clear Login Storage
-  </button>
-  <div id="debugText"></div>
-</div>
+<h2>Sign in with Google to continue</h2>
 
+<div id="g_id_onload"
+  data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
+  data-callback="handleCredentialResponse"
+  data-auto_prompt="false"></div>
 
+<div class="g_id_signin"
+  data-type="standard"
+  data-size="large"
+  data-theme="outline"
+  data-text="sign_in_with"
+  data-shape="rectangular"
+  data-logo_alignment="left"></div>
 
-  <div id="g_id_onload"
-    data-client_id="653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com"
-    data-callback="handleCredentialResponse"
-    data-auto_prompt="false"></div>
-
-  <div class="g_id_signin"
-    data-type="standard"
-    data-size="large"
-    data-theme="outline"
-    data-text="sign_in_with"
-    data-shape="rectangular"
-    data-logo_alignment="left"></div>
-
-  <div class="small" id="msg"></div>
+<div class="small" id="msg"></div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-  const el = document.getElementById("debugText");
-  if (el) {
-    el.textContent = "Loaded: " + new Date().toLocaleString();
-  }
-});
 
-  function resetAuth() {
-  localStorage.clear();
-  sessionStorage.clear();
+/* =====================================================
+   EDIT ONLY THIS SECTION TO CONTROL ACCESS
+   ===================================================== */
 
-  // also clear Google’s remembered account prompt state (optional)
-  if (window.google && google.accounts && google.accounts.id) {
-    google.accounts.id.disableAutoSelect();
-  }
-
-  alert("Cleared localStorage + sessionStorage. Refreshing...");
-  location.reload();
-}
-
-/**
- * =========================================================
- * EDIT ONLY THIS USERS OBJECT
- * =========================================================
- *
- * allow:
- *   - Use ["*"] to allow all pages
- *   - Or list specific pages: ["./SimonsAdminDash.html", "./Dashboard.html"]
- *
- * deny:
- *   - Optional list of pages to block even if allow is ["*"]
- */
 const USERS = {
+
   "sedorst17@gmail.com": {
     defaultPage: "./SimonsAdminDash.html",
     allow: ["*"],
@@ -110,89 +64,93 @@ const USERS = {
     defaultPage: "./ChanticlearSeller.html",
     allow: ["./ChanticlearSeller.html", "./Dashboard.html"]
   }
+
 };
 
-// OPTIONAL: where to send unauthorized users
-const UNAUTHORIZED_REDIRECT = ""; // e.g. "./NotAllowed.html" or leave "" to just alert
+const UNAUTHORIZED_REDIRECT = ""; // optional
 
-const msg = document.getElementById("msg");
+/* =====================================================
+   GOOGLE SIGN IN
+   ===================================================== */
 
 function handleCredentialResponse(response) {
+
   const tokenData = parseJwt(response.credential);
   const email = (tokenData.email || "").toLowerCase();
   const name  = tokenData.name || email;
 
   const user = USERS[email];
+
   if (!user) {
     alert("You are not authorized to access this site.");
     if (UNAUTHORIZED_REDIRECT) window.location.href = UNAUTHORIZED_REDIRECT;
     return;
   }
 
-  // Save identity + permissions
+  // Save login info
   localStorage.setItem("userEmail", email);
   localStorage.setItem("userName", name);
   localStorage.setItem("defaultPage", user.defaultPage || "");
   localStorage.setItem("allowedPages", JSON.stringify(user.allow || []));
   localStorage.setItem("deniedPages", JSON.stringify(user.deny || []));
 
-  const dest = user.defaultPage;
-  if (!dest) {
-    alert("This user has no defaultPage set yet.");
+  if (!user.defaultPage) {
+    alert("This account has no start page configured yet.");
     return;
   }
 
-  window.location.href = dest;
+  // Redirect
+  window.location.href = user.defaultPage;
 }
 
-/** Decode Google JWT */
+/* =====================================================
+   JWT DECODER
+   ===================================================== */
+
 function parseJwt(token) {
   const base64Url = token.split('.')[1];
   const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
   const jsonPayload = decodeURIComponent(
-    atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+    atob(base64).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    ).join('')
   );
   return JSON.parse(jsonPayload);
 }
 
-/**
- * =========================================================
- * OPTIONAL NAVIGATION ENFORCER
- * =========================================================
- * Use this on any page:
- *   go("./Dashboard.html")
- */
+/* =====================================================
+   PAGE ACCESS PROTECTION (USE ON ALL PAGES)
+   ===================================================== */
+
 function canAccess(page) {
   const allow = JSON.parse(localStorage.getItem("allowedPages") || "[]");
   const deny  = JSON.parse(localStorage.getItem("deniedPages") || "[]");
 
-  // normalize (support "Dashboard.html" or "./Dashboard.html")
-  const norm = (p) => {
-    if (!p) return "";
-    return p.startsWith("./") ? p : ("./" + p);
-  };
-
+  const norm = (p) => p.startsWith("./") ? p : "./" + p;
   const target = norm(page);
 
   if (deny.map(norm).includes(target)) return false;
   if (allow.includes("*")) return true;
 
-  const allowedNorm = allow.map(norm);
-  return allowedNorm.includes(target);
+  return allow.map(norm).includes(target);
 }
 
 window.go = function(page) {
+
   if (!localStorage.getItem("userEmail")) {
     alert("Please sign in first.");
-    window.location.href = "./Index.html";
+    window.location.href = "./index.html";
     return;
   }
+
   if (!canAccess(page)) {
     alert("You are not allowed to view that page.");
     return;
   }
+
   window.location.href = page;
 };
+
 </script>
 </body>
 </html>
