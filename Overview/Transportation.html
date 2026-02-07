@@ -58,8 +58,14 @@
   </div>
 
 <script>
-  // ✅ IMPORTANT: set this to your Worker URL
-  const apiBase = "https://overview.jenna-dorst.workers.dev";
+const apiBase = "https://overview.jenna-dorst.workers.dev";
+
+async function api(path, options = {}) {
+  const resp = await fetch(`${apiBase}${path}`, options);
+  const txt = await resp.text();
+  try { return JSON.parse(txt); } catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
+}
+
 
 const backdrop = document.getElementById("backdrop");
 const modalTitle = document.getElementById("modalTitle");
