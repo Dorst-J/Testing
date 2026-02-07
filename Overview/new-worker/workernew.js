@@ -56,6 +56,7 @@ function requireLocation(loc) {
 function tInv(loc) { return `${loc}_Inventory`; }
 function tOpen(loc) { return `${loc}_Open`; }
 function tClosed(loc) { return `${loc}_Closed`; }
+function tFinalClosed() { return `Final_Closed`; }  // single table
 
 function mfKey(mfcid, partno, serno) {
   return `${String(mfcid).trim()} ${String(partno).trim()} ${String(serno).trim()}`.trim();
@@ -459,22 +460,26 @@ export default {
        PICKUP: list closed games
     ========================= */
     if (request.method === "GET" && path === "/api/pickup/list") {
-      try {
-        const results = {};
-        for (const loc of LOCATIONS) {
-          const res = await env.DB.prepare(`
-            SELECT MFCID_PARTNO_SERNO AS key, GNAME AS gname, CASH_HAND AS cash
-            FROM ${tClosed(loc)}
-            ORDER BY rowid DESC
-            LIMIT 2000
-          `).all();
-          results[loc] = res.results || [];
-        }
-        return json({ ok:true, results });
-      } catch (e) {
-        return json({ ok:false, error:String(e) }, 500);
-      }
+  try {
+    if (!env.DB) return json({ ok:false, error:"Missing D1 binding env.DB" }, 500);
+
+    const byLocation = {};
+    for (const loc of LOCATIONS) {
+      const res = await env.DB.prepare(`
+        SELECT MFCID_PARTNO_SERNO, GNAME, CASH_HAND
+        FROM ${tClosed(loc)}
+        ORDER BY rowid DESC
+        LIMIT 1000
+      `).all();
+      byLocation[loc] = res.results || [];
     }
+
+    return json({ ok:true, byLocation });
+  } catch (e) {
+    return json({ ok:false, error:String(e) }, 500);
+  }
+}
+
 
     /* =========================
        PICKUP: confirm selection
