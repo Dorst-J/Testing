@@ -31,10 +31,10 @@ const LOCATIONS = ["Chanticlear", "McDuffs", "Willies", "Northwoods"];
 
 // Fill these in (LAST 3 digits of SITENO)
 const SITE_LAST3_TO_LOCATION = {
-  "014": "McDuffs",
-  // "???": "Chanticlear",
-  // "???": "Willies",
-  // "???": "Northwoods",
+  "006": "McDuffs",
+  "014": "Chanticlear",
+  "012": "Willies",
+  "009": "Northwoods",
 };
 
 function requireLocation(loc) {
