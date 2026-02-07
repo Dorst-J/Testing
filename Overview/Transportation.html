@@ -14,6 +14,20 @@
     .btn { padding:12px 14px; border-radius:12px; border:1px solid #bbb; background:#fff; cursor:pointer; }
     .btn:disabled { opacity:.5; cursor:not-allowed; }
     .note { color:#666; font-size:13px; margin:10px 0; }
+.dropoffBtn{
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  background: #2f57ff;
+  color: #fff;
+}
+
+.dropoffBtn:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+}
 
     table { width:100%; border-collapse:collapse; }
     th, td { text-align:left; padding:10px; border-bottom:1px solid #eee; vertical-align:top; }
@@ -27,7 +41,7 @@
       <button class="smallBtn" onclick="location.href='/Dashboard'">Back</button>
       <h1>Transportation</h1>
     </div>
-    <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
+    <button id="dropoffBtn" class="dropoffBtn" disabled>Drop off selected</button>
   </header>
 
   <div class="wrap">
