@@ -4,23 +4,45 @@
   <meta charset="utf-8" />
   <title>Pickup</title>
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fafafa; }
-    header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; background:#fff; }
+    body { font-family: Arial; margin:0; padding:0; background:#fff; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
     .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
     h1 { margin:0; font-size:34px; }
     .wrap { padding:18px; }
     .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
-    .col { border:1px solid #ddd; border-radius:14px; padding:14px; min-height:60vh; background:#fff; }
+    .col { border:1px solid #ddd; border-radius:14px; padding:14px; min-height:60vh; }
     .col h3 { margin:0 0 10px; }
     .item { display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #eee; }
     .item:last-child { border-bottom:none; }
     .key { font-weight:700; }
     .muted { color:#666; font-size:13px; margin-top:2px; }
-    .topRow { display:flex; justify-content:flex-end; margin:10px 0 0; gap:10px; }
+    .topRow { display:flex; justify-content:flex-end; margin:10px 0 0; }
     .pickupBtn { padding:14px 18px; border-radius:12px; border:none; cursor:pointer; font-size:16px; }
     .pickupBtn:disabled { opacity:.5; cursor:not-allowed; }
     .blue { background:#2f57ff; color:#fff; }
     .note { color:#666; font-size:13px; margin-top:10px; }
+
+    /* Modal */
+    .modalOverlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal {
+      width: 420px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.2);
+      padding: 18px;
+    }
+    .modal h2 { margin: 0 0 8px; font-size: 20px; }
+    .modal p { margin: 0 0 14px; color:#555; font-size: 14px; }
+    .modalBtns { display:flex; gap:12px; justify-content:flex-end; }
+    .btn { padding: 12px 14px; border-radius: 12px; border:1px solid #bbb; background:#fff; cursor:pointer; }
+    .btnPrimary { border:none; background:#2f57ff; color:#fff; }
   </style>
 </head>
 <body>
@@ -47,11 +69,24 @@
     </div>
   </div>
 
+  <!-- Modal -->
+  <div id="modalOverlay" class="modalOverlay">
+    <div class="modal">
+      <h2>Who picked up these games?</h2>
+      <p>Select the person who picked them up:</p>
+      <div class="modalBtns">
+        <button class="btn" id="cancelPicker">Cancel</button>
+        <button class="btn btnPrimary" id="pickerJosh">Josh</button>
+        <button class="btn btnPrimary" id="pickerSteve">Steve</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 const apiBase = "https://overview.jenna-dorst.workers.dev";
 const LOCS = ["Chanticlear","McDuffs","Willies","Northwoods"];
 
-// store "location|key"
+// store selected items as "loc||key"
 const selected = new Set();
 
 function setStatus(msg){ document.getElementById("status").textContent = msg || ""; }
@@ -59,17 +94,20 @@ function syncBtn(){ document.getElementById("pickupBtn").disabled = selected.siz
 
 async function api(path, options = {}) {
   const resp = await fetch(`${apiBase}${path}`, {
-    credentials: "include",
-    ...options
+    ...options,
+    headers: { "content-type":"application/json", ...(options.headers || {}) },
   });
   const txt = await resp.text();
   try { return JSON.parse(txt); }
   catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
 }
 
+function safeId(str){
+  return String(str).replaceAll(" ","_").replaceAll("/","_").replaceAll("\\","_");
+}
+
 function renderLocation(loc, rows){
   const host = document.getElementById(loc);
-
   if (!rows || rows.length === 0){
     host.innerHTML = `<div class="muted">(none)</div>`;
     return;
@@ -79,8 +117,8 @@ function renderLocation(loc, rows){
     const key = r.MFCID_PARTNO_SERNO;
     const gname = r.GNAME || "";
     const cash = (r.CASH_HAND === null || r.CASH_HAND === undefined) ? "" : `Cash: ${r.CASH_HAND}`;
-    const token = `${loc}|${key}`;
-    const id = `cb_${token.replaceAll(" ","_").replaceAll("/","_")}`;
+    const token = `${loc}||${key}`;
+    const id = `cb_${safeId(loc)}_${safeId(key)}`;
 
     return `
       <label class="item" for="${id}">
@@ -106,7 +144,8 @@ function renderLocation(loc, rows){
 
 async function load(){
   setStatus("Loading...");
-  const r = await api("/api/pickup/list");
+  const r = await api("/api/pickup/list", { method:"GET", headers:{} });
+
   if (!r.ok){
     setStatus(`Error loading list: ${r.error}`);
     LOCS.forEach(l => document.getElementById(l).innerHTML = `<div class="muted">(error)</div>`);
@@ -120,20 +159,26 @@ async function load(){
   setStatus("Loaded.");
 }
 
-document.getElementById("pickupBtn").onclick = async () => {
-  const items = Array.from(selected).map(token => {
-    const [location, key] = token.split("|");
+// Modal controls
+const overlay = document.getElementById("modalOverlay");
+function openModal(){ overlay.style.display = "flex"; }
+function closeModal(){ overlay.style.display = "none"; }
+
+document.getElementById("cancelPicker").onclick = closeModal;
+overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+
+async function confirmPickup(picker){
+  closeModal();
+
+  const keys = Array.from(selected).map(token => {
+    const [location, key] = token.split("||");
     return { location, key };
   });
 
-  if (items.length === 0) return;
-
   setStatus("Picking up...");
-
   const r = await api("/api/pickup/confirm", {
     method: "POST",
-    headers: { "content-type":"application/json" },
-    body: JSON.stringify({ keys: items })
+    body: JSON.stringify({ picker, keys })
   });
 
   if (!r.ok){
@@ -143,9 +188,22 @@ document.getElementById("pickupBtn").onclick = async () => {
 
   selected.clear();
   syncBtn();
-  setStatus(`Picked up by ${r.pickName}.`);
+
+  if (r.errors && r.errors.length){
+    setStatus(`Picked up ${r.moved} as ${r.picker}. (${r.errors.length} skipped)`);
+  } else {
+    setStatus(`Picked up ${r.moved} as ${r.picker}.`);
+  }
 
   await load();
+}
+
+document.getElementById("pickerJosh").onclick  = () => confirmPickup("Josh");
+document.getElementById("pickerSteve").onclick = () => confirmPickup("Steve");
+
+document.getElementById("pickupBtn").onclick = () => {
+  if (selected.size === 0) return;
+  openModal();
 };
 
 syncBtn();
