@@ -39,8 +39,8 @@ const SITE_LAST3_TO_LOCATION = {
 };
 
 // Who is picking up (used when pickup button is pressed)
-const JOSH_EMAIL = "Sedorst17@gmail.com";     // <-- replace
-const STEVE_EMAIL = "Jenna.dorst@gmail.com";   // <-- replace
+const JOSH_EMAIL = "sedorst17@gmail.com";     // <-- replace
+const STEVE_EMAIL = "jenna.dorst@gmail.com";   // <-- replace
 
 /* =========================
    Helpers
