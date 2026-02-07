@@ -218,6 +218,15 @@ export default {
        POST /api/upload-dbf
        multipart/form-data field "file"
     ========================= */
+    function toSqlValue(v) {
+  if (v === undefined || v === null) return null;
+  // Convert Date objects to ISO date string
+  if (v instanceof Date) return v.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  // Some DBF parsers return objects that stringify like Date
+  if (typeof v === "object") return String(v);
+  return v;
+}
+
     if (request.method === "POST" && path === "/api/upload-dbf") {
       try {
         if (!env.DB) return json({ ok:false, error:"Missing D1 binding env.DB" }, 500);
