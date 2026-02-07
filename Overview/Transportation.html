@@ -4,139 +4,143 @@
   <meta charset="utf-8" />
   <title>Transportation</title>
   <style>
-    body { font-family: Arial; margin:0; padding:0; }
-    header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
-    .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
-    h1 { margin:0; font-size:34px; }
-    .wrap { padding:18px; }
-    .topRow { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:10px 0; }
-    .blue { background:#2f57ff; color:#fff; border:none; }
-    .btn { padding:12px 14px; border-radius:12px; border:1px solid #bbb; background:#fff; cursor:pointer; }
-    .btn:disabled { opacity:.5; cursor:not-allowed; }
-    .note { color:#666; font-size:13px; margin:10px 0; }
-.dropoffBtn{
-  padding: 14px 18px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  background: #2f57ff;
-  color: #fff;
-}
-
-.dropoffBtn:disabled{
-  opacity: .45;
-  cursor: not-allowed;
-}
-
-    table { width:100%; border-collapse:collapse; }
-    th, td { text-align:left; padding:10px; border-bottom:1px solid #eee; vertical-align:top; }
-    th { font-size:13px; color:#0c0202; }
-    .muted { color:#666; font-size:13px; }
+    body{font-family:Arial;margin:0}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #ddd}
+    .topRow{display:flex;gap:12px;align-items:center}
+    .btn{padding:12px 18px;font-size:18px;border:none;border-radius:10px;cursor:pointer}
+    .blue{background:#2563eb;color:#fff}
+    .gray{background:#eee}
+    .wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:16px}
+    .card{border:1px solid #ddd;border-radius:12px;padding:12px}
+    .colTitle{font-weight:bold;margin:0 0 10px 0}
+    ul{margin:0;padding-left:18px}
+    li{margin:6px 0}
+    .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
+    .modal{background:#fff;width:min(720px,92vw);border-radius:14px;padding:18px}
+    .dangerX{position:absolute;right:18px;top:14px;background:#d64545;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .modalHeader{position:relative;padding-right:60px}
   </style>
 </head>
 <body>
   <header>
-    <div style="display:flex; gap:12px; align-items:center;">
-      <button class="smallBtn" onclick="location.href='/Dashboard'">Back</button>
-      <h1>Transportation</h1>
+    <div class="topRow">
+      <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back to Dashboard</button>
+      <h2 style="margin:0">Transportation</h2>
     </div>
-    <button id="dropoffBtn" class="dropoffBtn" disabled>Drop off selected</button>
+    <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
   </header>
 
+  <div style="padding:16px;display:flex;gap:12px">
+    <button id="pickingupBtn" class="btn blue">pickingup</button>
+    <button id="droppedoffBtn" class="btn gray">dropedoff</button>
+  </div>
+
   <div class="wrap">
-    <div class="topRow">
-      <button class="btn" onclick="location.href='/Pickup.html'">Go to Pickup</button>
-      <button id="dropoffBtn" class="btn blue" disabled>Drop off selected</button>
+    <div class="card">
+      <h3 class="colTitle">Josh</h3>
+      <ul id="joshList"></ul>
     </div>
+    <div class="card">
+      <h3 class="colTitle">Steve</h3>
+      <ul id="steveList"></ul>
+    </div>
+  </div>
 
-    <div class="note" id="status"></div>
-
-    <table>
-      <thead>
-        <tr>
-          <th></th>
-          <th>Key</th>
-          <th>Game</th>
-          <th>Cash</th>
-          <th>Picked Up By</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+  <div id="backdrop" class="modalBackdrop">
+    <div class="modal">
+      <div class="modalHeader">
+        <h3 id="modalTitle" style="margin:0">Modal</h3>
+        <button id="modalX" class="dangerX">X</button>
+      </div>
+      <div id="modalBody" style="margin-top:10px"></div>
+    </div>
   </div>
 
 <script>
 const apiBase = "https://overview.jenna-dorst.workers.dev";
-const selected = new Set();
-
-function setStatus(msg){ document.getElementById("status").textContent = msg || ""; }
-function syncBtn(){ document.getElementById("dropoffBtn").disabled = selected.size === 0; }
 
 async function api(path, options = {}) {
-  const resp = await fetch(`${apiBase}${path}`, {
-    ...options,
-    headers: { "content-type":"application/json", ...(options.headers || {}) },
-  });
+  const resp = await fetch(`${apiBase}${path}`, options);
   const txt = await resp.text();
-  try { return JSON.parse(txt); }
-  catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
+  try { return JSON.parse(txt); } catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
 }
 
-function render(rows){
-  const tb = document.getElementById("rows");
-  if (!rows || rows.length === 0){
-    tb.innerHTML = `<tr><td colspan="5" class="muted">(none)</td></tr>`;
-    return;
+
+const backdrop = document.getElementById("backdrop");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+document.getElementById("modalX").onclick = () => backdrop.style.display="none";
+backdrop.addEventListener("click", e => { if(e.target===backdrop) backdrop.style.display="none"; });
+function openModal(title, html){ modalTitle.textContent=title; modalBody.innerHTML=html; backdrop.style.display="flex"; }
+
+async function loadLive(){
+  const r = await fetch("/api/transportation/live").then(r=>r.json());
+  if(!r.ok){ console.log(r.error); return; }
+
+  const josh = [];
+  const steve = [];
+  for(const row of r.results){
+    if((row.PICK_UP||"").toLowerCase()==="josh") josh.push(row);
+    else if((row.PICK_UP||"").toLowerCase()==="steve") steve.push(row);
   }
-
-  tb.innerHTML = rows.map(r => {
-    const key = r.MFCID_PARTNO_SERNO;
-    return `
-      <tr>
-        <td><input type="checkbox" data-key="${key}"></td>
-        <td><b>${key}</b></td>
-        <td>${r.GNAME || ""}</td>
-        <td>${(r.CASH_HAND ?? "")}</td>
-        <td>${r.PICK_UP || ""}</td>
-      </tr>
-    `;
-  }).join("");
-
-  tb.querySelectorAll("input[type=checkbox]").forEach(cb => {
-    cb.addEventListener("change", () => {
-      const key = cb.dataset.key;
-      if (cb.checked) selected.add(key);
-      else selected.delete(key);
-      syncBtn();
-    });
-  });
+  renderList("joshList", josh);
+  renderList("steveList", steve);
 }
 
-async function load(){
-  setStatus("Loading...");
-  const r = await api("/api/transportation/live", { method:"GET", headers:{} });
-  if (!r.ok){ setStatus(`Error: ${r.error}`); return; }
-  render(r.results || []);
-  setStatus("Loaded.");
+function renderList(id, rows){
+  const ul = document.getElementById(id);
+  ul.innerHTML = "";
+  for(const r of rows){
+    const li = document.createElement("li");
+    li.textContent = `${r.MFCID_PARTNO_SERNO} — ${r.GNAME||""} — $${Number(r.CASH_HAND||0).toFixed(2)}`;
+    ul.appendChild(li);
+  }
 }
 
-document.getElementById("dropoffBtn").onclick = async () => {
-  const keys = Array.from(selected);
-  setStatus("Dropping off...");
-  const r = await api("/api/transportation/dropoff", {
-    method:"POST",
-    body: JSON.stringify({ keys })
-  });
-  if (!r.ok){ setStatus(`Dropoff failed: ${r.error}`); return; }
-  selected.clear();
-  syncBtn();
-  setStatus("Dropped off.");
-  await load();
+document.getElementById("pickingupBtn").onclick = () => location.href="/Pickup.html";
+
+document.getElementById("droppedoffBtn").onclick = async () => {
+  // Choose which games to drop off: show checkboxes for all in Transportation
+  const live = await fetch("/api/transportation/live").then(r=>r.json());
+  if(!live.ok) return openModal("Error", `<p>${live.error||"Error"}</p>`);
+
+  const rows = live.results || [];
+  const listHtml = rows.map((r,i)=>`
+    <label style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+      <input type="checkbox" class="k" value="${r.MFCID_PARTNO_SERNO}">
+      <span>${r.MFCID_PARTNO_SERNO} — ${r.GNAME||""} — $${Number(r.CASH_HAND||0).toFixed(2)} (${r.PICK_UP||""})</span>
+    </label>
+  `).join("");
+
+  openModal("Confirm dropped off", `
+    <p>Select games to drop off:</p>
+    <div style="max-height:320px;overflow:auto;border:1px solid #ddd;border-radius:10px;padding:10px;">${listHtml || "<p>(none)</p>"}</div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+      <button class="smallBtn" id="cancel">Cancel</button>
+      <button class="smallBtn" id="confirm">dropedoff confirm</button>
+    </div>
+  `);
+
+  document.getElementById("cancel").onclick = () => backdrop.style.display="none";
+  document.getElementById("confirm").onclick = async () => {
+    const keys = [...document.querySelectorAll(".k:checked")].map(x=>x.value);
+    if(keys.length===0) return;
+
+    const r2 = await fetch("/api/transportation/droppedoff", {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ keys })
+    }).then(r=>r.json());
+
+    if(!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+    backdrop.style.display="none";
+    loadLive();
+  };
 };
 
-syncBtn();
-load();
+loadLive();
+setInterval(loadLive, 5000);
 </script>
 </body>
 </html>
