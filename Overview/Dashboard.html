@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Dashboard</title>
+  <style>
+    body{font-family:Arial;margin:0}
+    header{padding:16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px}
+    .box{border:1px solid #ddd;border-radius:12px;padding:12px;text-align:center}
+    .big{font-size:28px;font-weight:bold}
+    .mid{font-size:16px;color:#555}
+    .section{padding:0 16px 16px 16px}
+    .card{border:1px solid #ddd;border-radius:12px;padding:12px}
+    .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    ul{margin:0;padding-left:18px}
+    li{margin:8px 0;display:flex;justify-content:space-between;gap:12px}
+    .check{cursor:pointer;border:1px solid #16a34a;color:#16a34a;border-radius:10px;padding:4px 10px}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
+    .modal{background:#fff;width:min(720px,92vw);border-radius:14px;padding:18px}
+    .dangerX{position:absolute;right:18px;top:14px;background:#d64545;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .modalHeader{position:relative;padding-right:60px}
+  </style>
+</head>
+<body>
+  <header>
+    <h2 style="margin:0">Dashboard</h2>
+    <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
+  </header>
+
+  <div class="grid">
+    <div class="box"><div class="big" id="cCh">0</div><div class="mid">Chanticlear waiting pickup</div></div>
+    <div class="box"><div class="big" id="cMc">0</div><div class="mid">McDuffs waiting pickup</div></div>
+    <div class="box"><div class="big" id="cWi">0</div><div class="mid">Willies waiting pickup</div></div>
+    <div class="box"><div class="big" id="cNo">0</div><div class="mid">Northwoods waiting pickup</div></div>
+  </div>
+
+  <div class="section">
+    <div class="box" style="max-width:260px">
+      <div class="big" id="dep">0</div>
+      <div class="mid">deposits pending</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 style="text-align:center">Game Issues</h3>
+    <div class="card">
+      <ul id="issues"></ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Page Links</h3>
+    <div class="card" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="smallBtn" onclick="location.href='/UploadDbf.html'">DBF Upload</button>
+      <button class="smallBtn" onclick="location.href='/Transportation.html'">Transportation</button>
+      <button class="smallBtn" onclick="location.href='/Deposit.html'">Deposit</button>
+      <button class="smallBtn" onclick="location.href='/OfficeLocation.html'">OfficeLocation</button>
+    </div>
+  </div>
+
+  <div id="backdrop" class="modalBackdrop">
+    <div class="modal">
+      <div class="modalHeader">
+        <h3 id="modalTitle" style="margin:0">Modal</h3>
+        <button id="modalX" class="dangerX">X</button>
+      </div>
+      <div id="modalBody" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+<script>
+const backdrop = document.getElementById("backdrop");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+document.getElementById("modalX").onclick = ()=> backdrop.style.display="none";
+backdrop.addEventListener("click", e=>{ if(e.target===backdrop) backdrop.style.display="none"; });
+function openModal(title, html){ modalTitle.textContent=title; modalBody.innerHTML=html; backdrop.style.display="flex"; }
+
+async function loadCounts(){
+  const r = await fetch("/api/dashboard/counts").then(r=>r.json());
+  if(!r.ok) return;
+
+  document.getElementById("cCh").textContent = r.perLoc.Chanticlear ?? 0;
+  document.getElementById("cMc").textContent = r.perLoc.McDuffs ?? 0;
+  document.getElementById("cWi").textContent = r.perLoc.Willies ?? 0;
+  document.getElementById("cNo").textContent = r.perLoc.Northwoods ?? 0;
+  document.getElementById("dep").textContent = r.depositsPending ?? 0;
+}
+
+async function loadIssues(){
+  const r = await fetch("/api/issues/live").then(r=>r.json());
+  if(!r.ok) return;
+
+  const ul = document.getElementById("issues");
+  ul.innerHTML = "";
+  for(const it of (r.results||[])){
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${it.MFCID_PARTNO_SERNO} — ${it.ISSUE_TEXT}</span>
+      <button class="check" data-id="${it.ID}">✓</button>
+    `;
+    ul.appendChild(li);
+  }
+
+  ul.querySelectorAll(".check").forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = Number(btn.getAttribute("data-id"));
+      openModal("Problem fixed?", `
+        <p>Is the problem fixed?</p>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+          <button class="smallBtn" id="cancel">Cancel</button>
+          <button class="smallBtn" id="fixed">fixed</button>
+        </div>
+      `);
+      document.getElementById("cancel").onclick = ()=> backdrop.style.display="none";
+      document.getElementById("fixed").onclick = async ()=>{
+        const r2 = await fetch("/api/issues/fix",{
+          method:"POST",
+          headers:{ "content-type":"application/json" },
+          body: JSON.stringify({ id })
+        }).then(r=>r.json());
+        if(!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+        backdrop.style.display="none";
+        loadIssues();
+      };
+    };
+  });
+}
+
+loadCounts();
+loadIssues();
+setInterval(()=>{ loadCounts(); loadIssues(); }, 5000);
+</script>
+</body>
+</html>

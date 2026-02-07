@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Auditor</title>
+  <style>
+    body{font-family:Arial;margin:0}
+    header{padding:16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
+    .row{display:flex;gap:10px;align-items:center;padding:16px}
+    input{padding:12px;font-size:18px;width:min(520px,80vw)}
+    .btn{padding:12px 16px;border:none;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}
+    .gray{background:#eee;color:#111}
+    .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
+    .modal{background:#fff;width:min(760px,92vw);border-radius:14px;padding:18px}
+    .dangerX{position:absolute;right:18px;top:14px;background:#d64545;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .modalHeader{position:relative;padding-right:60px}
+    textarea{width:100%;height:120px;font-size:16px;padding:10px}
+  </style>
+</head>
+<body>
+  <header>
+    <h2 style="margin:0">Auditor</h2>
+    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back to Dashboard</button>
+  </header>
+
+  <div class="row">
+    <input id="scanKey" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off" />
+    <button id="issuesBtn" class="btn gray">Issues</button>
+    <button id="searchBtn" class="btn">search</button>
+  </div>
+
+  <div class="row">
+    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back</button>
+  </div>
+
+  <div id="backdrop" class="modalBackdrop">
+    <div class="modal">
+      <div class="modalHeader">
+        <h3 id="modalTitle" style="margin:0">Modal</h3>
+        <button id="modalX" class="dangerX">X</button>
+      </div>
+      <div id="modalBody" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+<script>
+const scanKey = document.getElementById("scanKey");
+const backdrop = document.getElementById("backdrop");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+document.getElementById("modalX").onclick = ()=> backdrop.style.display="none";
+backdrop.addEventListener("click", e=>{ if(e.target===backdrop) backdrop.style.display="none"; });
+
+function openModal(title, html){
+  modalTitle.textContent = title;
+  modalBody.innerHTML = html;
+  backdrop.style.display = "flex";
+}
+function beep(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    o.connect(ctx.destination);
+    o.frequency.value = 880;
+    o.start();
+    setTimeout(()=>{ o.stop(); ctx.close(); }, 120);
+  }catch{}
+}
+
+async function findOffice(key){
+  return fetch("/api/office/find", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body: JSON.stringify({ key })
+  }).then(r=>r.json());
+}
+
+async function scanStep(key, scannedValue){
+  return fetch("/api/office/scan", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body: JSON.stringify({ key, scannedValue })
+  }).then(r=>r.json());
+}
+
+// Main scan field: on Enter, open step modal
+scanKey.addEventListener("keydown", async (e)=>{
+  if(e.key !== "Enter") return;
+  const key = scanKey.value.trim();
+  if(!key) return;
+
+  const r = await findOffice(key);
+  if(!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
+  if(!r.found){
+    beep();
+    return openModal("Not found", `<p>can’t find this game</p>`);
+  }
+
+  const row = r.row;
+  const hasAudit = !!row.AUDIT_OFFICE_TS;
+  const hasRiver = !!row.RIVER_ROOM_TS;
+  const hasBin = !!row.BIN_NUMBER_TS;
+  const hasStorage = !!row.STORAGE_TS;
+
+  if(hasAudit && hasRiver && hasBin && hasStorage){
+    return openModal("Done", `<p>all the columns are filled!!</p>`);
+  }
+
+  let prompt = "";
+  if(!hasAudit) prompt = 'Scan "auditors office" barcode';
+  else if(!hasRiver) prompt = "Scan River Room barcode (Silver/Sockeye/King/Pink/Chumb)";
+  else if(!hasBin) prompt = "Scan bin number (0-900)";
+  else prompt = 'Scan storage (Word Number, number 0-100)';
+
+  openModal("Scan next step", `
+    <div style="border:1px solid #ddd;border-radius:10px;padding:10px;margin-bottom:10px;">
+      <div><b>${row.MFCID_PARTNO_SERNO}</b></div>
+      <div>${row.GNAME||""}</div>
+      <div>$${Number(row.CASH_HAND||0).toFixed(2)}</div>
+    </div>
+
+    <div><b>Date:</b> ${new Date().toLocaleDateString()}</div>
+    <div><b>Time:</b> ${new Date().toLocaleTimeString()}</div>
+
+    <p style="margin-top:10px">${prompt}</p>
+    <input id="stepVal" placeholder="Scan here" autocomplete="off" style="width:100%;padding:12px;font-size:18px;">
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+      <button class="smallBtn" id="cancel">Cancel</button>
+    </div>
+  `);
+
+  document.getElementById("cancel").onclick = ()=> backdrop.style.display="none";
+  const stepVal = document.getElementById("stepVal");
+  stepVal.focus();
+
+  stepVal.addEventListener("keydown", async (ev)=>{
+    if(ev.key !== "Enter") return;
+    const v = stepVal.value.trim();
+    if(!v) return;
+
+    const r2 = await scanStep(key, v);
+    if(!r2.ok){
+      beep();
+      return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+    }
+    backdrop.style.display="none";
+    scanKey.value = "";
+    scanKey.focus();
+  });
+});
+
+// Issues popup
+document.getElementById("issuesBtn").onclick = ()=>{
+  openModal("Place issue", `
+    <p>Scan or type MFCID_PARTNO_SERNO</p>
+    <input id="ik" placeholder="MFCID PARTNO SERNO" style="width:100%;padding:12px;font-size:18px;">
+    <p>Issue (max 500 chars)</p>
+    <textarea id="it" maxlength="500"></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+      <button class="smallBtn" id="icancel">Cancel</button>
+      <button class="smallBtn" id="iplace" disabled>place issue</button>
+    </div>
+  `);
+
+  const ik = document.getElementById("ik");
+  const it = document.getElementById("it");
+  const place = document.getElementById("iplace");
+
+  function sync(){
+    const ok = ik.value.trim() && it.value.trim();
+    place.disabled = !ok;
+  }
+  ik.addEventListener("input", sync);
+  it.addEventListener("input", sync);
+  sync();
+
+  document.getElementById("icancel").onclick = ()=> backdrop.style.display="none";
+  place.onclick = async ()=>{
+    const r = await fetch("/api/issues/add",{
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ key: ik.value.trim(), text: it.value.trim() })
+    }).then(r=>r.json());
+    if(!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
+    backdrop.style.display="none";
+  };
+};
+
+// Search popup
+document.getElementById("searchBtn").onclick = ()=>{
+  openModal("Find game in Office", `
+    <input id="sk" placeholder="Scan or type MFCID PARTNO SERNO" style="width:100%;padding:12px;font-size:18px;">
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+      <button class="smallBtn" id="scancel">Cancel</button>
+      <button class="smallBtn" id="sfind">find</button>
+    </div>
+  `);
+  document.getElementById("scancel").onclick = ()=> backdrop.style.display="none";
+  document.getElementById("sfind").onclick = async ()=>{
+    const key = document.getElementById("sk").value.trim();
+    const r = await findOffice(key);
+    if(!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
+    if(!r.found) return openModal("Not found", `<p>game can not be found</p>`);
+    openModal("Found", `<pre style="white-space:pre-wrap">${JSON.stringify(r.row,null,2)}</pre>`);
+  };
+};
+</script>
+</body>
+</html>

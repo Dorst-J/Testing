@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Pickup</title>
+  <style>
+    body{font-family:Arial;margin:0}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #ddd}
+    .wrap{padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .card{border:1px solid #ddd;border-radius:12px;padding:12px}
+    .smallBtn{padding:10px 14px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    .btn{padding:12px 18px;border:none;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}
+    .row{display:flex;gap:10px;align-items:center}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="row">
+      <button class="smallBtn" onclick="location.href='/Transportation.html'">Back</button>
+      <h2 style="margin:0">Pickup</h2>
+    </div>
+    <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
+  </header>
+
+  <div class="wrap" id="grid"></div>
+
+  <div style="padding:16px;display:flex;justify-content:flex-end;">
+    <button id="pickupBtn" class="btn" disabled>pickup</button>
+  </div>
+
+<script>
+function getUser(){
+  return {
+    email: (localStorage.userEmail || "").toLowerCase(),
+    name: localStorage.userName || ""
+  };
+}
+
+async function loadClosed(){
+  const r = await fetch("/api/pickup/closed").then(r=>r.json());
+  if(!r.ok){ alert(r.error||"Error"); return; }
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  for(const loc of ["Chanticlear","McDuffs","Willies","Northwoods"]){
+    const rows = r.results[loc] || [];
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <h3 style="margin:0 0 10px 0;">${loc}</h3>
+      <div style="max-height:420px;overflow:auto">
+        ${rows.map(row => `
+          <label style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+            <input type="checkbox" class="pick" data-loc="${loc}" value="${row.MFCID_PARTNO_SERNO}">
+            <span>${row.MFCID_PARTNO_SERNO} — ${row.GNAME||""}</span>
+          </label>
+        `).join("") || "<p>(none)</p>"}
+      </div>
+    `;
+    grid.appendChild(div);
+  }
+
+  document.querySelectorAll(".pick").forEach(cb => cb.addEventListener("change", sync));
+  sync();
+}
+
+function sync(){
+  const any = [...document.querySelectorAll(".pick:checked")].length > 0;
+  document.getElementById("pickupBtn").disabled = !any;
+}
+
+document.getElementById("pickupBtn").onclick = async () => {
+  const user = getUser();
+  if(!user.email){ alert("Missing user email (localStorage.userEmail)"); return; }
+
+  const items = [...document.querySelectorAll(".pick:checked")].map(cb => ({
+    location: cb.getAttribute("data-loc"),
+    key: cb.value
+  }));
+
+  const r = await fetch("/api/pickup/confirm", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body: JSON.stringify({ email: user.email, employeeName: user.name, items })
+  }).then(r=>r.json());
+
+  if(!r.ok){ alert(r.error||"Error"); return; }
+
+  location.href = "/Transportation.html";
+};
+
+loadClosed();
+setInterval(loadClosed, 5000);
+</script>
+</body>
+</html>

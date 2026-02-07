@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Deposit</title>
+  <style>
+    body{font-family:Arial;margin:0}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #ddd}
+    .btn{padding:12px 18px;border:none;border-radius:10px;cursor:pointer}
+    .blue{background:#2563eb;color:#fff}
+    .green{background:#16a34a;color:#fff}
+    .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
+    .modal{background:#fff;width:min(720px,92vw);border-radius:14px;padding:18px}
+    .dangerX{position:absolute;right:18px;top:14px;background:#d64545;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .modalHeader{position:relative;padding-right:60px}
+  </style>
+</head>
+<body>
+  <header>
+    <h2 style="margin:0">Deposit</h2>
+    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back to Dashboard</button>
+  </header>
+
+  <div style="padding:16px;display:flex;gap:12px">
+    <button id="toBank" class="btn blue">ToBank</button>
+    <button id="atBank" class="btn green">AtBank</button>
+  </div>
+
+  <div style="padding:0 16px 16px 16px">
+    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back</button>
+  </div>
+
+  <div id="backdrop" class="modalBackdrop">
+    <div class="modal">
+      <div class="modalHeader">
+        <h3 id="modalTitle" style="margin:0">Modal</h3>
+        <button id="modalX" class="dangerX">X</button>
+      </div>
+      <div id="modalBody" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+<script>
+const backdrop = document.getElementById("backdrop");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+document.getElementById("modalX").onclick = ()=> backdrop.style.display="none";
+backdrop.addEventListener("click", e=>{ if(e.target===backdrop) backdrop.style.display="none"; });
+function openModal(title, html){ modalTitle.textContent=title; modalBody.innerHTML=html; backdrop.style.display="flex"; }
+
+document.getElementById("toBank").onclick = async () => {
+  const r = await fetch("/api/deposit/pending").then(r=>r.json());
+  if(!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
+
+  const list = (r.results||[]).map(d=>`
+    <label style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+      <input type="checkbox" class="k" value="${d.MFCID_PARTNO_SERNO}">
+      <span>${d.MFCID_PARTNO_SERNO} — $${Number(d.CASH_HAND||0).toFixed(2)} — ${d.PICK_UP||""}</span>
+    </label>
+  `).join("") || "<p>(none)</p>";
+
+  openModal("Taking to bank", `
+    <div style="max-height:320px;overflow:auto;border:1px solid #ddd;border-radius:10px;padding:10px;">${list}</div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+      <button class="smallBtn" id="cancel">cancel</button>
+      <button class="smallBtn" id="go">taking to bank</button>
+    </div>
+  `);
+  document.getElementById("cancel").onclick = ()=> backdrop.style.display="none";
+  document.getElementById("go").onclick = async () => {
+    const keys = [...document.querySelectorAll(".k:checked")].map(x=>x.value);
+    if(keys.length===0) return;
+    const r2 = await fetch("/api/deposit/tobank", {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ keys })
+    }).then(r=>r.json());
+    if(!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+    backdrop.style.display="none";
+  };
+};
+
+document.getElementById("atBank").onclick = async () => {
+  const r = await fetch("/api/deposit/atbank-list").then(r=>r.json());
+  if(!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
+
+  const list = (r.results||[]).map(d=>`
+    <label style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+      <input type="checkbox" class="k2" value="${d.MFCID_PARTNO_SERNO}">
+      <span>${d.MFCID_PARTNO_SERNO} — $${Number(d.CASH_HAND||0).toFixed(2)} — ${d.PICK_UP||""}</span>
+    </label>
+  `).join("") || "<p>(none)</p>";
+
+  openModal("Dropped at bank", `
+    <div style="max-height:320px;overflow:auto;border:1px solid #ddd;border-radius:10px;padding:10px;">${list}</div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+      <button class="smallBtn" id="cancel2">cancel</button>
+      <button class="smallBtn" id="go2">AtBank</button>
+    </div>
+  `);
+  document.getElementById("cancel2").onclick = ()=> backdrop.style.display="none";
+  document.getElementById("go2").onclick = async () => {
+    const keys = [...document.querySelectorAll(".k2:checked")].map(x=>x.value);
+    if(keys.length===0) return;
+    const r2 = await fetch("/api/deposit/atbank", {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ keys })
+    }).then(r=>r.json());
+    if(!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+    backdrop.style.display="none";
+  };
+};
+</script>
+</body>
+</html>
