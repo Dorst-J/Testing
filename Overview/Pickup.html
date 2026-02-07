@@ -4,102 +4,156 @@
   <meta charset="utf-8" />
   <title>Pickup</title>
   <style>
-    body{font-family:Arial;margin:0}
-    header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #ddd}
-    .wrap{padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .card{border:1px solid #ddd;border-radius:12px;padding:12px}
-    .smallBtn{padding:10px 14px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
-    .btn{padding:12px 18px;border:none;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}
-    .row{display:flex;gap:10px;align-items:center}
+    body { font-family: Arial; margin:0; padding:0; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
+    .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
+    h1 { margin:0; font-size:34px; }
+    .wrap { padding:18px; }
+    .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+    .col { border:1px solid #ddd; border-radius:14px; padding:14px; min-height:60vh; }
+    .col h3 { margin:0 0 10px; }
+    .item { display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #eee; }
+    .item:last-child { border-bottom:none; }
+    .key { font-weight:700; }
+    .muted { color:#666; font-size:13px; margin-top:2px; }
+    .topRow { display:flex; justify-content:flex-end; margin:10px 0 0; }
+    .pickupBtn { padding:14px 18px; border-radius:12px; border:none; cursor:pointer; font-size:16px; }
+    .pickupBtn:disabled { opacity:.5; cursor:not-allowed; }
+    .blue { background:#2f57ff; color:#fff; }
+    .note { color:#666; font-size:13px; margin-top:10px; }
   </style>
 </head>
 <body>
   <header>
-    <div class="row">
+    <div style="display:flex; gap:12px; align-items:center;">
       <button class="smallBtn" onclick="location.href='/Transportation.html'">Back</button>
-      <h2 style="margin:0">Pickup</h2>
+      <h1>Pickup</h1>
     </div>
     <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
   </header>
 
-  <div class="wrap" id="grid"></div>
+  <div class="wrap">
+    <div class="topRow">
+      <button id="pickupBtn" class="pickupBtn blue" disabled>pickup</button>
+    </div>
 
-  <div style="padding:16px;display:flex;justify-content:flex-end;">
-    <button id="pickupBtn" class="btn" disabled>pickup</button>
+    <div class="note" id="status"></div>
+
+    <div class="grid" style="margin-top:12px;">
+      <div class="col"><h3>Chanticlear</h3><div id="Chanticlear"></div></div>
+      <div class="col"><h3>McDuffs</h3><div id="McDuffs"></div></div>
+      <div class="col"><h3>Willies</h3><div id="Willies"></div></div>
+      <div class="col"><h3>Northwoods</h3><div id="Northwoods"></div></div>
+    </div>
   </div>
 
 <script>
 const apiBase = "https://overview.jenna-dorst.workers.dev";
+const LOCS = ["Chanticlear","McDuffs","Willies","Northwoods"];
+const selected = new Set();
+
+function setStatus(msg){ document.getElementById("status").textContent = msg || ""; }
+function syncBtn(){
+  document.getElementById("pickupBtn").disabled = selected.size === 0;
+}
 
 async function api(path, options = {}) {
   const resp = await fetch(`${apiBase}${path}`, options);
   const txt = await resp.text();
-  try { return JSON.parse(txt); } catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
+  try { return JSON.parse(txt); }
+  catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
 }
 
-
-function getUser(){
-  return {
-    email: (localStorage.userEmail || "").toLowerCase(),
-    name: localStorage.userName || ""
-  };
-}
-
-async function loadClosed(){
-  const r = await fetch("/api/pickup/closed").then(r=>r.json());
-  if(!r.ok){ alert(r.error||"Error"); return; }
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
-
-  for(const loc of ["Chanticlear","McDuffs","Willies","Northwoods"]){
-    const rows = r.results[loc] || [];
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <h3 style="margin:0 0 10px 0;">${loc}</h3>
-      <div style="max-height:420px;overflow:auto">
-        ${rows.map(row => `
-          <label style="display:flex;gap:10px;align-items:center;margin:8px 0;">
-            <input type="checkbox" class="pick" data-loc="${loc}" value="${row.MFCID_PARTNO_SERNO}">
-            <span>${row.MFCID_PARTNO_SERNO} — ${row.GNAME||""}</span>
-          </label>
-        `).join("") || "<p>(none)</p>"}
-      </div>
-    `;
-    grid.appendChild(div);
+function renderLocation(loc, rows){
+  const host = document.getElementById(loc);
+  if (!rows || rows.length === 0){
+    host.innerHTML = `<div class="muted">(none)</div>`;
+    return;
   }
 
-  document.querySelectorAll(".pick").forEach(cb => cb.addEventListener("change", sync));
-  sync();
+  host.innerHTML = rows.map(r => {
+    const key = r.MFCID_PARTNO_SERNO;
+    const gname = r.GNAME || "";
+    const cash = (r.CASH_HAND === null || r.CASH_HAND === undefined) ? "" : `Cash: ${r.CASH_HAND}`;
+    const id = `cb_${loc}_${key.replaceAll(" ","_").replaceAll("/","_")}`;
+
+    return `
+      <label class="item" for="${id}">
+        <input type="checkbox" id="${id}" data-key="${key}" style="margin-top:2px;">
+        <div>
+          <div class="key">${key}</div>
+          <div class="muted">${gname}</div>
+          <div class="muted">${cash}</div>
+        </div>
+      </label>
+    `;
+  }).join("");
+
+  host.querySelectorAll("input[type=checkbox]").forEach(cb => {
+    cb.addEventListener("change", () => {
+      const key = cb.dataset.key;
+      if (cb.checked) selected.add(key);
+      else selected.delete(key);
+      syncBtn();
+    });
+  });
 }
 
-function sync(){
-  const any = [...document.querySelectorAll(".pick:checked")].length > 0;
-  document.getElementById("pickupBtn").disabled = !any;
+async function load(){
+  setStatus("Loading...");
+  const r = await api("/api/pickup/list");
+  if (!r.ok){
+    setStatus(`Error loading list: ${r.error}`);
+    LOCS.forEach(l => document.getElementById(l).innerHTML = `<div class="muted">(error)</div>`);
+    return;
+  }
+
+  for (const loc of LOCS){
+    renderLocation(loc, (r.byLocation && r.byLocation[loc]) ? r.byLocation[loc] : []);
+  }
+
+  setStatus("Loaded.");
 }
 
 document.getElementById("pickupBtn").onclick = async () => {
-  const user = getUser();
-  if(!user.email){ alert("Missing user email (localStorage.userEmail)"); return; }
+  // Your site should already know the signed-in email.
+  // For now we’ll ask once, then reuse it:
+  let email = localStorage.getItem("pickupEmail") || "";
+  if (!email) {
+    email = prompt("Enter your email (Josh or Steve):") || "";
+    email = email.trim().toLowerCase();
+    if (email) localStorage.setItem("pickupEmail", email);
+  }
+  if (!email) return;
 
-  const items = [...document.querySelectorAll(".pick:checked")].map(cb => ({
-    location: cb.getAttribute("data-loc"),
-    key: cb.value
-  }));
+  const keys = Array.from(selected);
+  setStatus("Picking up...");
 
-  const r = await fetch("/api/pickup/confirm", {
+  const r = await api("/api/pickup/confirm", {
     method:"POST",
     headers:{ "content-type":"application/json" },
-    body: JSON.stringify({ email: user.email, employeeName: user.name, items })
-  }).then(r=>r.json());
+    body: JSON.stringify({ email, keys })
+  });
 
-  if(!r.ok){ alert(r.error||"Error"); return; }
+  if (!r.ok){
+    setStatus(`Pickup failed: ${r.error}`);
+    return;
+  }
 
-  location.href = "/Transportation.html";
+  selected.clear();
+  syncBtn();
+
+  if (r.errors && r.errors.length){
+    setStatus(`Picked up ${r.moved}. Some errors: ${r.errors.length}`);
+  } else {
+    setStatus(`Picked up ${r.moved} for ${r.picker}.`);
+  }
+
+  await load();
 };
 
-loadClosed();
-setInterval(loadClosed, 5000);
+syncBtn();
+load();
 </script>
 </body>
 </html>
