@@ -8,3 +8,8 @@ account_id = "85221db225a51b1c70076848e8c20111"
 kv_namespaces = [
   { binding = "SIGNIN_LOGS", id = "21170895129f4be28c3f40ca676dc1ea", preview_id = "21170895129f4be28c3f40ca676dc1ea" }
 ]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "araa_testing"
+database_id = "1676ab2e-74e7-4b7e-b84c-b4c45adeb40c"
