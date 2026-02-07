@@ -29,6 +29,9 @@
   </div>
 
 <script>
+  // ✅ IMPORTANT: set this to your Worker URL
+  const apiBase = "https://overview.jenna-dorst.workers.dev";
+
 function getUser(){
   return {
     email: (localStorage.userEmail || "").toLowerCase(),
