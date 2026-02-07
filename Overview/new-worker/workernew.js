@@ -134,6 +134,20 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    if (request.method === "GET" && path === "/api/debug/routes") {
+  return json({
+    ok: true,
+    routes: [
+      "/health",
+      "/signin",
+      "/logs",
+      "/api/inventory/live",
+      "/api/upload-dbf",
+      "/api/emergency/lookup",
+      "/api/emergency/move"
+    ]
+  });
+}
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
@@ -322,20 +336,7 @@ export default {
         return json({ ok:false, error:String(e) }, 500);
       }
     }
-if (request.method === "GET" && path === "/api/debug/routes") {
-  return json({
-    ok: true,
-    routes: [
-      "/health",
-      "/signin",
-      "/logs",
-      "/api/inventory/live",
-      "/api/upload-dbf",
-      "/api/emergency/lookup",
-      "/api/emergency/move"
-    ]
-  });
-}
+
 
     return new Response("Not found", { status: 404, headers: corsHeaders() });
   },
