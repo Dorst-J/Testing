@@ -234,8 +234,7 @@ export default {
       headers: {
         ...corsHeaders(),
         "Content-Type":"application/json",
-        "Set-Cookie":
-          `SESSION=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`
+        "Set-Cookie": `SESSION=${sessionId}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=86400`
       }
     });
 
