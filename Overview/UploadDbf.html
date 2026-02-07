@@ -1,0 +1,80 @@
+<div id="drop" style="border:2px dashed #999; padding:30px; border-radius:12px;">
+  Drag & Drop DBF here
+</div>
+
+<div id="popup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:18px; border-radius:12px; width:min(600px, 92vw);">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="pTitle" style="margin:0;">Uploading</h3>
+      <button id="pX">X</button>
+    </div>
+    <div id="pBody" style="margin-top:10px;"></div>
+    <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:10px;">
+      <button id="pCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let aborter = null;
+
+function showPopup(title, bodyHtml, canCancel=true){
+  document.getElementById("pTitle").textContent = title;
+  document.getElementById("pBody").innerHTML = bodyHtml;
+  document.getElementById("pCancel").style.display = canCancel ? "inline-block" : "none";
+  document.getElementById("popup").style.display = "flex";
+}
+function hidePopup(){ document.getElementById("popup").style.display="none"; }
+
+document.getElementById("pX").onclick = hidePopup;
+document.getElementById("pCancel").onclick = () => {
+  if (aborter) aborter.abort();
+  hidePopup();
+};
+
+async function refreshLive(){
+  const r = await fetch("/api/inventory/live").then(r=>r.json());
+  // render list left side...
+}
+
+const drop = document.getElementById("drop");
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.style.opacity=.7; });
+drop.addEventListener("dragleave", () => drop.style.opacity=1);
+drop.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  drop.style.opacity=1;
+
+  const file = e.dataTransfer.files?.[0];
+  if (!file) return;
+
+  aborter = new AbortController();
+  showPopup("Uploading games", "<p>Uploading games…</p>", true);
+
+  const fd = new FormData();
+  fd.append("file", file);
+
+  try {
+    const r = await fetch("/api/upload-dbf", { method:"POST", body: fd, signal: aborter.signal });
+    const j = await r.json();
+    aborter = null;
+
+    if (!j.ok) {
+      showPopup("Upload failed", `<p>something went wrong, couldn’t upload the game</p><p>${j.error||""}</p>`, false);
+      return;
+    }
+
+    showPopup("Done", `<p>Games have been uploaded (${j.inserted}) to ${j.location}_Inventory</p>`, false);
+    await refreshLive();
+  } catch (err) {
+    if (String(err).includes("AbortError")) {
+      // If you want “cancel deletes partial upload”, we’ll do it server-side by uploading into a temp table then committing.
+      showPopup("Cancelled", "<p>Upload cancelled.</p>", false);
+    } else {
+      showPopup("Upload failed", `<p>something went wrong, couldn’t upload the game</p>`, false);
+    }
+    aborter = null;
+  }
+});
+
+refreshLive();
+</script>
