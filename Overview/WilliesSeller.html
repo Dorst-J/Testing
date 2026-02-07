@@ -45,12 +45,15 @@
   </div>
 
 <script>
+
+    
   window.LOCATION="Willies";
   // For ChanticlearSeller.html just set window.LOCATION="Chanticlear" and include this same file.
   const LOCATION = window.LOCATION;
   if (!LOCATION) alert("Missing LOCATION");
 
-  const apiBase = ""; // same origin
+    // ✅ IMPORTANT: set this to your Worker URL
+  const apiBase = "https://overview.jenna-dorst.workers.dev";
   const backdrop = document.getElementById("backdrop");
   const modalTitle = document.getElementById("modalTitle");
   const modalBody = document.getElementById("modalBody");
