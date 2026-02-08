@@ -88,7 +88,7 @@ function setText(id, val){ document.getElementById(id).textContent = String(val)
 
 async function loadCounts() {
   const r = await api("/api/dashboard/summary");
-  document.getElementById("apiHint").textContent = `API: ${apiBase}/api/dashboard/summary`;
+  
 
   if (!r.ok) {
     setText("c_chant", "0");
@@ -96,7 +96,6 @@ async function loadCounts() {
     setText("c_will", "0");
     setText("c_north", "0");
     setText("c_dep", "0");
-    document.getElementById("apiHint").textContent = `API ERROR: ${r.error}`;
     return;
   }
 
