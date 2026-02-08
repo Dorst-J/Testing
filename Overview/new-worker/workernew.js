@@ -648,90 +648,137 @@ export default {
        OFFICE find / scan
     ========================= */
     if (request.method === "POST" && path === "/api/office/find") {
-      try {
-        const body = await request.json();
-        const key = String(body.key || "").trim();
-        if (!key) return json(request, { ok:false, error:"Missing key" }, 400);
+  try {
+    const body = await request.json();
+    const key = String(body.key || "").trim();
+    if (!key) return json(request, { ok:false, error:"Missing key" }, 400);
 
-        const res = await env.DB.prepare(`SELECT * FROM Office WHERE MFCID_PARTNO_SERNO = ?`).bind(key).all();
-        const row = res.results?.[0] || null;
-        return json(request, { ok:true, found: !!row, row });
-      } catch (e) {
-        return json(request, { ok:false, error:String(e) }, 500);
-      }
-    }
+    const res = await env.DB.prepare(`SELECT * FROM Office WHERE MFCID_PARTNO_SERNO = ?`)
+      .bind(key)
+      .all();
+
+    const row = res.results?.[0] || null;
+    return json(request, { ok:true, found: !!row, row });
+  } catch (e) {
+    return json(request, { ok:false, error:String(e) }, 500);
+  }
+}
+
 
     if (request.method === "POST" && path === "/api/office/scan") {
-      try {
-        const body = await request.json();
-        const key = String(body.key || "").trim();
-        const scannedValue = String(body.scannedValue || "").trim();
+  try {
+    const body = await request.json();
+    const key = String(body.key || "").trim();
+    const scannedValueRaw = String(body.scannedValue || "").trim();
 
-        if (!key || !scannedValue) return json(request, { ok:false, error:"Missing key/scannedValue" }, 400);
-
-        const res = await env.DB.prepare(`SELECT * FROM Office WHERE MFCID_PARTNO_SERNO = ?`).bind(key).all();
-        const row = res.results?.[0];
-        if (!row) return json(request, { ok:false, error:"Not found" }, 404);
-
-        const dt = nowIso();
-
-        if (!row.AUDIT_OFFICE) {
-          if (scannedValue.toLowerCase() !== "auditors office") {
-            return json(request, { ok:false, error:"Expected scan: auditors office" }, 400);
-          }
-          await env.DB.prepare(`UPDATE Office SET AUDIT_OFFICE = ? WHERE MFCID_PARTNO_SERNO = ?`).bind(dt, key).run();
-          return json(request, { ok:true, updated:"AUDIT_OFFICE", dt });
-        }
-
-        if (!row.RIVER_ROOM) {
-          const ok = ["silver","sockeye","king","pink","chumb"].includes(scannedValue.toLowerCase());
-          if (!ok) return json(request, { ok:false, error:"Expected Silver/Sockeye/King/Pink/Chumb" }, 400);
-          await env.DB.prepare(`UPDATE Office SET RIVER_ROOM = ? WHERE MFCID_PARTNO_SERNO = ?`).bind(`${scannedValue} @ ${dt}`, key).run();
-          return json(request, { ok:true, updated:"RIVER_ROOM", dt });
-        }
-
-        if (!row.BIN_NUMBER) {
-          const n = Number(scannedValue);
-          if (!Number.isInteger(n) || n < 0 || n > 900) return json(request, { ok:false, error:"Expected bin number 0-900" }, 400);
-          await env.DB.prepare(`UPDATE Office SET BIN_NUMBER = ? WHERE MFCID_PARTNO_SERNO = ?`).bind(`${n} @ ${dt}`, key).run();
-          return json(request, { ok:true, updated:"BIN_NUMBER", dt });
-        }
-
-        if (!row.STORAGE) {
-          if (!/^[A-Za-z]+\s+\d{1,3}$/.test(scannedValue)) {
-            return json(request, { ok:false, error:"Expected: Word + number (0-100)" }, 400);
-          }
-          await env.DB.prepare(`UPDATE Office SET STORAGE = ? WHERE MFCID_PARTNO_SERNO = ?`).bind(`${scannedValue} @ ${dt}`, key).run();
-          return json(request, { ok:true, updated:"STORAGE", dt });
-        }
-
-        return json(request, { ok:false, error:"All columns are filled" }, 409);
-      } catch (e) {
-        return json(request, { ok:false, error:String(e) }, 500);
-      }
+    if (!key || !scannedValueRaw) {
+      return json(request, { ok:false, error:"Missing key/scannedValue" }, 400);
     }
+
+    const res = await env.DB.prepare(`SELECT * FROM Office WHERE MFCID_PARTNO_SERNO = ?`)
+      .bind(key)
+      .all();
+
+    const row = res.results?.[0];
+    if (!row) return json(request, { ok:false, error:"can’t find this game" }, 404);
+
+    const dtIso = new Date().toISOString();
+    const v = scannedValueRaw.trim();
+
+    // 6) AUDIT_OFFICE
+    if (!row.AUDIT_OFFICE) {
+      if (v.toLowerCase() !== "auditors office") {
+        return json(request, { ok:false, error:"Expected scan: auditors office" }, 400);
+      }
+
+      await env.DB.prepare(`UPDATE Office SET AUDIT_OFFICE = ? WHERE MFCID_PARTNO_SERNO = ?`)
+        .bind(dtIso, key)
+        .run();
+
+      return json(request, { ok:true, updated:"AUDIT_OFFICE", value: dtIso });
+    }
+
+    // 7) RIVER_ROOM (rack name + timestamp)
+    if (!row.RIVER_ROOM) {
+      const allowed = ["silver","sockeye","king","pink","chumb"];
+      if (!allowed.includes(v.toLowerCase())) {
+        return json(request, { ok:false, error:"Expected Silver/Sockeye/King/Pink/Chumb" }, 400);
+      }
+
+      const stored = `${v} @ ${dtIso}`;
+      await env.DB.prepare(`UPDATE Office SET RIVER_ROOM = ? WHERE MFCID_PARTNO_SERNO = ?`)
+        .bind(stored, key)
+        .run();
+
+      return json(request, { ok:true, updated:"RIVER_ROOM", value: stored });
+    }
+
+    // 8) BIN_NUMBER (0-900 + timestamp)
+    if (!row.BIN_NUMBER) {
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 0 || n > 900) {
+        return json(request, { ok:false, error:"Expected bin number 0-900" }, 400);
+      }
+
+      const stored = `${n} @ ${dtIso}`;
+      await env.DB.prepare(`UPDATE Office SET BIN_NUMBER = ? WHERE MFCID_PARTNO_SERNO = ?`)
+        .bind(stored, key)
+        .run();
+
+      return json(request, { ok:true, updated:"BIN_NUMBER", value: stored });
+    }
+
+    // 9) STORAGE (Word + 0-100 + timestamp)
+    if (!row.STORAGE) {
+      // Example: "Aisle 12" or "Row 7" (word then number 0-100)
+      const m = v.match(/^([A-Za-z]+)\s+(\d{1,3})$/);
+      if (!m) return json(request, { ok:false, error:"Expected: Word + number (0-100)" }, 400);
+
+      const num = Number(m[2]);
+      if (!Number.isInteger(num) || num < 0 || num > 100) {
+        return json(request, { ok:false, error:"Expected: Word + number (0-100)" }, 400);
+      }
+
+      const stored = `${m[1]} ${num} @ ${dtIso}`;
+      await env.DB.prepare(`UPDATE Office SET STORAGE = ? WHERE MFCID_PARTNO_SERNO = ?`)
+        .bind(stored, key)
+        .run();
+
+      return json(request, { ok:true, updated:"STORAGE", value: stored });
+    }
+
+    // If we got here, all 9/9 are filled
+    return json(request, { ok:false, error:"all the columns are filled!!" }, 409);
+
+  } catch (e) {
+    return json(request, { ok:false, error:String(e) }, 500);
+  }
+}
+
 
     /* =========================
        Issues add/list/fix
     ========================= */
     if (request.method === "POST" && path === "/api/issues/add") {
-      try {
-        const body = await request.json();
-        const key = String(body.key || "").trim();
-        const issue = String(body.issue || "").trim();
-        if (!key || !issue) return json(request, { ok:false, error:"Missing key/issue" }, 400);
-        if (issue.length > 500) return json(request, { ok:false, error:"Issue too long (max 500)" }, 400);
+  try {
+    const body = await request.json();
+    const key = String(body.key || "").trim();
+    const issue = String(body.issue || "").trim();
 
-        await env.DB.prepare(`
-          INSERT INTO GameIssues (MFCID_PARTNO_SERNO, issue, created_at)
-          VALUES (?, ?, ?)
-        `).bind(key, issue, nowIso()).run();
+    if (!key || !issue) return json(request, { ok:false, error:"Missing key/issue" }, 400);
+    if (issue.length > 500) return json(request, { ok:false, error:"Issue too long (max 500)" }, 400);
 
-        return json(request, { ok:true });
-      } catch (e) {
-        return json(request, { ok:false, error:String(e) }, 500);
-      }
-    }
+    await env.DB.prepare(`
+      INSERT INTO GameIssues (MFCID_PARTNO_SERNO, issue, created_at)
+      VALUES (?, ?, ?)
+    `).bind(key, issue, new Date().toISOString()).run();
+
+    return json(request, { ok:true });
+  } catch (e) {
+    return json(request, { ok:false, error:String(e) }, 500);
+  }
+}
+
 
     if (request.method === "GET" && path === "/api/issues/list") {
       try {

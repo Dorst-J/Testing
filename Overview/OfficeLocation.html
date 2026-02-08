@@ -5,35 +5,75 @@
   <title>Auditor</title>
   <style>
     body{font-family:Arial;margin:0}
-    header{padding:16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
-    .row{display:flex;gap:10px;align-items:center;padding:16px}
-    input{padding:12px;font-size:18px;width:min(520px,80vw)}
-    .btn{padding:12px 16px;border:none;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}
-    .gray{background:#eee;color:#111}
-    .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #ddd}
+    .topRow{display:flex;gap:12px;align-items:center}
+    .smallBtn{padding:10px 14px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    h1{margin:0;font-size:34px}
+
+    .wrap{padding:18px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .scanInput{
+      width:min(520px, 90vw);
+      padding:12px 14px;
+      font-size:18px;
+      border:1px solid #ddd;
+      border-radius:12px;
+      outline:none;
+    }
+    .btn{padding:12px 16px;font-size:16px;border:none;border-radius:12px;cursor:pointer}
+    .blue{background:#2563eb;color:#fff}
+    .gray{background:#eee}
+    .note{color:#666;font-size:13px;margin-top:10px}
+
+    /* Modal */
     .modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
-    .modal{background:#fff;width:min(760px,92vw);border-radius:14px;padding:18px}
-    .dangerX{position:absolute;right:18px;top:14px;background:#d64545;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .modal{background:#fff;width:min(820px,92vw);border-radius:14px;padding:18px}
     .modalHeader{position:relative;padding-right:60px}
-    textarea{width:100%;height:120px;font-size:16px;padding:10px}
+    .dangerX{position:absolute;right:18px;top:14px;background:#d64545;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .field{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+    .field label{font-size:13px;color:#666}
+    .field input, .field textarea{
+      padding:12px 14px;font-size:16px;border:1px solid #ddd;border-radius:12px;outline:none;
+    }
+    textarea{min-height:110px;resize:vertical}
+    .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+    .disabled{opacity:.5;cursor:not-allowed}
+
+    .infoBox{
+      border:1px solid #ddd;border-radius:12px;padding:12px;margin-top:10px;background:#fafafa
+    }
+    .infoBox .k{font-weight:700}
+    .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:720px){ .twoCol{grid-template-columns:1fr;} }
+    .miniTable{width:100%;border-collapse:collapse;margin-top:12px}
+    .miniTable td{border-bottom:1px solid #eee;padding:8px 6px;font-size:14px;vertical-align:top}
+    .miniTable td:first-child{color:#666;width:220px}
+    .err{color:#b00020;font-size:13px;margin-top:10px}
   </style>
 </head>
 <body>
   <header>
-    <h2 style="margin:0">Auditor</h2>
-    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back to Dashboard</button>
+    <div class="topRow">
+      <h1>Auditor</h1>
+    </div>
+    <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
   </header>
 
-  <div class="row">
-    <input id="scanKey" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off" />
-    <button id="issuesBtn" class="btn gray">Issues</button>
-    <button id="searchBtn" class="btn">search</button>
+  <div class="wrap">
+    <div class="row">
+      <input id="scanKey" class="scanInput" placeholder="Scan MFCID_PARTNO_SERNO" autocomplete="off" />
+      <button id="issuesBtn" class="btn gray">Issues</button>
+      <button id="searchBtn" class="btn gray">search</button>
+    </div>
+
+    <div style="margin-top:14px;">
+      <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back to Dashboard</button>
+    </div>
+
+    <div class="note" id="status"></div>
   </div>
 
-  <div class="row">
-    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back</button>
-  </div>
-
+  <!-- Modal -->
   <div id="backdrop" class="modalBackdrop">
     <div class="modal">
       <div class="modalHeader">
@@ -45,175 +85,359 @@
   </div>
 
 <script>
-const apiBase = "https://overview.jenna-dorst.workers.dev";
+  const apiBase = "https://overview.jenna-dorst.workers.dev";
 
-async function api(path, options = {}) {
-  const resp = await fetch(`${apiBase}${path}`, options);
-  const txt = await resp.text();
-  try { return JSON.parse(txt); } catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
-}
-
-
-const scanKey = document.getElementById("scanKey");
-const backdrop = document.getElementById("backdrop");
-const modalTitle = document.getElementById("modalTitle");
-const modalBody = document.getElementById("modalBody");
-document.getElementById("modalX").onclick = ()=> backdrop.style.display="none";
-backdrop.addEventListener("click", e=>{ if(e.target===backdrop) backdrop.style.display="none"; });
-
-function openModal(title, html){
-  modalTitle.textContent = title;
-  modalBody.innerHTML = html;
-  backdrop.style.display = "flex";
-}
-function beep(){
-  try{
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    o.connect(ctx.destination);
-    o.frequency.value = 880;
-    o.start();
-    setTimeout(()=>{ o.stop(); ctx.close(); }, 120);
-  }catch{}
-}
-
-async function findOffice(key){
-  return fetch("/api/office/find", {
-    method:"POST",
-    headers:{ "content-type":"application/json" },
-    body: JSON.stringify({ key })
-  }).then(r=>r.json());
-}
-
-async function scanStep(key, scannedValue){
-  return fetch("/api/office/scan", {
-    method:"POST",
-    headers:{ "content-type":"application/json" },
-    body: JSON.stringify({ key, scannedValue })
-  }).then(r=>r.json());
-}
-
-// Main scan field: on Enter, open step modal
-scanKey.addEventListener("keydown", async (e)=>{
-  if(e.key !== "Enter") return;
-  const key = scanKey.value.trim();
-  if(!key) return;
-
-  const r = await findOffice(key);
-  if(!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
-  if(!r.found){
-    beep();
-    return openModal("Not found", `<p>can’t find this game</p>`);
+  async function api(path, options = {}) {
+    const resp = await fetch(`${apiBase}${path}`, options);
+    const txt = await resp.text();
+    try { return JSON.parse(txt); }
+    catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
   }
 
-  const row = r.row;
-  const hasAudit = !!row.AUDIT_OFFICE_TS;
-  const hasRiver = !!row.RIVER_ROOM_TS;
-  const hasBin = !!row.BIN_NUMBER_TS;
-  const hasStorage = !!row.STORAGE_TS;
+  function setStatus(msg){ document.getElementById("status").textContent = msg || ""; }
 
-  if(hasAudit && hasRiver && hasBin && hasStorage){
-    return openModal("Done", `<p>all the columns are filled!!</p>`);
+  // Simple beep (works on most browsers after any user interaction)
+  function beep(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = 880;
+      g.gain.value = 0.08;
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      setTimeout(()=>{ o.stop(); ctx.close(); }, 140);
+    }catch{}
   }
 
-  let prompt = "";
-  if(!hasAudit) prompt = 'Scan "auditors office" barcode';
-  else if(!hasRiver) prompt = "Scan River Room barcode (Silver/Sockeye/King/Pink/Chumb)";
-  else if(!hasBin) prompt = "Scan bin number (0-900)";
-  else prompt = 'Scan storage (Word Number, number 0-100)';
+  const backdrop = document.getElementById("backdrop");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalBody = document.getElementById("modalBody");
+  document.getElementById("modalX").onclick = () => backdrop.style.display="none";
+  backdrop.addEventListener("click", e => { if(e.target===backdrop) backdrop.style.display="none"; });
 
-  openModal("Scan next step", `
-    <div style="border:1px solid #ddd;border-radius:10px;padding:10px;margin-bottom:10px;">
-      <div><b>${row.MFCID_PARTNO_SERNO}</b></div>
-      <div>${row.GNAME||""}</div>
-      <div>$${Number(row.CASH_HAND||0).toFixed(2)}</div>
-    </div>
+  function openModal(title, html){
+    modalTitle.textContent = title;
+    modalBody.innerHTML = html;
+    backdrop.style.display="flex";
+  }
 
-    <div><b>Date:</b> ${new Date().toLocaleDateString()}</div>
-    <div><b>Time:</b> ${new Date().toLocaleTimeString()}</div>
+  function closeModal(){ backdrop.style.display="none"; }
 
-    <p style="margin-top:10px">${prompt}</p>
-    <input id="stepVal" placeholder="Scan here" autocomplete="off" style="width:100%;padding:12px;font-size:18px;">
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-      <button class="smallBtn" id="cancel">Cancel</button>
-    </div>
-  `);
+  function cleanKey(v){
+    v = String(v||"").trim();
+    // Only allow typical key characters (letters/numbers/spaces/dashes/underscores/slashes)
+    v = v.replace(/[^\w\s\-\/]/g, "");
+    return v.trim();
+  }
 
-  document.getElementById("cancel").onclick = ()=> backdrop.style.display="none";
-  const stepVal = document.getElementById("stepVal");
-  stepVal.focus();
+  function splitIso(iso){
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2,"0");
+    const date = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    return { date, time };
+  }
 
-  stepVal.addEventListener("keydown", async (ev)=>{
-    if(ev.key !== "Enter") return;
-    const v = stepVal.value.trim();
-    if(!v) return;
+  function officeStage(row){
+    const audit = row.AUDIT_OFFICE;
+    const river = row.RIVER_ROOM;
+    const bin = row.BIN_NUMBER;
+    const storage = row.STORAGE;
 
-    const r2 = await scanStep(key, v);
-    if(!r2.ok){
-      beep();
-      return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+    if (!audit) return "AUDIT_OFFICE";         // 5/9 filled
+    if (!river) return "RIVER_ROOM";           // 6/9 filled
+    if (!bin) return "BIN_NUMBER";             // 7/9 filled
+    if (!storage) return "STORAGE";            // 8/9 filled
+    return "DONE";                             // 9/9 filled
+  }
+
+  // =========================
+  // Issues Modal
+  // =========================
+  document.getElementById("issuesBtn").onclick = () => {
+    openModal("Place Issue", `
+      <div class="field">
+        <label>MFCID_PARTNO_SERNO</label>
+        <input id="issueKey" placeholder="Scan or type key" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Issue (max 500 characters)</label>
+        <textarea id="issueText" maxlength="500" placeholder="Type issue here..."></textarea>
+        <div class="note"><span id="charCount">0</span>/500</div>
+      </div>
+      <div class="actions">
+        <button class="smallBtn" id="issueCancel">Cancel</button>
+        <button class="smallBtn" id="issueSubmit" class="disabled" disabled>place issue</button>
+      </div>
+      <div class="err" id="issueErr"></div>
+    `);
+
+    const k = document.getElementById("issueKey");
+    const t = document.getElementById("issueText");
+    const submit = document.getElementById("issueSubmit");
+    const err = document.getElementById("issueErr");
+    const cc = document.getElementById("charCount");
+
+    function sync(){
+      const key = cleanKey(k.value);
+      const txt = String(t.value||"").trim();
+      cc.textContent = String(txt.length);
+      const ok = key.length>0 && txt.length>0 && txt.length<=500;
+      submit.disabled = !ok;
+      submit.classList.toggle("disabled", !ok);
     }
-    backdrop.style.display="none";
-    scanKey.value = "";
-    scanKey.focus();
-  });
-});
 
-// Issues popup
-document.getElementById("issuesBtn").onclick = ()=>{
-  openModal("Place issue", `
-    <p>Scan or type MFCID_PARTNO_SERNO</p>
-    <input id="ik" placeholder="MFCID PARTNO SERNO" style="width:100%;padding:12px;font-size:18px;">
-    <p>Issue (max 500 chars)</p>
-    <textarea id="it" maxlength="500"></textarea>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-      <button class="smallBtn" id="icancel">Cancel</button>
-      <button class="smallBtn" id="iplace" disabled>place issue</button>
-    </div>
-  `);
+    k.addEventListener("input", sync);
+    t.addEventListener("input", sync);
 
-  const ik = document.getElementById("ik");
-  const it = document.getElementById("it");
-  const place = document.getElementById("iplace");
+    document.getElementById("issueCancel").onclick = closeModal;
 
-  function sync(){
-    const ok = ik.value.trim() && it.value.trim();
-    place.disabled = !ok;
+    submit.onclick = async () => {
+      err.textContent = "";
+      const key = cleanKey(k.value);
+      const issue = String(t.value||"").trim();
+      if (!key || !issue) return;
+
+      const r = await api("/api/issues/add", {
+        method:"POST",
+        headers:{ "content-type":"application/json" },
+        body: JSON.stringify({ key, issue })
+      });
+
+      if (!r.ok){
+        beep();
+        err.textContent = r.error || "Failed to place issue";
+        return;
+      }
+      closeModal();
+      setStatus("Issue placed.");
+    };
+
+    // focus for scanner
+    setTimeout(()=>k.focus(), 50);
+    sync();
+  };
+
+  // =========================
+  // Search Modal
+  // =========================
+  document.getElementById("searchBtn").onclick = () => {
+    openModal("Search Office", `
+      <div class="field">
+        <label>MFCID_PARTNO_SERNO</label>
+        <input id="findKey" placeholder="Scan or type key" autocomplete="off">
+      </div>
+      <div class="actions">
+        <button class="smallBtn" id="findCancel">Cancel</button>
+        <button class="smallBtn" id="findBtn">find</button>
+      </div>
+      <div id="findResult"></div>
+    `);
+
+    const input = document.getElementById("findKey");
+    const out = document.getElementById("findResult");
+
+    document.getElementById("findCancel").onclick = closeModal;
+
+    async function runFind(){
+      out.innerHTML = "";
+      const key = cleanKey(input.value);
+      if (!key) return;
+
+      const r = await api("/api/office/find", {
+        method:"POST",
+        headers:{ "content-type":"application/json" },
+        body: JSON.stringify({ key })
+      });
+
+      if (!r.ok){
+        beep();
+        out.innerHTML = `<div class="err">${r.error || "Error"}</div>`;
+        return;
+      }
+
+      if (!r.found){
+        beep();
+        out.innerHTML = `<div class="infoBox">The game can not be found.</div>`;
+        return;
+      }
+
+      const row = r.row || {};
+      const keys = Object.keys(row);
+
+      out.innerHTML = `
+        <div class="infoBox">
+          <div class="k">${row.MFCID_PARTNO_SERNO || ""}</div>
+          <div class="note">${row.GNAME || ""}</div>
+          <div class="note">Cash: ${row.CASH_HAND ?? ""}</div>
+        </div>
+        <table class="miniTable">
+          ${keys.map(k=>`
+            <tr>
+              <td>${k}</td>
+              <td>${row[k] ?? ""}</td>
+            </tr>
+          `).join("")}
+        </table>
+      `;
+    }
+
+    document.getElementById("findBtn").onclick = runFind;
+    input.addEventListener("keydown", e => { if(e.key==="Enter") runFind(); });
+
+    setTimeout(()=>input.focus(), 50);
+  };
+
+  // =========================
+  // Main scan flow
+  // =========================
+  const scanInput = document.getElementById("scanKey");
+
+  let scanBuffer = "";
+  let scanTimer = null;
+
+  function scheduleScannerAuto(){
+    if (scanTimer) clearTimeout(scanTimer);
+    scanTimer = setTimeout(()=> {
+      // If scanner dumps fast, we auto-run without needing Enter
+      if (scanBuffer.length >= 6){
+        handleScan(scanBuffer);
+        scanBuffer = "";
+      }
+    }, 80);
   }
-  ik.addEventListener("input", sync);
-  it.addEventListener("input", sync);
-  sync();
 
-  document.getElementById("icancel").onclick = ()=> backdrop.style.display="none";
-  place.onclick = async ()=>{
-    const r = await fetch("/api/issues/add",{
+  scanInput.addEventListener("input", () => {
+    scanBuffer = scanInput.value;
+    scheduleScannerAuto();
+  });
+
+  scanInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter"){
+      e.preventDefault();
+      handleScan(scanInput.value);
+      scanBuffer = "";
+    }
+  });
+
+  async function handleScan(raw){
+    const key = cleanKey(raw);
+    scanInput.value = "";
+    scanBuffer = "";
+
+    if (!key){
+      beep();
+      return;
+    }
+
+    setStatus("");
+
+    const r = await api("/api/office/find", {
       method:"POST",
       headers:{ "content-type":"application/json" },
-      body: JSON.stringify({ key: ik.value.trim(), text: it.value.trim() })
-    }).then(r=>r.json());
-    if(!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
-    backdrop.style.display="none";
-  };
-};
+      body: JSON.stringify({ key })
+    });
 
-// Search popup
-document.getElementById("searchBtn").onclick = ()=>{
-  openModal("Find game in Office", `
-    <input id="sk" placeholder="Scan or type MFCID PARTNO SERNO" style="width:100%;padding:12px;font-size:18px;">
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-      <button class="smallBtn" id="scancel">Cancel</button>
-      <button class="smallBtn" id="sfind">find</button>
-    </div>
-  `);
-  document.getElementById("scancel").onclick = ()=> backdrop.style.display="none";
-  document.getElementById("sfind").onclick = async ()=>{
-    const key = document.getElementById("sk").value.trim();
-    const r = await findOffice(key);
-    if(!r.ok) return openModal("Error", `<p>${r.error||"Error"}</p>`);
-    if(!r.found) return openModal("Not found", `<p>game can not be found</p>`);
-    openModal("Found", `<pre style="white-space:pre-wrap">${JSON.stringify(r.row,null,2)}</pre>`);
-  };
-};
+    if (!r.ok){
+      beep();
+      openModal("Error", `<div class="err">${r.error || "Error"}</div>`);
+      return;
+    }
+
+    if (!r.found){
+      beep();
+      openModal("Can't find this game", `<div class="infoBox">can’t find this game</div>`);
+      return;
+    }
+
+    const row = r.row || {};
+    const stage = officeStage(row);
+
+    if (stage === "DONE"){
+      beep();
+      openModal("All done", `<div class="infoBox">all the columns are filled!!</div>`);
+      return;
+    }
+
+    // Build scan modal
+    const iso = new Date().toISOString();
+    const dt = splitIso(iso);
+
+    const needInfoBox = (stage === "AUDIT_OFFICE"); // only for 5/9 case
+    const prompt =
+      stage === "AUDIT_OFFICE" ? `Scan barcode: <b>auditors office</b>` :
+      stage === "RIVER_ROOM"   ? `Scan barcode: <b>Silver</b>, <b>Sockeye</b>, <b>King</b>, <b>Pink</b>, <b>Chumb</b>` :
+      stage === "BIN_NUMBER"   ? `Scan barcode: <b>number 0-900</b>` :
+      `Scan barcode: <b>Word + number (0-100)</b>`;
+
+    openModal("Scan Confirmation", `
+      ${needInfoBox ? `
+        <div class="infoBox">
+          <div class="k">${row.MFCID_PARTNO_SERNO || ""}</div>
+          <div class="note">${row.GNAME || ""}</div>
+          <div class="note">Cash: ${row.CASH_HAND ?? ""}</div>
+        </div>
+      ` : ""}
+
+      <div class="twoCol">
+        <div class="field">
+          <label>Date of scan</label>
+          <input id="scanDate" value="${dt.date}" readonly>
+        </div>
+        <div class="field">
+          <label>Time of scan</label>
+          <input id="scanTime" value="${dt.time}" readonly>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Scan field</label>
+        <input id="scanValue" placeholder="${prompt.replace(/<[^>]+>/g,'')}" autocomplete="off">
+        <div class="note">${prompt}</div>
+        <div class="err" id="scanErr"></div>
+      </div>
+
+      <div class="actions">
+        <button class="smallBtn" id="scanCancel">Cancel</button>
+      </div>
+    `);
+
+    document.getElementById("scanCancel").onclick = closeModal;
+
+    const val = document.getElementById("scanValue");
+    const err = document.getElementById("scanErr");
+
+    async function submitScan(){
+      err.textContent = "";
+      const v = String(val.value||"").trim();
+      if (!v) return;
+
+      const r2 = await api("/api/office/scan", {
+        method:"POST",
+        headers:{ "content-type":"application/json" },
+        body: JSON.stringify({ key, scannedValue: v })
+      });
+
+      if (!r2.ok){
+        beep();
+        err.textContent = r2.error || "Invalid scan";
+        val.value = "";
+        val.focus();
+        return;
+      }
+
+      closeModal();
+      setStatus(`Saved: ${r2.updated || "updated"}`);
+    }
+
+    val.addEventListener("keydown", e => { if(e.key==="Enter"){ e.preventDefault(); submitScan(); } });
+
+    setTimeout(()=>val.focus(), 50);
+  }
+
+  // focus input on page load
+  setTimeout(()=>scanInput.focus(), 50);
 </script>
 </body>
 </html>
