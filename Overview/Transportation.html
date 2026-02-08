@@ -115,28 +115,68 @@ document.getElementById("droppedoffBtn").onclick = async () => {
   if(!live.ok) return openModal("Error", `<p>${live.error||"Error"}</p>`);
 
   const rows = live.results || [];
-  const listHtml = rows.map(r=>`
-    <label style="display:flex;gap:10px;align-items:center;margin:8px 0;">
-      <input type="checkbox" class="k" value="${r.MFCID_PARTNO_SERNO}">
-      <span>${r.MFCID_PARTNO_SERNO} — ${r.GNAME||""} — $${Number(r.CASH_HAND||0).toFixed(2)} (${r.PICK_UP||""})</span>
-    </label>
-  `).join("");
+
+  const joshRows = rows.filter(r => (r.PICK_UP||"").toLowerCase() === "josh");
+  const steveRows = rows.filter(r => (r.PICK_UP||"").toLowerCase() === "steve");
+
+  function esc(s){ return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+
+  function listFor(picker, arr){
+    if(!arr.length) return `<div style="color:#666;font-size:13px;">(none)</div>`;
+    return arr.map(r => `
+      <label style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+        <input type="checkbox" class="k" data-picker="${picker}" value="${esc(r.MFCID_PARTNO_SERNO)}">
+        <span>
+          <b>${esc(r.MFCID_PARTNO_SERNO)}</b> — ${esc(r.GNAME||"")} — $${Number(r.CASH_HAND||0).toFixed(2)}
+        </span>
+      </label>
+    `).join("");
+  }
 
   openModal("Confirm dropped off", `
     <p>Select games to drop off:</p>
-    <div style="max-height:320px;overflow:auto;border:1px solid #ddd;border-radius:10px;padding:10px;">${listHtml || "<p>(none)</p>"}</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px;">
+      <div style="border:1px solid #ddd;border-radius:12px;padding:10px;">
+        <div style="font-weight:bold;margin-bottom:8px;">Josh</div>
+        <div style="max-height:320px;overflow:auto;border:1px solid #eee;border-radius:10px;padding:10px;">
+          ${listFor("josh", joshRows)}
+        </div>
+      </div>
+
+      <div style="border:1px solid #ddd;border-radius:12px;padding:10px;">
+        <div style="font-weight:bold;margin-bottom:8px;">Steve</div>
+        <div style="max-height:320px;overflow:auto;border:1px solid #eee;border-radius:10px;padding:10px;">
+          ${listFor("steve", steveRows)}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;gap:10px;margin-top:12px;">
+      <button class="smallBtn" id="selectAllJosh">Select all Josh</button>
+      <button class="smallBtn" id="selectAllSteve">Select all Steve</button>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
       <button class="smallBtn" id="cancel">Cancel</button>
       <button class="smallBtn" id="confirm">dropedoff confirm</button>
     </div>
   `);
 
+  // helpers inside modal
+  function setAllFor(picker, checked){
+    document.querySelectorAll(`.k[data-picker="${picker}"]`).forEach(cb => cb.checked = checked);
+  }
+
+  document.getElementById("selectAllJosh").onclick = () => setAllFor("josh", true);
+  document.getElementById("selectAllSteve").onclick = () => setAllFor("steve", true);
+
   document.getElementById("cancel").onclick = () => backdrop.style.display="none";
+
   document.getElementById("confirm").onclick = async () => {
     const keys = [...document.querySelectorAll(".k:checked")].map(x=>x.value);
     if(keys.length===0) return;
 
-    // ✅ FIXED endpoint: /api/transportation/dropoff
     const r2 = await api("/api/transportation/dropoff", {
       method:"POST",
       headers:{ "content-type":"application/json" },
