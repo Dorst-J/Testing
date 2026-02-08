@@ -123,6 +123,32 @@ async function moveRow(env, fromTable, toTable, row) {
   await env.DB.batch([insert, del]);
 }
 
+async function gameExistsAnywhere(env, key) {
+  const tables = [
+    "Chanticlear_Inventory","Chanticlear_Open","Chanticlear_Closed",
+    "McDuffs_Inventory","McDuffs_Open","McDuffs_Closed",
+    "Willies_Inventory","Willies_Open","Willies_Closed",
+    "Northwoods_Inventory","Northwoods_Open","Northwoods_Closed",
+    "Transportation",
+    "Office",
+    "Deposit",
+    "Final_Closed"
+  ];
+
+  for (const t of tables) {
+    try {
+      const r = await env.DB.prepare(
+        `SELECT 1 FROM ${t} WHERE MFCID_PARTNO_SERNO = ? LIMIT 1`
+      ).bind(key).first();
+
+      if (r) return true;
+    } catch(e) {}
+  }
+
+  return false;
+}
+
+
 async function insertInventory(env, loc, row) {
   const table = tInv(loc);
   await env.DB.prepare(`
@@ -274,9 +300,23 @@ export default {
         if (!targetLoc) return json(request, { ok:false, error:"Could not determine location from SITENO mapping." }, 400);
         if (converted.length === 0) return json(request, { ok:false, error:"No usable rows found in DBF." }, 400);
 
-        for (const row of converted) {
-          await insertInventory(env, targetLoc, row);
-        }
+        let inserted = 0;
+let skipped = 0;
+
+for (const row of converted) {
+  const exists = await gameExistsAnywhere(env, row.MFCID_PARTNO_SERNO);
+
+  if (exists) {
+    skipped++;
+    continue;
+  }
+
+  await insertInventory(env, targetLoc, row);
+  inserted++;
+}
+
+return json({ ok:true, location: targetLoc, inserted, skipped });
+
 
         return json(request, { ok:true, location: targetLoc, inserted: converted.length });
       } catch (e) {
