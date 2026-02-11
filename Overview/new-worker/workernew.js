@@ -30,6 +30,7 @@ function text(request, msg, status = 200) {
 }
 
 
+
 /* =========================
    CONFIG
 ========================= */
@@ -183,8 +184,9 @@ export default {
     const path = url.pathname;
 
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders(request) });
-    }
+  return new Response(null, { status: 204, headers: corsHeaders(request) });
+}
+
 
     // Debug routes
     if (request.method === "GET" && path === "/api/debug/routes") {
@@ -252,77 +254,104 @@ export default {
        multipart field: "file"
     ========================= */
     if (request.method === "POST" && path === "/api/upload-dbf") {
-      try {
-        const ct = request.headers.get("content-type") || "";
-        if (!ct.includes("multipart/form-data")) {
-          return json(request, { ok: false, error: "Expected multipart/form-data" }, 400);
-        }
+  try {
+    const ct = request.headers.get("content-type") || "";
+    if (!ct.includes("multipart/form-data")) {
+      return json(request, { ok: false, error: "Expected multipart/form-data" }, 400);
+    }
 
-        const form = await request.formData();
-        const file = form.get("file");
-        if (!(file instanceof File)) return json(request, { ok:false, error:"Missing file" }, 400);
+    const form = await request.formData();
+    const file = form.get("file");
+    if (!(file instanceof File)) return json(request, { ok:false, error:"Missing file" }, 400);
 
-        const buf = await file.arrayBuffer();
-        const rawRows = await parseDbfRows(buf);
+    const buf = await file.arrayBuffer();
+    const rawRows = await parseDbfRows(buf);
 
-        let targetLoc = null;
-        const converted = [];
+    // group rows by location
+    const byLoc = {};                // { Chanticlear: [row,row], ... }
+    const seenLast3 = new Set();     // for debugging
+    const unknownLast3 = new Set();  // SITENO last3 not in mapping
+    let totalRows = 0;
 
-        for (const r of rawRows) {
-          const key = mfKey(r.MFCID, r.PARTNO, r.SERNO);
-          const last3 = last3FromSiteno(r.SITENO);
-          if (!last3) continue;
+    for (const r of rawRows) {
+      const key = mfKey(r.MFCID, r.PARTNO, r.SERNO);
+      const last3 = last3FromSiteno(r.SITENO);
+      if (!last3) continue;
 
-          const loc = SITE_LAST3_TO_LOCATION[last3];
-          if (!loc) continue;
+      totalRows++;
+      seenLast3.add(last3);
 
-          if (!targetLoc) targetLoc = loc;
-          if (targetLoc !== loc) {
-            return json(request, { ok:false, error:"Each DBF must be for exactly one location (mixed SITENO codes found)." }, 400);
-          }
+      const loc = SITE_LAST3_TO_LOCATION[last3];
+      if (!loc) {
+        unknownLast3.add(last3);
+        continue;
+      }
 
-          converted.push({
-            MFCID_PARTNO_SERNO: key,
-            GNAME: toSqlValue(r.GNAME),
-            DIST_ID: toSqlValue(r.DIST_ID),
-            GTYPE: toSqlValue(r.GTYPE),
-            GCOST: toSqlValue(r.GCOST),
-            SITENO: toSqlValue(r.SITENO),
-            INV_NUM: toSqlValue(r.INV_NUM),
-            PLCOST: toSqlValue(r.PLCOST),
-            PLNOS: toSqlValue(r.PLNOS),
-            IDLGRS: toSqlValue(r.IDLGRS),
-            IDLPRZ: toSqlValue(r.IDLPRZ),
-            DPURCH: toSqlValue(r.DPURCH),
-          });
-        }
+      const row = {
+        MFCID_PARTNO_SERNO: key,
+        GNAME: toSqlValue(r.GNAME),
+        DIST_ID: toSqlValue(r.DIST_ID),
+        GTYPE: toSqlValue(r.GTYPE),
+        GCOST: toSqlValue(r.GCOST),
+        SITENO: toSqlValue(r.SITENO),
+        INV_NUM: toSqlValue(r.INV_NUM),
+        PLCOST: toSqlValue(r.PLCOST),
+        PLNOS: toSqlValue(r.PLNOS),
+        IDLGRS: toSqlValue(r.IDLGRS),
+        IDLPRZ: toSqlValue(r.IDLPRZ),
+        DPURCH: toSqlValue(r.DPURCH),
+      };
 
-        if (!targetLoc) return json(request, { ok:false, error:"Could not determine location from SITENO mapping." }, 400);
-        if (converted.length === 0) return json(request, { ok:false, error:"No usable rows found in DBF." }, 400);
+      if (!byLoc[loc]) byLoc[loc] = [];
+      byLoc[loc].push(row);
+    }
 
-        let inserted = 0;
-let skipped = 0;
+    const locs = Object.keys(byLoc);
+    if (locs.length === 0) {
+      return json(request, {
+        ok: false,
+        error: "No usable rows found (check SITENO mapping).",
+        seenLast3: Array.from(seenLast3),
+        unknownLast3: Array.from(unknownLast3)
+      }, 400);
+    }
 
-for (const row of converted) {
-  const exists = await gameExistsAnywhere(env, row.MFCID_PARTNO_SERNO);
+    // insert with duplicate protection (optional — only if you added gameExistsAnywhere)
+    const insertedByLoc = {};
+    const skippedByLoc = {};
 
-  if (exists) {
-    skipped++;
-    continue;
+    for (const loc of locs) {
+      let inserted = 0;
+      let skipped = 0;
+
+      for (const row of byLoc[loc]) {
+        // If you added the duplicate fail-safe function, keep this block:
+        // const exists = await gameExistsAnywhere(env, row.MFCID_PARTNO_SERNO);
+        // if (exists) { skipped++; continue; }
+
+        await insertInventory(env, loc, row);
+        inserted++;
+      }
+
+      insertedByLoc[loc] = inserted;
+      skippedByLoc[loc] = skipped;
+    }
+
+    return json(request, {
+      ok: true,
+      totalRowsRead: rawRows.length,
+      totalRowsWithSiteno: totalRows,
+      insertedByLoc,
+      skippedByLoc,
+      seenLast3: Array.from(seenLast3),
+      unknownLast3: Array.from(unknownLast3),
+    });
+
+  } catch (e) {
+    return json(request, { ok:false, error:String(e) }, 500);
   }
-
-  await insertInventory(env, targetLoc, row);
-  inserted++;
 }
 
-return json({ ok:true, location: targetLoc, inserted, skipped });
-
-
-        return json(request, { ok:true, location: targetLoc, inserted: converted.length });
-      } catch (e) {
-        return json(request, { ok:false, error:String(e) }, 500);
-      }
-    }
 
     /* =========================
        Emergency lookup / move
