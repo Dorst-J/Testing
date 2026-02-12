@@ -5,7 +5,7 @@
   <title>Chanticlear Seller</title>
   <style>
     body { font-family: Arial; margin:0; padding:0; }
-    header { display:flex; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
+    header { display:flex; justify-content:space; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
     .btn { padding:18px 28px; font-size:22px; border:none; border-radius:10px; cursor:pointer; }
     .open { background:#1f9d55; color:white; }
     .close { background:#d64545; color:white; }
@@ -18,13 +18,16 @@
     .dangerX { position:absolute; right:18px; top:14px; background:#d64545; color:#fff; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; }
     .modalHeader { position:relative; padding-right:60px; }
     .disabled { opacity:.5; cursor:not-allowed; }
-    .center{justify-content: center;}
+    .headerCenter{position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; /* buttons still clickable */}
+
   </style>
 </head>
 <body>
   <header>
     <div class="center">
+      <div class="headerCenter">
       <h2 style="margin:0;">Chanticlear Seller</h2>
+      </div>
       <div style="color:#666;">Inventory → Open → Closed</div>
     </div>
     <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
