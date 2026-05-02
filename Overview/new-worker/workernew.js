@@ -902,6 +902,54 @@ export default {
       }
     }
 
+if (request.method === "GET" && path.startsWith("/api/lg844/")) {
+  try {
+    const loc = requireLocation(decodeURIComponent(path.split("/").pop()));
+
+    const tables = [tInv(loc), tOpen(loc), tClosed(loc)];
+    const rows = [];
+
+    for (const table of tables) {
+      const res = await env.DB.prepare(`
+        SELECT 
+          MFCID_PARTNO_SERNO,
+          GNAME,
+          GCOST,
+          DPURCH,
+          INV_NUM,
+          DATE_OPEN,
+          DATE_CLOSED
+        FROM ${table}
+        ORDER BY DPURCH DESC
+      `).all();
+
+      for (const r of res.results || []) {
+        const parts = String(r.MFCID_PARTNO_SERNO || "").trim().split(/\s+/);
+        const mfcid = parts[0] || "";
+        const partno = parts[1] || "";
+        const serno = parts.slice(2).join(" ") || "";
+
+        rows.push({
+          invoiceDate: r.DPURCH || "",
+          distributorName: loc,
+          invoiceNumber: r.INV_NUM || "",
+          manufactureId: mfcid,
+          partNumber: partno,
+          gameName: r.GNAME || "",
+          gameSerialNumber: serno,
+          actualGameCost: r.GCOST ?? "",
+          datePutIntoPlay: r.DATE_OPEN || "",
+          dateGameClosed: r.DATE_CLOSED || "",
+        });
+      }
+    }
+
+    return json(request, { ok: true, location: loc, rows });
+  } catch (e) {
+    return json(request, { ok: false, error: String(e) }, 500);
+  }
+}
+
     return text(request, "Not found", 404);
   }
 };

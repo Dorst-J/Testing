@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>LG844</title>
+  <style>
+    body{font-family:Arial;margin:0;color:#111}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #ddd}
+    .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    select{padding:9px 12px;border-radius:10px;border:1px solid #bbb;font-size:15px}
+    .wrap{padding:18px}
+    h2{text-align:center;margin:10px 0 8px}
+    .orgLine{margin:8px 0 18px;font-size:15px}
+    .sectionTitle{font-weight:bold;margin:24px 0 8px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{border:1px solid #333;padding:6px;vertical-align:top}
+    th{background:#f1f1f1}
+    .muted{color:#666;font-size:13px;margin-top:8px}
+    @media print{
+      header{display:none}
+      .wrap{padding:0}
+      table{font-size:10px}
+      th,td{padding:4px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Return Home</button>
+
+    <div>
+      <label for="barSelect"><b>Bar Location:</b></label>
+      <select id="barSelect">
+        <option value="">Choose location...</option>
+        <option value="Chanticlear">Chanticlear</option>
+        <option value="McDuffs">McDuffs</option>
+        <option value="Willies">Willys</option>
+        <option value="Northwoods">Northwoods</option>
+      </select>
+    </div>
+
+    <button class="smallBtn" onclick="window.print()">Print Page</button>
+  </header>
+
+  <div class="wrap">
+    <h2>LG844 Perpetual Inventory/Paper Pull-Tabs, Tipboards, and/or Paddletickets</h2>
+
+    <div class="orgLine">
+      Organization Name: Anoka Ramsey Athletic Association (ARAA)
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      License/Premises Permit Number: 98049
+    </div>
+
+    <div id="status" class="muted">Choose a bar location to load inventory.</div>
+
+    <div class="sectionTitle">Paper Pull-Tabs</div>
+    <div id="pulltabs"></div>
+
+    <div class="sectionTitle">Tipboard Games</div>
+    <div id="tipboards"></div>
+
+    <div class="sectionTitle">Paddletickets</div>
+    <div id="paddletickets"></div>
+  </div>
+
+<script>
+const apiBase = "https://overview.jenna-dorst.workers.dev";
+
+async function api(path){
+  const resp = await fetch(`${apiBase}${path}`);
+  const txt = await resp.text();
+  try { return JSON.parse(txt); }
+  catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
+}
+
+function money(v){
+  if(v === "" || v === null || v === undefined) return "";
+  const n = Number(v);
+  return Number.isFinite(n) ? `$${n.toFixed(2)}` : v;
+}
+
+function makeTable(rows){
+  return `
+    <table>
+      <thead>
+        <tr>
+          <th>Invoice Date</th>
+          <th>Distributor Name</th>
+          <th>Invoice Number</th>
+          <th>Manufacture ID</th>
+          <th>Part Number</th>
+          <th>Game Name</th>
+          <th>Game Serial Number</th>
+          <th>Actual Game Cost</th>
+          <th>Date Put into Play</th>
+          <th>Date Game Closed</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.length ? rows.map(r => `
+          <tr>
+            <td>${r.invoiceDate || ""}</td>
+            <td>${r.distributorName || ""}</td>
+            <td>${r.invoiceNumber || ""}</td>
+            <td>${r.manufactureId || ""}</td>
+            <td>${r.partNumber || ""}</td>
+            <td>${r.gameName || ""}</td>
+            <td>${r.gameSerialNumber || ""}</td>
+            <td>${money(r.actualGameCost)}</td>
+            <td>${r.datePutIntoPlay || ""}</td>
+            <td>${r.dateGameClosed || ""}</td>
+          </tr>
+        `).join("") : `
+          <tr><td colspan="10" style="text-align:center;">No records</td></tr>
+        `}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderEmpty(){
+  document.getElementById("pulltabs").innerHTML = makeTable([]);
+  document.getElementById("tipboards").innerHTML = makeTable([]);
+  document.getElementById("paddletickets").innerHTML = makeTable([]);
+}
+
+function classify(rows){
+  const pulltabs = [];
+  const tipboards = [];
+  const paddletickets = [];
+
+  for(const r of rows){
+    const p = String(r.partNumber || "").toUpperCase();
+
+    if(p.includes("PT1")){
+      paddletickets.push(r);
+    } else if(p.includes("XB100") || p.includes("TIP")){
+      tipboards.push(r);
+    } else {
+      pulltabs.push(r);
+    }
+  }
+
+  return { pulltabs, tipboards, paddletickets };
+}
+
+document.getElementById("barSelect").addEventListener("change", async e => {
+  const loc = e.target.value;
+
+  if(!loc){
+    document.getElementById("status").textContent = "Choose a bar location to load inventory.";
+    renderEmpty();
+    return;
+  }
+
+  document.getElementById("status").textContent = "Loading...";
+
+  const r = await api(`/api/lg844/${encodeURIComponent(loc)}`);
+
+  if(!r.ok){
+    document.getElementById("status").textContent = `Error: ${r.error}`;
+    renderEmpty();
+    return;
+  }
+
+  const grouped = classify(r.rows || []);
+
+  document.getElementById("pulltabs").innerHTML = makeTable(grouped.pulltabs);
+  document.getElementById("tipboards").innerHTML = makeTable(grouped.tipboards);
+  document.getElementById("paddletickets").innerHTML = makeTable(grouped.paddletickets);
+
+  document.getElementById("status").textContent =
+    `${loc} loaded — Pull-Tabs: ${grouped.pulltabs.length}, Tipboards: ${grouped.tipboards.length}, Paddletickets: ${grouped.paddletickets.length}`;
+});
+
+renderEmpty();
+</script>
+</body>
+</html>
