@@ -57,10 +57,11 @@ td.money{
 
     .footerBox{
   position:absolute;
+  position:absolute;
   left:18px;
   right:18px;
   bottom:18px;
-  height:88px;
+  height:96px;
   border:2px solid #111;
   display:grid;
   grid-template-columns:1fr 170px;
@@ -72,14 +73,13 @@ td.money{
     .sigBox{
   padding:6px;
   border-right:2px solid #111;
-  height:88px;
-  box-sizing:border-box;
+  height:96px;
 }
 
 .totalBox{
   display:grid;
   grid-template-rows:34px 1fr;
-  height:88px;
+  height:96px;
 }
 
 .totalTop{
@@ -96,22 +96,26 @@ td.money{
 }
 
 .sigLine{
-  margin-top:22px;
+  margin-top:26px;
   border-bottom:1px solid #111;
-  height:14px;
+  height:0;
 }
 
 .dateLine{
   display:flex;
   justify-content:flex-end;
+  align-items:center;
   gap:8px;
-  margin-top:4px;
+  margin-top:8px;
+  font-size:13px;
 }
 
 .dateBlank{
   border-bottom:1px solid #111;
   min-width:180px;
   text-align:center;
+  line-height:16px;
+  height:16px;
 }
 
    @page{
@@ -147,11 +151,11 @@ td.money{
   }
 
   .footerBox{
-    left:0;
-    right:0;
-    bottom:0;
-    height:88px;
-  }
+  left:0;
+  right:0;
+  bottom:0;
+  height:96px;
+}
 
   table{
     font-size:9px;
