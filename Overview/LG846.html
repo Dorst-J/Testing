@@ -55,15 +55,15 @@ td.money{
   text-align:center;
 }
 
-   .footerBox{
+  .footerBox{
   position:absolute;
   left:18px;
   right:18px;
   bottom:18px;
-  height:92px;
+  height:105px;
   border:2px solid #111;
   display:grid;
-  grid-template-columns:1fr 135px;
+  grid-template-columns:1fr 130px;
   background:#fff;
   box-sizing:border-box;
 }
@@ -71,38 +71,42 @@ td.money{
 .sigBox{
   padding:8px;
   border-right:2px solid #111;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
   box-sizing:border-box;
 }
 
+.sigText{
+  font-size:13px;
+  line-height:1.2;
+}
+
 .sigLine{
-  margin-top:26px;
   border-bottom:1px solid #111;
-  height:0;
+  align-self:end;
+  margin-bottom:8px;
 }
 
 .dateRow{
-  margin-top:10px;
   display:flex;
-  justify-content:flex-end;
+  justify-content:flex-start;
   align-items:center;
-  gap:8px;
+  gap:12px;
   font-size:13px;
 }
 
 .dateBlank{
   border-bottom:1px solid #111;
-  min-width:190px;
+  min-width:180px;
   text-align:center;
-  padding-bottom:2px;
+  height:16px;
+  line-height:16px;
 }
 
 .totalBox{
-  display:flex;
-  flex-direction:column;
   height:100%;
+  display:grid;
+  grid-template-rows:34px 1fr;
 }
 
 .totalTop{
@@ -110,8 +114,8 @@ td.money{
   align-items:center;
   justify-content:space-between;
   border-bottom:2px solid #111;
-  padding:10px;
-  font-size:14px;
+  padding:0 8px;
+  font-size:13px;
   font-weight:bold;
 }
 
@@ -296,9 +300,8 @@ function makeTable(rows){
 function makeFooter(totalRows){
   return `
     <div class="footerBox">
-      
       <div class="sigBox">
-        <div style="font-size:14px; line-height:1.2;">
+        <div class="sigText">
           <b>Signature of person verifying physical inventory</b>
           (may not be the person who maintains the perpetual inventory):
         </div>
@@ -316,8 +319,8 @@ function makeFooter(totalRows){
           <span>TOTAL:</span>
           <span class="totalAmount">${money(sumCost(totalRows))}</span>
         </div>
+        <div></div>
       </div>
-
     </div>
   `;
 }
