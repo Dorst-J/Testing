@@ -17,6 +17,30 @@
     th{background:#f1f1f1}
     .muted{color:#666;font-size:13px;margin-top:8px}
 
+    .printPage{
+      page-break-after:always;
+      break-after:page;
+      min-height:10.2in;
+      position:relative;
+      padding-bottom:115px;
+    }
+    .printPage:last-child{
+      page-break-after:auto;
+      break-after:auto;
+    }
+    .printTitle{
+      text-align:center;
+      margin:10px 0 8px;
+      font-size:18px;
+      font-weight:700;
+    }
+    .printFooter{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+    }
+
     .footerBox{
       margin-top:10px;
       border:2px solid #111;
@@ -34,10 +58,21 @@
 
     @media print{
       header{display:none}
+      body{margin:0}
       .wrap{padding:0}
+      .screenOnly{display:none}
       table{font-size:10px}
       th,td{padding:4px}
-      .pageBlock{break-inside:avoid;page-break-inside:avoid}
+      .printPage{
+        page-break-after:always;
+        break-after:page;
+        min-height:10.2in;
+        padding-bottom:115px;
+      }
+      .printPage:last-child{
+        page-break-after:auto;
+        break-after:auto;
+      }
     }
   </style>
 </head>
@@ -60,38 +95,60 @@
   </header>
 
   <div class="wrap">
-    <h2>LG846 Physical Inventory / Pull-Tabs, Tipboards, and / or Paddletickets Monthly Report</h2>
+    <div id="status" class="muted screenOnly">Choose a bar location to load inventory.</div>
 
-    <div class="line">
-      Organization Name: Anoka Ramsey Athletic Association (ARAA)
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      License/Premises Permit Number: 98049
-    </div>
+    <div class="printPage">
+      <div class="printTitle">LG846 Physical Inventory / Pull-Tabs, Tipboards, and / or Paddletickets Monthly Report</div>
+      <div class="line">
+        Organization Name: Anoka Ramsey Athletic Association (ARAA)
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        License/Premises Permit Number: 98049
+      </div>
+      <div class="line">
+        Site Name: <span class="siteNamePrint"></span>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        Month/Year: <span class="monthYearPrint"></span>
+      </div>
 
-    <div class="line">
-      Site Name: <span id="siteName"></span>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      Month/Year: <span id="monthYear"></span>
-    </div>
-
-    <div id="status" class="muted">Choose a bar location to load inventory.</div>
-
-    <div class="pageBlock">
       <div class="sectionTitle">Paper Pull-Tabs</div>
       <div id="pulltabs"></div>
-      <div id="pulltabsFooter"></div>
+      <div id="pulltabsFooter" class="printFooter"></div>
     </div>
 
-    <div class="pageBlock">
+    <div class="printPage">
+      <div class="printTitle">LG846 Physical Inventory / Pull-Tabs, Tipboards, and / or Paddletickets Monthly Report</div>
+      <div class="line">
+        Organization Name: Anoka Ramsey Athletic Association (ARAA)
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        License/Premises Permit Number: 98049
+      </div>
+      <div class="line">
+        Site Name: <span class="siteNamePrint"></span>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        Month/Year: <span class="monthYearPrint"></span>
+      </div>
+
       <div class="sectionTitle">Tipboard Games</div>
       <div id="tipboards"></div>
-      <div id="tipboardsFooter"></div>
+      <div id="tipboardsFooter" class="printFooter"></div>
     </div>
 
-    <div class="pageBlock">
+    <div class="printPage">
+      <div class="printTitle">LG846 Physical Inventory / Pull-Tabs, Tipboards, and / or Paddletickets Monthly Report</div>
+      <div class="line">
+        Organization Name: Anoka Ramsey Athletic Association (ARAA)
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        License/Premises Permit Number: 98049
+      </div>
+      <div class="line">
+        Site Name: <span class="siteNamePrint"></span>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        Month/Year: <span class="monthYearPrint"></span>
+      </div>
+
       <div class="sectionTitle">Paddletickets</div>
       <div id="paddletickets"></div>
-      <div id="paddleticketsFooter"></div>
+      <div id="paddleticketsFooter" class="printFooter"></div>
     </div>
   </div>
 
@@ -111,7 +168,7 @@ function monthYear(){
   return d.toLocaleString("en-US", { month:"long", year:"numeric" });
 }
 
-document.getElementById("monthYear").textContent = monthYear();
+document.querySelectorAll(".monthYearPrint").forEach(x => x.textContent = monthYear());
 
 async function api(path){
   const resp = await fetch(`${apiBase}${path}`);
@@ -218,7 +275,7 @@ function classify(rows){
 
 document.getElementById("barSelect").addEventListener("change", async e => {
   const loc = e.target.value;
-  document.getElementById("siteName").textContent = loc || "";
+  document.querySelectorAll(".siteNamePrint").forEach(x => x.textContent = loc || "");
 
   if(!loc){
     document.getElementById("status").textContent = "Choose a bar location to load inventory.";
