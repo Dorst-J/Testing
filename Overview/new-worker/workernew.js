@@ -950,6 +950,44 @@ if (request.method === "GET" && path.startsWith("/api/lg844/")) {
   }
 }
 
+if (request.method === "GET" && path.startsWith("/api/lg846/")) {
+  try {
+    const loc = requireLocation(decodeURIComponent(path.split("/").pop()));
+
+    const tables = [tInv(loc), tOpen(loc)];
+    const rows = [];
+
+    for (const table of tables) {
+      const res = await env.DB.prepare(`
+        SELECT 
+          MFCID_PARTNO_SERNO,
+          GNAME,
+          GCOST
+        FROM ${table}
+        ORDER BY GNAME ASC
+      `).all();
+
+      for (const r of res.results || []) {
+        const parts = String(r.MFCID_PARTNO_SERNO || "").trim().split(/\s+/);
+        const mfcid = parts[0] || "";
+        const partno = parts[1] || "";
+        const serno = parts.slice(2).join(" ") || "";
+
+        rows.push({
+          manufactureId: mfcid,
+          partNumber: partno,
+          gameName: r.GNAME || "",
+          gameSerialNumber: serno,
+          actualGameCost: r.GCOST ?? "",
+        });
+      }
+    }
+
+    return json(request, { ok: true, location: loc, rows });
+  } catch (e) {
+    return json(request, { ok: false, error: String(e) }, 500);
+  }
+}
     return text(request, "Not found", 404);
   }
 };

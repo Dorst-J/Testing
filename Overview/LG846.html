@@ -1,0 +1,256 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>LG846</title>
+  <style>
+    body{font-family:Arial;margin:0;color:#111}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #ddd}
+    .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    select{padding:9px 12px;border-radius:10px;border:1px solid #bbb;font-size:15px}
+    .wrap{padding:18px}
+    h2{text-align:center;margin:10px 0 8px}
+    .line{margin:8px 0;font-size:15px}
+    .sectionTitle{font-weight:bold;margin:24px 0 8px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{border:1px solid #333;padding:6px;vertical-align:top}
+    th{background:#f1f1f1}
+    .muted{color:#666;font-size:13px;margin-top:8px}
+
+    .footerBox{
+      margin-top:10px;
+      border:2px solid #111;
+      display:grid;
+      grid-template-columns: 1fr 170px;
+      font-size:14px;
+    }
+    .sigBox{padding:6px;border-right:2px solid #111;min-height:76px}
+    .totalBox{display:grid;grid-template-rows:34px 1fr}
+    .totalTop{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #111;padding:0 10px;font-weight:bold}
+    .totalAmount{font-weight:normal}
+    .sigLine{margin-top:32px;border-bottom:1px solid #111;height:16px}
+    .dateLine{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+    .dateBlank{border-bottom:1px solid #111;min-width:180px;text-align:center}
+
+    @media print{
+      header{display:none}
+      .wrap{padding:0}
+      table{font-size:10px}
+      th,td{padding:4px}
+      .pageBlock{break-inside:avoid;page-break-inside:avoid}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Return Home</button>
+
+    <div>
+      <label for="barSelect"><b>Bar Location:</b></label>
+      <select id="barSelect">
+        <option value="">Choose location...</option>
+        <option value="Chanticlear">Chanticlear</option>
+        <option value="McDuffs">McDuffs</option>
+        <option value="Willies">Willies</option>
+        <option value="Northwoods">Northwoods</option>
+      </select>
+    </div>
+
+    <button class="smallBtn" onclick="window.print()">Print Page</button>
+  </header>
+
+  <div class="wrap">
+    <h2>LG846 Physical Inventory / Pull-Tabs, Tipboards, and / or Paddletickets Monthly Report</h2>
+
+    <div class="line">
+      Organization Name: Anoka Ramsey Athletic Association (ARAA)
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      License/Premises Permit Number: 98049
+    </div>
+
+    <div class="line">
+      Site Name: <span id="siteName"></span>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Month/Year: <span id="monthYear"></span>
+    </div>
+
+    <div id="status" class="muted">Choose a bar location to load inventory.</div>
+
+    <div class="pageBlock">
+      <div class="sectionTitle">Paper Pull-Tabs</div>
+      <div id="pulltabs"></div>
+      <div id="pulltabsFooter"></div>
+    </div>
+
+    <div class="pageBlock">
+      <div class="sectionTitle">Tipboard Games</div>
+      <div id="tipboards"></div>
+      <div id="tipboardsFooter"></div>
+    </div>
+
+    <div class="pageBlock">
+      <div class="sectionTitle">Paddletickets</div>
+      <div id="paddletickets"></div>
+      <div id="paddleticketsFooter"></div>
+    </div>
+  </div>
+
+<script>
+const apiBase = "https://overview.jenna-dorst.workers.dev";
+
+function today(){
+  const d = new Date();
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  const yy = d.getFullYear();
+  return `${mm}/${dd}/${yy}`;
+}
+
+function monthYear(){
+  const d = new Date();
+  return d.toLocaleString("en-US", { month:"long", year:"numeric" });
+}
+
+document.getElementById("monthYear").textContent = monthYear();
+
+async function api(path){
+  const resp = await fetch(`${apiBase}${path}`);
+  const txt = await resp.text();
+  try { return JSON.parse(txt); }
+  catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
+}
+
+function money(v){
+  if(v === "" || v === null || v === undefined) return "";
+  const n = Number(v);
+  return Number.isFinite(n) ? `$${n.toFixed(2)}` : v;
+}
+
+function sumCost(rows){
+  return rows.reduce((sum, r) => {
+    const n = Number(r.actualGameCost);
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
+}
+
+function makeTable(rows){
+  return `
+    <table>
+      <thead>
+        <tr>
+          <th>Manufacture ID</th>
+          <th>Part Number</th>
+          <th>Game Name</th>
+          <th>Game Serial Number</th>
+          <th>Actual Game Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.length ? rows.map(r => `
+          <tr>
+            <td>${r.manufactureId || ""}</td>
+            <td>${r.partNumber || ""}</td>
+            <td>${r.gameName || ""}</td>
+            <td>${r.gameSerialNumber || ""}</td>
+            <td style="text-align:right;">${money(r.actualGameCost)}</td>
+          </tr>
+        `).join("") : `
+          <tr><td colspan="5" style="text-align:center;">No records</td></tr>
+        `}
+      </tbody>
+    </table>
+  `;
+}
+
+function makeFooter(rows){
+  const total = sumCost(rows);
+  return `
+    <div class="footerBox">
+      <div class="sigBox">
+        <b>Signature of person verifying physical inventory</b>
+        (may not be the person who maintains the perpetual inventory):
+        <div class="sigLine"></div>
+        <div class="dateLine">
+          <span>Date Taken:</span>
+          <span class="dateBlank">${today()}</span>
+        </div>
+      </div>
+      <div class="totalBox">
+        <div class="totalTop">
+          <span>TOTAL:</span>
+          <span class="totalAmount">${money(total)}</span>
+        </div>
+        <div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderEmpty(){
+  document.getElementById("pulltabs").innerHTML = makeTable([]);
+  document.getElementById("tipboards").innerHTML = makeTable([]);
+  document.getElementById("paddletickets").innerHTML = makeTable([]);
+
+  document.getElementById("pulltabsFooter").innerHTML = makeFooter([]);
+  document.getElementById("tipboardsFooter").innerHTML = makeFooter([]);
+  document.getElementById("paddleticketsFooter").innerHTML = makeFooter([]);
+}
+
+function classify(rows){
+  const pulltabs = [];
+  const tipboards = [];
+  const paddletickets = [];
+
+  for(const r of rows){
+    const p = String(r.partNumber || "").toUpperCase();
+
+    if(p.includes("PT1")){
+      paddletickets.push(r);
+    } else if(p.includes("XB100") || p.includes("TIP")){
+      tipboards.push(r);
+    } else {
+      pulltabs.push(r);
+    }
+  }
+
+  return { pulltabs, tipboards, paddletickets };
+}
+
+document.getElementById("barSelect").addEventListener("change", async e => {
+  const loc = e.target.value;
+  document.getElementById("siteName").textContent = loc || "";
+
+  if(!loc){
+    document.getElementById("status").textContent = "Choose a bar location to load inventory.";
+    renderEmpty();
+    return;
+  }
+
+  document.getElementById("status").textContent = "Loading...";
+
+  const r = await api(`/api/lg846/${encodeURIComponent(loc)}`);
+
+  if(!r.ok){
+    document.getElementById("status").textContent = `Error: ${r.error}`;
+    renderEmpty();
+    return;
+  }
+
+  const grouped = classify(r.rows || []);
+
+  document.getElementById("pulltabs").innerHTML = makeTable(grouped.pulltabs);
+  document.getElementById("tipboards").innerHTML = makeTable(grouped.tipboards);
+  document.getElementById("paddletickets").innerHTML = makeTable(grouped.paddletickets);
+
+  document.getElementById("pulltabsFooter").innerHTML = makeFooter(grouped.pulltabs);
+  document.getElementById("tipboardsFooter").innerHTML = makeFooter(grouped.tipboards);
+  document.getElementById("paddleticketsFooter").innerHTML = makeFooter(grouped.paddletickets);
+
+  document.getElementById("status").textContent =
+    `${loc} loaded — Pull-Tabs: ${grouped.pulltabs.length}, Tipboards: ${grouped.tipboards.length}, Paddletickets: ${grouped.paddletickets.length}`;
+});
+
+renderEmpty();
+</script>
+</body>
+</html>
