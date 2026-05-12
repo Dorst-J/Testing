@@ -55,31 +55,54 @@ td.money{
   text-align:center;
 }
 
-    .footerBox{
-  position:absolute;
+   .footerBox{
   position:absolute;
   left:18px;
   right:18px;
   bottom:18px;
-  height:96px;
+  height:92px;
   border:2px solid #111;
   display:grid;
-  grid-template-columns:1fr 170px;
-  font-size:14px;
+  grid-template-columns:1fr 135px;
   background:#fff;
   box-sizing:border-box;
 }
 
-    .sigBox{
-  padding:6px;
+.sigBox{
+  padding:8px;
   border-right:2px solid #111;
-  height:96px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  box-sizing:border-box;
+}
+
+.sigLine{
+  margin-top:26px;
+  border-bottom:1px solid #111;
+  height:0;
+}
+
+.dateRow{
+  margin-top:10px;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+}
+
+.dateBlank{
+  border-bottom:1px solid #111;
+  min-width:190px;
+  text-align:center;
+  padding-bottom:2px;
 }
 
 .totalBox{
-  display:grid;
-  grid-template-rows:34px 1fr;
-  height:96px;
+  display:flex;
+  flex-direction:column;
+  height:100%;
 }
 
 .totalTop{
@@ -87,7 +110,8 @@ td.money{
   align-items:center;
   justify-content:space-between;
   border-bottom:2px solid #111;
-  padding:0 10px;
+  padding:10px;
+  font-size:14px;
   font-weight:bold;
 }
 
@@ -154,7 +178,7 @@ td.money{
   left:0;
   right:0;
   bottom:0;
-  height:96px;
+  height:92px;
 }
 
   table{
@@ -272,22 +296,28 @@ function makeTable(rows){
 function makeFooter(totalRows){
   return `
     <div class="footerBox">
+      
       <div class="sigBox">
-        <b>Signature of person verifying physical inventory</b>
-        (may not be the person who maintains the perpetual inventory):
+        <div style="font-size:14px; line-height:1.2;">
+          <b>Signature of person verifying physical inventory</b>
+          (may not be the person who maintains the perpetual inventory):
+        </div>
+
         <div class="sigLine"></div>
-        <div class="dateLine">
+
+        <div class="dateRow">
           <span>Date Taken:</span>
           <span class="dateBlank">${today()}</span>
         </div>
       </div>
+
       <div class="totalBox">
         <div class="totalTop">
           <span>TOTAL:</span>
           <span class="totalAmount">${money(sumCost(totalRows))}</span>
         </div>
-        <div></div>
       </div>
+
     </div>
   `;
 }
