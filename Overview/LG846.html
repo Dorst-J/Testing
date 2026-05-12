@@ -4,82 +4,104 @@
   <meta charset="utf-8" />
   <title>LG846</title>
   <style>
-    body{font-family:Arial;margin:0;color:#111}
+    body{font-family:Arial;margin:0;color:#111;background:#fff}
     header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #ddd}
     .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
     select{padding:9px 12px;border-radius:10px;border:1px solid #bbb;font-size:15px}
     .wrap{padding:18px}
-    h2{text-align:center;margin:10px 0 8px}
-    .line{margin:8px 0;font-size:15px}
-    .sectionTitle{font-weight:bold;margin:24px 0 8px}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{border:1px solid #333;padding:6px;vertical-align:top}
-    th{background:#f1f1f1}
-    .muted{color:#666;font-size:13px;margin-top:8px}
+    .muted{color:#666;font-size:13px;margin:8px 0}
 
     .printPage{
+      width:8.5in;
+      min-height:10.75in;
+      margin:0 auto 24px;
+      border:1px solid #111;
+      box-sizing:border-box;
+      position:relative;
+      background:#fff;
       page-break-after:always;
       break-after:page;
-      min-height:10.2in;
-      position:relative;
-      padding-bottom:115px;
+      padding-bottom:86px;
     }
-    .printPage:last-child{
-      page-break-after:auto;
-      break-after:auto;
+    .printPage:last-child{page-break-after:auto;break-after:auto}
+
+    .formTop{
+      display:grid;
+      grid-template-columns:1fr 118px;
+      border-bottom:1px solid #111;
     }
-    .printTitle{
-      text-align:center;
-      margin:10px 0 8px;
-      font-size:18px;
-      font-weight:700;
+    .formTitle{
+      font-weight:bold;
+      font-size:15px;
+      line-height:1.1;
+      padding:4px 6px;
     }
-    .printFooter{
+    .checkBoxArea{
+      border-left:1px solid #111;
+      font-size:10px;
+      line-height:1.1;
+      padding:2px 4px;
+    }
+    .checkRow{display:flex;gap:4px;align-items:center}
+    .box{width:9px;height:9px;border:1px solid #111;display:inline-block;text-align:center;line-height:8px;font-size:8px}
+
+    .orgRow,.siteRow{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      border-bottom:1px solid #111;
+      min-height:24px;
+      font-size:10px;
+    }
+    .cell{padding:4px 6px}
+    .rightBorder{border-right:1px solid #111}
+
+    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px}
+    th,td{border:1px solid #111;padding:2px 3px;vertical-align:middle}
+    th{font-weight:bold;text-align:center}
+    .colNums th{font-size:10px;height:18px}
+    .labels th{font-size:8px;height:30px;font-weight:normal}
+    tbody td{height:20px}
+    .money{text-align:right}
+
+    .footer{
       position:absolute;
       left:0;
       right:0;
       bottom:0;
-    }
-
-    .footerBox{
-      margin-top:10px;
-      border:2px solid #111;
+      border-top:1px solid #111;
       display:grid;
-      grid-template-columns: 1fr 170px;
-      font-size:14px;
+      grid-template-columns:1fr 170px;
+      min-height:76px;
+      font-size:10px;
     }
-    .sigBox{padding:6px;border-right:2px solid #111;min-height:76px}
-    .totalBox{display:grid;grid-template-rows:34px 1fr}
-    .totalTop{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #111;padding:0 10px;font-weight:bold}
-    .totalAmount{font-weight:normal}
-    .sigLine{margin-top:32px;border-bottom:1px solid #111;height:16px}
-    .dateLine{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+    .sig{padding:4px 6px;border-right:1px solid #111}
+    .sigLine{border-bottom:1px solid #111;height:26px;margin-top:10px}
+    .dateTaken{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
     .dateBlank{border-bottom:1px solid #111;min-width:180px;text-align:center}
+    .totalArea{display:grid;grid-template-rows:28px 1fr}
+    .totalTop{display:grid;grid-template-columns:1fr 90px;border-bottom:1px solid #111}
+    .totalLabel{font-weight:bold;text-align:center;padding-top:8px}
+    .totalAmount{text-align:center;padding-top:8px;border-left:1px solid #111}
 
     @media print{
-      header{display:none}
+      header,.screenOnly{display:none}
       body{margin:0}
       .wrap{padding:0}
-      .screenOnly{display:none}
-      table{font-size:10px}
-      th,td{padding:4px}
       .printPage{
+        margin:0;
+        width:100%;
+        min-height:10.75in;
+        border:1px solid #111;
         page-break-after:always;
         break-after:page;
-        min-height:10.2in;
-        padding-bottom:115px;
       }
-      .printPage:last-child{
-        page-break-after:auto;
-        break-after:auto;
-      }
+      .printPage:last-child{page-break-after:auto;break-after:auto}
     }
   </style>
 </head>
 <body>
   <header>
     <button class="smallBtn" onclick="location.href='/Dashboard.html'">Return Home</button>
-
     <div>
       <label for="barSelect"><b>Bar Location:</b></label>
       <select id="barSelect">
@@ -90,85 +112,26 @@
         <option value="Northwoods">Northwoods</option>
       </select>
     </div>
-
     <button class="smallBtn" onclick="window.print()">Print Page</button>
   </header>
 
   <div class="wrap">
     <div id="status" class="muted screenOnly">Choose a bar location to load inventory.</div>
-
-    <div class="printPage">
-      <div class="printTitle">LG846 Physical Inventory / Pull-Tabs, Tipboards, and / or Paddletickets Monthly Report</div>
-      <div class="line">
-        Organization Name: Anoka Ramsey Athletic Association (ARAA)
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        License/Premises Permit Number: 98049
-      </div>
-      <div class="line">
-        Site Name: <span class="siteNamePrint"></span>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        Month/Year: <span class="monthYearPrint"></span>
-      </div>
-
-      <div class="sectionTitle">Paper Pull-Tabs</div>
-      <div id="pulltabs"></div>
-      <div id="pulltabsFooter" class="printFooter"></div>
-    </div>
-
-    <div class="printPage">
-      <div class="printTitle">LG846 Physical Inventory / Pull-Tabs, Tipboards, and / or Paddletickets Monthly Report</div>
-      <div class="line">
-        Organization Name: Anoka Ramsey Athletic Association (ARAA)
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        License/Premises Permit Number: 98049
-      </div>
-      <div class="line">
-        Site Name: <span class="siteNamePrint"></span>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        Month/Year: <span class="monthYearPrint"></span>
-      </div>
-
-      <div class="sectionTitle">Tipboard Games</div>
-      <div id="tipboards"></div>
-      <div id="tipboardsFooter" class="printFooter"></div>
-    </div>
-
-    <div class="printPage">
-      <div class="printTitle">LG846 Physical Inventory / Pull-Tabs, Tipboards, and / or Paddletickets Monthly Report</div>
-      <div class="line">
-        Organization Name: Anoka Ramsey Athletic Association (ARAA)
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        License/Premises Permit Number: 98049
-      </div>
-      <div class="line">
-        Site Name: <span class="siteNamePrint"></span>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        Month/Year: <span class="monthYearPrint"></span>
-      </div>
-
-      <div class="sectionTitle">Paddletickets</div>
-      <div id="paddletickets"></div>
-      <div id="paddleticketsFooter" class="printFooter"></div>
-    </div>
+    <div id="pages"></div>
   </div>
 
 <script>
 const apiBase = "https://overview.jenna-dorst.workers.dev";
+let currentSite = "";
 
 function today(){
   const d = new Date();
-  const mm = String(d.getMonth()+1).padStart(2,"0");
-  const dd = String(d.getDate()).padStart(2,"0");
-  const yy = d.getFullYear();
-  return `${mm}/${dd}/${yy}`;
+  return `${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}/${d.getFullYear()}`;
 }
 
 function monthYear(){
-  const d = new Date();
-  return d.toLocaleString("en-US", { month:"long", year:"numeric" });
+  return new Date().toLocaleString("en-US", { month:"long", year:"numeric" });
 }
-
-document.querySelectorAll(".monthYearPrint").forEach(x => x.textContent = monthYear());
 
 async function api(path){
   const resp = await fetch(`${apiBase}${path}`);
@@ -190,92 +153,138 @@ function sumCost(rows){
   }, 0);
 }
 
-function makeTable(rows){
+function classify(rows){
+  const pulltabs = [], tipboards = [], paddletickets = [];
+  for(const r of rows){
+    const p = String(r.partNumber || "").toUpperCase();
+    if(p.includes("PT1")) paddletickets.push(r);
+    else if(p.includes("XB100") || p.includes("TIP")) tipboards.push(r);
+    else pulltabs.push(r);
+  }
+  return { pulltabs, tipboards, paddletickets };
+}
+
+function blankRows(rows, minRows=22){
+  const out = [...rows];
+  while(out.length < minRows) out.push({});
+  return out;
+}
+
+function makePage(title, checkedType, rows){
+  const total = money(sumCost(rows));
+  const displayRows = blankRows(rows);
+
+  const checked = {
+    pulltabs: checkedType === "pulltabs" ? "✓" : "",
+    tipboards: checkedType === "tipboards" ? "✓" : "",
+    paddletickets: checkedType === "paddletickets" ? "✓" : ""
+  };
+
   return `
-    <table>
-      <thead>
-        <tr>
-          <th>Manufacture ID</th>
-          <th>Part Number</th>
-          <th>Game Name</th>
-          <th>Game Serial Number</th>
-          <th>Actual Game Cost</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.length ? rows.map(r => `
-          <tr>
-            <td>${r.manufactureId || ""}</td>
-            <td>${r.partNumber || ""}</td>
-            <td>${r.gameName || ""}</td>
-            <td>${r.gameSerialNumber || ""}</td>
-            <td style="text-align:right;">${money(r.actualGameCost)}</td>
+    <section class="printPage">
+      <div class="formTop">
+        <div class="formTitle">
+          LG846 Physical Inventory/Pull-Tabs, Tipboards,<br>
+          and/or Paddletickets Monthly Report
+        </div>
+        <div class="checkBoxArea">
+          <div class="checkRow"><span class="box">${checked.pulltabs}</span> Pull-Tabs</div>
+          <div class="checkRow"><span class="box">${checked.tipboards}</span> Tipboards</div>
+          <div class="checkRow"><span class="box">${checked.paddletickets}</span> Paddletickets</div>
+        </div>
+      </div>
+
+      <div class="orgRow">
+        <div class="cell rightBorder">
+          <b>Organization Name:</b> Anoka Ramsey Athletic Association (ARAA)
+        </div>
+        <div class="cell">
+          <b>License/Premises Permit Number:</b> 98049
+        </div>
+      </div>
+
+      <div class="siteRow">
+        <div class="cell rightBorder">
+          <b>Site Name:</b> ${currentSite || ""}
+        </div>
+        <div class="cell">
+          <b>Month/Year:</b> ${monthYear()}
+        </div>
+      </div>
+
+      <table>
+        <colgroup>
+          <col style="width:11%">
+          <col style="width:14%">
+          <col style="width:36%">
+          <col style="width:18%">
+          <col style="width:21%">
+        </colgroup>
+        <thead>
+          <tr class="colNums">
+            <th>Column 1</th>
+            <th>Column 2</th>
+            <th>Column 3</th>
+            <th>Column 4</th>
+            <th>Column 5</th>
           </tr>
-        `).join("") : `
-          <tr><td colspan="5" style="text-align:center;">No records</td></tr>
-        `}
-      </tbody>
-    </table>
+          <tr class="labels">
+            <th>Manuf. ID</th>
+            <th>Form (part)<br>Number</th>
+            <th>Name of Game</th>
+            <th>Serial Number</th>
+            <th>Actual Game Cost<br>(do not include sales tax,<br>1.7% tax, or freight)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${displayRows.map(r => `
+            <tr>
+              <td>${r.manufactureId || ""}</td>
+              <td>${r.partNumber || ""}</td>
+              <td>${r.gameName || ""}</td>
+              <td>${r.gameSerialNumber || ""}</td>
+              <td class="money">${money(r.actualGameCost)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <div class="sig">
+          <b>Signature of person verifying physical inventory</b>
+          (may not be the person who maintains the perpetual inventory):
+          <div class="sigLine"></div>
+          <div class="dateTaken">
+            <span>Date Taken:</span>
+            <span class="dateBlank">${today()}</span>
+          </div>
+        </div>
+        <div class="totalArea">
+          <div class="totalTop">
+            <div class="totalLabel">TOTAL:</div>
+            <div class="totalAmount">${total}</div>
+          </div>
+          <div></div>
+        </div>
+      </div>
+    </section>
   `;
 }
 
-function makeFooter(rows){
-  const total = sumCost(rows);
-  return `
-    <div class="footerBox">
-      <div class="sigBox">
-        <b>Signature of person verifying physical inventory</b>
-        (may not be the person who maintains the perpetual inventory):
-        <div class="sigLine"></div>
-        <div class="dateLine">
-          <span>Date Taken:</span>
-          <span class="dateBlank">${today()}</span>
-        </div>
-      </div>
-      <div class="totalBox">
-        <div class="totalTop">
-          <span>TOTAL:</span>
-          <span class="totalAmount">${money(total)}</span>
-        </div>
-        <div></div>
-      </div>
-    </div>
-  `;
+function renderPages(grouped){
+  document.getElementById("pages").innerHTML =
+    makePage("Paper Pull-Tabs", "pulltabs", grouped.pulltabs || []) +
+    makePage("Tipboard Games", "tipboards", grouped.tipboards || []) +
+    makePage("Paddletickets", "paddletickets", grouped.paddletickets || []);
 }
 
 function renderEmpty(){
-  document.getElementById("pulltabs").innerHTML = makeTable([]);
-  document.getElementById("tipboards").innerHTML = makeTable([]);
-  document.getElementById("paddletickets").innerHTML = makeTable([]);
-
-  document.getElementById("pulltabsFooter").innerHTML = makeFooter([]);
-  document.getElementById("tipboardsFooter").innerHTML = makeFooter([]);
-  document.getElementById("paddleticketsFooter").innerHTML = makeFooter([]);
-}
-
-function classify(rows){
-  const pulltabs = [];
-  const tipboards = [];
-  const paddletickets = [];
-
-  for(const r of rows){
-    const p = String(r.partNumber || "").toUpperCase();
-
-    if(p.includes("PT1")){
-      paddletickets.push(r);
-    } else if(p.includes("XB100") || p.includes("TIP")){
-      tipboards.push(r);
-    } else {
-      pulltabs.push(r);
-    }
-  }
-
-  return { pulltabs, tipboards, paddletickets };
+  renderPages({ pulltabs:[], tipboards:[], paddletickets:[] });
 }
 
 document.getElementById("barSelect").addEventListener("change", async e => {
   const loc = e.target.value;
-  document.querySelectorAll(".siteNamePrint").forEach(x => x.textContent = loc || "");
+  currentSite = loc || "";
 
   if(!loc){
     document.getElementById("status").textContent = "Choose a bar location to load inventory.";
@@ -294,14 +303,7 @@ document.getElementById("barSelect").addEventListener("change", async e => {
   }
 
   const grouped = classify(r.rows || []);
-
-  document.getElementById("pulltabs").innerHTML = makeTable(grouped.pulltabs);
-  document.getElementById("tipboards").innerHTML = makeTable(grouped.tipboards);
-  document.getElementById("paddletickets").innerHTML = makeTable(grouped.paddletickets);
-
-  document.getElementById("pulltabsFooter").innerHTML = makeFooter(grouped.pulltabs);
-  document.getElementById("tipboardsFooter").innerHTML = makeFooter(grouped.tipboards);
-  document.getElementById("paddleticketsFooter").innerHTML = makeFooter(grouped.paddletickets);
+  renderPages(grouped);
 
   document.getElementById("status").textContent =
     `${loc} loaded — Pull-Tabs: ${grouped.pulltabs.length}, Tipboards: ${grouped.tipboards.length}, Paddletickets: ${grouped.paddletickets.length}`;
