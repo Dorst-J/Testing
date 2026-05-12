@@ -9,18 +9,102 @@
     .smallBtn{padding:8px 12px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
     select{padding:9px 12px;border-radius:10px;border:1px solid #bbb;font-size:15px}
     .wrap{padding:18px}
-    h2{text-align:center;margin:10px 0 8px}
-    .orgLine{margin:8px 0 18px;font-size:15px}
-    .sectionTitle{font-weight:bold;margin:24px 0 8px}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{border:1px solid #333;padding:6px;vertical-align:top}
-    th{background:#f1f1f1}
     .muted{color:#666;font-size:13px;margin-top:8px}
+
+    .printPage{
+      width:8.5in;
+      min-height:10.75in;
+      margin:0 auto 24px;
+      box-sizing:border-box;
+      padding:18px;
+      page-break-after:always;
+      break-after:page;
+    }
+
+    .printPage:last-child{
+      page-break-after:auto;
+      break-after:auto;
+    }
+
+    h2{
+      text-align:center;
+      margin:0 0 8px;
+      font-size:22px;
+      line-height:1.15;
+    }
+
+    .line{
+      display:flex;
+      justify-content:space-between;
+      gap:18px;
+      margin:10px 0 18px;
+      font-size:15px;
+    }
+
+    .sectionTitle{
+      font-weight:bold;
+      margin:20px 0 8px;
+      font-size:20px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:10px;
+      table-layout:fixed;
+    }
+
+    th,td{
+      border:1px solid #333;
+      padding:4px;
+      vertical-align:middle;
+      text-align:center;
+      word-break:break-word;
+    }
+
+    th{
+      background:#f1f1f1;
+      font-weight:700;
+    }
+
+    @page{
+      size:letter;
+      margin:0.25in;
+    }
+
     @media print{
-      header{display:none}
-      .wrap{padding:0}
-      table{font-size:10px}
-      th,td{padding:4px}
+      header,.screenOnly{display:none}
+
+      html,body{
+        margin:0;
+        padding:0;
+      }
+
+      .wrap{
+        padding:0;
+      }
+
+      .printPage{
+        width:100%;
+        min-height:10.75in;
+        margin:0;
+        padding:0;
+        page-break-after:always;
+        break-after:page;
+      }
+
+      .printPage:last-child{
+        page-break-after:auto;
+        break-after:auto;
+      }
+
+      table{
+        font-size:9px;
+      }
+
+      th,td{
+        padding:3px;
+      }
     }
   </style>
 </head>
@@ -34,7 +118,7 @@
         <option value="">Choose location...</option>
         <option value="Chanticlear">Chanticlear</option>
         <option value="McDuffs">McDuffs</option>
-        <option value="Willies">Willys</option>
+        <option value="Willies">Willies</option>
         <option value="Northwoods">Northwoods</option>
       </select>
     </div>
@@ -43,28 +127,15 @@
   </header>
 
   <div class="wrap">
-    <h2>LG844 Perpetual Inventory/Paper Pull-Tabs, Tipboards, and/or Paddletickets</h2>
-
-    <div class="orgLine">
-      Organization Name: Anoka Ramsey Athletic Association (ARAA)
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      License/Premises Permit Number: 98049
-    </div>
-
-    <div id="status" class="muted">Choose a bar location to load inventory.</div>
-
-    <div class="sectionTitle">Paper Pull-Tabs</div>
-    <div id="pulltabs"></div>
-
-    <div class="sectionTitle">Tipboard Games</div>
-    <div id="tipboards"></div>
-
-    <div class="sectionTitle">Paddletickets</div>
-    <div id="paddletickets"></div>
+    <div id="status" class="muted screenOnly">Choose a bar location to load inventory.</div>
+    <div id="pages"></div>
   </div>
 
 <script>
 const apiBase = "https://overview.jenna-dorst.workers.dev";
+let currentSite = "";
+
+const ROWS_PER_PAGE = 32;
 
 async function api(path){
   const resp = await fetch(`${apiBase}${path}`);
@@ -79,9 +150,51 @@ function money(v){
   return Number.isFinite(n) ? `$${n.toFixed(2)}` : v;
 }
 
+function classify(rows){
+  const pulltabs = [];
+  const tipboards = [];
+  const paddletickets = [];
+
+  for(const r of rows){
+    const p = String(r.partNumber || "").toUpperCase();
+
+    if(p.includes("PT1")){
+      paddletickets.push(r);
+    } else if(p.includes("XB100") || p.includes("TIP")){
+      tipboards.push(r);
+    } else {
+      pulltabs.push(r);
+    }
+  }
+
+  return { pulltabs, tipboards, paddletickets };
+}
+
+function chunkRows(rows){
+  const chunks = [];
+  if(!rows.length) return [[]];
+
+  for(let i = 0; i < rows.length; i += ROWS_PER_PAGE){
+    chunks.push(rows.slice(i, i + ROWS_PER_PAGE));
+  }
+  return chunks;
+}
+
 function makeTable(rows){
   return `
     <table>
+      <colgroup>
+        <col style="width:8%">
+        <col style="width:10%">
+        <col style="width:9%">
+        <col style="width:9%">
+        <col style="width:12%">
+        <col style="width:16%">
+        <col style="width:10%">
+        <col style="width:9%">
+        <col style="width:8%">
+        <col style="width:9%">
+      </colgroup>
       <thead>
         <tr>
           <th>Invoice Date</th>
@@ -111,41 +224,57 @@ function makeTable(rows){
             <td>${r.dateGameClosed || ""}</td>
           </tr>
         `).join("") : `
-          <tr><td colspan="10" style="text-align:center;">No records</td></tr>
+          <tr><td colspan="10">(No records)</td></tr>
         `}
       </tbody>
     </table>
   `;
 }
 
-function renderEmpty(){
-  document.getElementById("pulltabs").innerHTML = makeTable([]);
-  document.getElementById("tipboards").innerHTML = makeTable([]);
-  document.getElementById("paddletickets").innerHTML = makeTable([]);
+function makeHeader(){
+  return `
+    <h2>LG844 Perpetual Inventory/Paper Pull-Tabs, Tipboards, and/or<br>Paddletickets</h2>
+
+    <div class="line">
+      <div>Organization Name: Anoka Ramsey Athletic Association (ARAA)</div>
+      <div>License/Premises Permit Number: 98049</div>
+    </div>
+  `;
 }
 
-function classify(rows){
-  const pulltabs = [];
-  const tipboards = [];
-  const paddletickets = [];
+function makePage(sectionTitle, pageRows, pageNum, totalPages){
+  const continued = totalPages > 1 && pageNum > 1 ? " (continued)" : "";
 
-  for(const r of rows){
-    const p = String(r.partNumber || "").toUpperCase();
+  return `
+    <section class="printPage">
+      ${makeHeader()}
+      <div class="sectionTitle">${sectionTitle}${continued}</div>
+      ${makeTable(pageRows)}
+    </section>
+  `;
+}
 
-    if(p.includes("PT1")){
-      paddletickets.push(r);
-    } else if(p.includes("XB100") || p.includes("TIP")){
-      tipboards.push(r);
-    } else {
-      pulltabs.push(r);
-    }
-  }
+function renderSection(title, rows){
+  const chunks = chunkRows(rows);
+  return chunks.map((chunk, idx) =>
+    makePage(title, chunk, idx + 1, chunks.length)
+  ).join("");
+}
 
-  return { pulltabs, tipboards, paddletickets };
+function renderPages(grouped){
+  document.getElementById("pages").innerHTML =
+    renderSection("Paper Pull-Tabs", grouped.pulltabs || []) +
+    renderSection("Tipboard Games", grouped.tipboards || []) +
+    renderSection("Paddletickets", grouped.paddletickets || []);
+}
+
+function renderEmpty(){
+  renderPages({ pulltabs:[], tipboards:[], paddletickets:[] });
 }
 
 document.getElementById("barSelect").addEventListener("change", async e => {
   const loc = e.target.value;
+  currentSite = loc || "";
 
   if(!loc){
     document.getElementById("status").textContent = "Choose a bar location to load inventory.";
@@ -164,10 +293,7 @@ document.getElementById("barSelect").addEventListener("change", async e => {
   }
 
   const grouped = classify(r.rows || []);
-
-  document.getElementById("pulltabs").innerHTML = makeTable(grouped.pulltabs);
-  document.getElementById("tipboards").innerHTML = makeTable(grouped.tipboards);
-  document.getElementById("paddletickets").innerHTML = makeTable(grouped.paddletickets);
+  renderPages(grouped);
 
   document.getElementById("status").textContent =
     `${loc} loaded — Pull-Tabs: ${grouped.pulltabs.length}, Tipboards: ${grouped.tipboards.length}, Paddletickets: ${grouped.paddletickets.length}`;
