@@ -12,15 +12,16 @@
     .muted{color:#666;font-size:13px;margin-top:8px}
 
     .printPage{
-      width:8.5in;
-      min-height:10.75in;
-      margin:0 auto 24px;
-      position:relative;
-      box-sizing:border-box;
-      padding:18px 18px 130px 18px;
-      page-break-after:always;
-      break-after:page;
-    }
+  width:8.5in;
+  height:10.35in;
+  margin:0 auto 24px;
+  position:relative;
+  box-sizing:border-box;
+  padding:18px 18px 125px 18px;
+  page-break-after:always;
+  break-after:page;
+  overflow:hidden;
+}
 
     .printPage:last-child{
       page-break-after:auto;
@@ -31,55 +32,136 @@
     .line{margin:8px 0;font-size:15px}
     .sectionTitle{font-weight:bold;margin:20px 0 8px;font-size:20px}
 
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{border:1px solid #333;padding:5px;vertical-align:top}
-    th{background:#f1f1f1}
-    td.money{text-align:right}
+    table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:10px;
+  table-layout:fixed;
+}
+
+th,td{
+  border:1px solid #333;
+  padding:4px;
+  vertical-align:middle;
+  text-align:center;
+}
+
+th{
+  background:#f1f1f1;
+  font-weight:700;
+}
+
+td.money{
+  text-align:center;
+}
 
     .footerBox{
-      position:absolute;
-      left:18px;
-      right:18px;
-      bottom:18px;
-      border:2px solid #111;
-      display:grid;
-      grid-template-columns:1fr 170px;
-      font-size:14px;
-      background:#fff;
-    }
+  position:absolute;
+  left:18px;
+  right:18px;
+  bottom:18px;
+  height:88px;
+  border:2px solid #111;
+  display:grid;
+  grid-template-columns:1fr 170px;
+  font-size:14px;
+  background:#fff;
+  box-sizing:border-box;
+}
 
-    .sigBox{padding:6px;border-right:2px solid #111;min-height:76px}
-    .totalBox{display:grid;grid-template-rows:34px 1fr}
-    .totalTop{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #111;padding:0 10px;font-weight:bold}
-    .totalAmount{font-weight:normal}
-    .sigLine{margin-top:32px;border-bottom:1px solid #111;height:16px}
-    .dateLine{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
-    .dateBlank{border-bottom:1px solid #111;min-width:180px;text-align:center}
+    .sigBox{
+  padding:6px;
+  border-right:2px solid #111;
+  height:88px;
+  box-sizing:border-box;
+}
 
-    @media print{
-      header,.screenOnly{display:none}
-      body{margin:0}
-      .wrap{padding:0}
-      .printPage{
-        width:auto;
-        min-height:10.75in;
-        margin:0;
-        padding:0 0 130px 0;
-        page-break-after:always;
-        break-after:page;
-      }
-      .printPage:last-child{
-        page-break-after:auto;
-        break-after:auto;
-      }
-      .footerBox{
-        left:0;
-        right:0;
-        bottom:0;
-      }
-      table{font-size:10px}
-      th,td{padding:4px}
-    }
+.totalBox{
+  display:grid;
+  grid-template-rows:34px 1fr;
+  height:88px;
+}
+
+.totalTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:2px solid #111;
+  padding:0 10px;
+  font-weight:bold;
+}
+
+.totalAmount{
+  font-weight:normal;
+}
+
+.sigLine{
+  margin-top:22px;
+  border-bottom:1px solid #111;
+  height:14px;
+}
+
+.dateLine{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:4px;
+}
+
+.dateBlank{
+  border-bottom:1px solid #111;
+  min-width:180px;
+  text-align:center;
+}
+
+   @page{
+  size:letter;
+  margin:0.25in;
+}
+
+@media print{
+  header,.screenOnly{display:none}
+
+  html,body{
+    margin:0;
+    padding:0;
+  }
+
+  .wrap{
+    padding:0;
+  }
+
+  .printPage{
+    width:100%;
+    height:10.35in;
+    margin:0;
+    padding:0 0 125px 0;
+    page-break-after:always;
+    break-after:page;
+    overflow:hidden;
+  }
+
+  .printPage:last-child{
+    page-break-after:auto;
+    break-after:auto;
+  }
+
+  .footerBox{
+    left:0;
+    right:0;
+    bottom:0;
+    height:88px;
+  }
+
+  table{
+    font-size:9px;
+  }
+
+  th,td{
+    padding:3px;
+    text-align:center;
+  }
+}
   </style>
 </head>
 <body>
@@ -109,7 +191,7 @@
 const apiBase = "https://overview.jenna-dorst.workers.dev";
 let currentSite = "";
 
-const ROWS_PER_PAGE = 34;
+const ROWS_PER_PAGE = 29;
 
 function today(){
   const d = new Date();
