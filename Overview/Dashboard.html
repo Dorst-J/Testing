@@ -10,7 +10,8 @@
     .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#03d1fa; cursor:pointer; }
     .wrap { padding:18px; }
     .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
-    .card { border:1px solid #ddd; border-radius:14px; padding:18px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1cfa03;}
+    .cardBar { border:1px solid #ddd; border-radius:14px; padding:18px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1cfa03;}
+    .cardDep { border:1px solid #ddd; border-radius:14px; padding:18px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fae503;}
     .big { font-size:34px; font-weight:700; margin:0; }
     .label { margin-top:6px; align-items:center; color:#444; }
     .grid2 { display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px; }
@@ -33,7 +34,7 @@
 <div class="h2"><h2>Awaiting Pickup</h2></div>
   <div class="wrap">
     <div class="grid">
-      <div class="card">
+      <div class="cardBar">
         <div id="c_chant" class="big">–</div>
         <div class="label">Chanticlear</div>
       </div>
@@ -52,7 +53,7 @@
     </div>
 
     <div class="grid2">
-      <div class="card" style="align-items:flex-start; justify-content:center;">
+      <div class="cardDep" style="align-items:flex-start; justify-content:center;">
         <div id="c_dep" class="big" style="align-self:center;">–</div>
         <div class="label" style="align-self:center;">Deposits Pending</div>
         <div id="apiHint" class="muted" style="margin-top:10px; width:100%; text-align:center;"></div>
