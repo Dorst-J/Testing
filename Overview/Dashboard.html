@@ -10,7 +10,7 @@
     .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#03d1fa; cursor:pointer; }
     .wrap { padding:18px; }
     .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
-    .card { border:1px solid #ddd; border-radius:14px; padding:18px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .card { border:1px solid #ddd; border-radius:14px; padding:18px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1cfa03;}
     .big { font-size:34px; font-weight:700; margin:0; }
     .label { margin-top:6px; align-items:center; color:#444; }
     .grid2 { display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px; }
@@ -22,7 +22,7 @@
     .pill { display:inline-block; font-size:12px; padding:2px 8px; border:1px solid #ddd; border-radius:999px; margin-right:8px; }
     .links { border:1px solid #ddd; border-radius:14px; padding:14px; }
     .btnRow { display:flex; gap:12px; flex-wrap:wrap; }
-    .h2 {align-items:center;}
+    .h2 {align-items:center; justify-content:center;}
   </style>
 </head>
 <body>
@@ -30,7 +30,7 @@
     <h1>Dashboard</h1>
     <button class="smallBtn" onclick="location.href='/signout'">Sign out</button>
   </header>
-<divclass="h2"><h2>Awaiting Pickup</h2></divclass>
+<div class="h2"><h2>Awaiting Pickup</h2></div>
   <div class="wrap">
     <div class="grid">
       <div class="card">
