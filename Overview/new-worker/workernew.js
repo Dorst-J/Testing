@@ -39,8 +39,8 @@ const LOCATIONS = ["Chanticlear", "McDuffs", "Willies", "Northwoods"];
 
 // Update to match YOUR SITENO mapping
 const SITE_LAST3_TO_LOCATION = {
-  "014": "McDuffs",
-  "006": "Chanticlear",
+  "006": "McDuffs",
+  "014": "Chanticlear",
   "012": "Willies",
   "009": "Northwoods",
 };
