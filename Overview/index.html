@@ -115,6 +115,7 @@ function handleCredentialResponse(response) {
   localStorage.setItem("defaultPage", user.defaultPage || "");
   localStorage.setItem("allowedPages", JSON.stringify(user.allow || []));
   localStorage.setItem("deniedPages", JSON.stringify(user.deny || []));
+  localStorage.setItem("loginTime", String(Date.now()));
 
   if (!user.defaultPage) {
     alert("This account has no start page configured yet.");
