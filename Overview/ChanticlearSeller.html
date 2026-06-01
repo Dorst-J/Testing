@@ -52,7 +52,7 @@
   const maxAge = 1000 * 60 * 60 * 12; // 12 hours
 
   const email = localStorage.getItem("userEmail");
-  const defaultPage = localStorage.getItem("defaultPage") || "./index.html";
+  const defaultPage = localStorage.getItem("defaultPage") || "/index.html";
   const allow = JSON.parse(localStorage.getItem("allowedPages") || "[]");
   const deny = JSON.parse(localStorage.getItem("deniedPages") || "[]");
 
@@ -63,16 +63,15 @@
     localStorage.removeItem("allowedPages");
     localStorage.removeItem("deniedPages");
     localStorage.removeItem("loginTime");
-    location.href = "./index.html";
+    window.location.replace("/index.html");
   }
-
-  const current = "./" + location.pathname.split("/").pop();
 
   function norm(p){
     if (!p) return "";
-    return "./" + p.split("/").pop();
+    return "/" + String(p).replace("./","").replace(/^\/+/,"");
   }
 
+  const current = norm(location.pathname);
   const denied = deny.map(norm);
   const allowed = allow.map(norm);
 
@@ -84,13 +83,13 @@
 
   if (denied.includes(current)) {
     alert("You are not allowed to view this page.");
-    location.href = defaultPage;
+    window.location.replace(defaultPage);
     return;
   }
 
   if (!allow.includes("*") && !allowed.includes(current)) {
     alert("You are not allowed to view this page.");
-    location.href = defaultPage;
+    window.location.replace(defaultPage);
     return;
   }
 })();
