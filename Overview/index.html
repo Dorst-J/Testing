@@ -42,93 +42,79 @@
 <div class="small" id="msg"></div>
 
 <script>
-
-/* =====================================================
-   EDIT ONLY THIS SECTION TO CONTROL ACCESS
-   ===================================================== */
-
 const USERS = {
-
   "sedorst17@gmail.com": {
-    defaultPage: "./SimonsAdminDash.html",
+    defaultPage: "/SimonsAdminDash.html",
     allow: ["*"],
-    deny: ["./AdminMainPage.html"]
+    deny: ["/AdminMainPage.html"]
   },
 
   "gambling@arsports.org": {
-    defaultPage: "./Dashboard.html",
+    defaultPage: "/Dashboard.html",
     allow: ["*"],
-    deny: ["./SimonsAdminDash.html"]
+    deny: ["/SimonsAdminDash.html"]
   },
 
   "jenna.dorst@gmail.com": {
-    defaultPage: "./SimonsAdminDash.html",
-    allow: ["*"]
+    defaultPage: "/SimonsAdminDash.html",
+    allow: ["*"],
+    deny: []
   },
 
-   "chanticlear.tabs@gmail.com": {
-  defaultPage: "./ChanticlearSeller.html",
-  allow: [
-    "./index.html",
-    "./ChanticlearSeller.html"
-  ],
-  deny: [
-    "./SimonsAdminDash.html",
-    "./Dashboard.html",
-    "./McDuffsSeller.html",
-    "./WilliesSeller.html",
-    "./NorthwoodsSeller.html",
-    "./Transportation.html",
-    "./Pickup.html",
-    "./Deposit.html",
-    "./OfficeLocation.html",
-    "./UploadDbf.html",
-    "./LG844.html",
-    "./LG846.html"
-  ]
-}
+  "chanticlear.tabs@gmail.com": {
+    defaultPage: "/ChanticlearSeller.html",
+    allow: [
+      "/ChanticlearSeller.html"
+    ],
+    deny: [
+      "/SimonsAdminDash.html",
+      "/Dashboard.html",
+      "/McDuffsSeller.html",
+      "/WilliesSeller.html",
+      "/NorthwoodsSeller.html",
+      "/Transportation.html",
+      "/Pickup.html",
+      "/Deposit.html",
+      "/OfficeLocation.html",
+      "/UploadDbf.html",
+      "/LG844.html",
+      "/LG846.html"
+    ]
+  }
 };
 
-const UNAUTHORIZED_REDIRECT = ""; // optional
+const UNAUTHORIZED_REDIRECT = "";
 
-/* =====================================================
-   GOOGLE SIGN IN
-   ===================================================== */
+function norm(p){
+  if (!p) return "";
+  return "/" + String(p).replace("./","").replace(/^\/+/,"");
+}
 
 function handleCredentialResponse(response) {
-
   const tokenData = parseJwt(response.credential);
-  const email = (tokenData.email || "").toLowerCase();
-  const name  = tokenData.name || email;
+  const email = (tokenData.email || "").toLowerCase().trim();
+  const name = tokenData.name || email;
 
   const user = USERS[email];
 
   if (!user) {
+    localStorage.clear();
     alert("You are not authorized to access this site.");
     if (UNAUTHORIZED_REDIRECT) window.location.href = UNAUTHORIZED_REDIRECT;
     return;
   }
 
-  // Save login info
+  const defaultPage = norm(user.defaultPage);
+
   localStorage.setItem("userEmail", email);
   localStorage.setItem("userName", name);
-  localStorage.setItem("defaultPage", user.defaultPage || "");
+  localStorage.setItem("defaultPage", defaultPage);
   localStorage.setItem("allowedPages", JSON.stringify(user.allow || []));
   localStorage.setItem("deniedPages", JSON.stringify(user.deny || []));
   localStorage.setItem("loginTime", String(Date.now()));
 
-  if (!user.defaultPage) {
-    alert("This account has no start page configured yet.");
-    return;
-  }
-
-  // Redirect
-  window.location.href = user.defaultPage;
+  window.location.replace(defaultPage);
 }
-
-/* =====================================================
-   JWT DECODER
-   ===================================================== */
 
 function parseJwt(token) {
   const base64Url = token.split('.')[1];
@@ -141,28 +127,29 @@ function parseJwt(token) {
   return JSON.parse(jsonPayload);
 }
 
-/* =====================================================
-   PAGE ACCESS PROTECTION (USE ON ALL PAGES)
-   ===================================================== */
-
 function canAccess(page) {
   const allow = JSON.parse(localStorage.getItem("allowedPages") || "[]");
-  const deny  = JSON.parse(localStorage.getItem("deniedPages") || "[]");
+  const deny = JSON.parse(localStorage.getItem("deniedPages") || "[]");
 
-  const norm = (p) => p.startsWith("./") ? p : "./" + p;
   const target = norm(page);
+  const denied = deny.map(norm);
+  const allowed = allow.map(norm);
 
-  if (deny.map(norm).includes(target)) return false;
+  if (denied.includes(target)) return false;
   if (allow.includes("*")) return true;
 
-  return allow.map(norm).includes(target);
+  return allowed.includes(target);
 }
 
 window.go = function(page) {
+  const email = localStorage.getItem("userEmail");
+  const loginTime = Number(localStorage.getItem("loginTime") || 0);
+  const maxAge = 1000 * 60 * 60 * 12;
 
-  if (!localStorage.getItem("userEmail")) {
+  if (!email || !loginTime || Date.now() - loginTime > maxAge) {
+    localStorage.clear();
     alert("Please sign in first.");
-    window.location.href = "./index.html";
+    window.location.replace("/index.html");
     return;
   }
 
@@ -171,9 +158,8 @@ window.go = function(page) {
     return;
   }
 
-  window.location.href = page;
+  window.location.href = norm(page);
 };
-
 </script>
 </body>
 </html>
