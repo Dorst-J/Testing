@@ -79,6 +79,43 @@
   </div>
 
 <script>
+(function protectPage(){
+  const email = localStorage.getItem("userEmail");
+  const defaultPage = localStorage.getItem("defaultPage") || "./index.html";
+  const allow = JSON.parse(localStorage.getItem("allowedPages") || "[]");
+  const deny = JSON.parse(localStorage.getItem("deniedPages") || "[]");
+
+  const current = "./" + location.pathname.split("/").pop();
+
+  function norm(p){
+    if (!p) return "";
+    p = p.split("/").pop();
+    return "./" + p;
+  }
+
+  const denied = deny.map(norm);
+  const allowed = allow.map(norm);
+
+  if (!email) {
+    alert("Please sign in first.");
+    location.href = "./index.html";
+    return;
+  }
+
+  if (denied.includes(current)) {
+    alert("You are not allowed to view this page.");
+    location.href = defaultPage;
+    return;
+  }
+
+  if (!allow.includes("*") && !allowed.includes(current)) {
+    alert("You are not allowed to view this page.");
+    location.href = defaultPage;
+  }
+})();
+</script>
+
+<script>
 const apiBase = "https://overview.jenna-dorst.workers.dev";
 
 async function api(path, options = {}) {
