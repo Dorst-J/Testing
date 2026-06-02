@@ -5,7 +5,14 @@ const GOOGLE_CLIENT_ID = "653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.goo
 const USERS = {
   "sedorst17@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
-    allow: ["/SimonsAdminDash.html", "/Dashboard.html"]
+    allow: ["/SimonsAdminDash.html", 
+      "/Dashboard.html",
+      "/Transportation.html",
+      "/Pickup.html",
+      "/Deposit.html",
+      "/OfficeLocation.html",
+      "/LG844.html",
+      "/LG846.html"]
   },
   "jenna.dorst@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
