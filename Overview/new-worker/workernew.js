@@ -9,7 +9,7 @@ const USERS = {
   },
   "jenna.dorst@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
-    allow: ["*"]
+    allow: ["/Dashboard.html"]
   },
   "gambling@arsports.org": {
     defaultPage: "/Dashboard.html",
