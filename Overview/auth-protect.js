@@ -25,6 +25,7 @@
     if (!allowed.includes(currentPage)) {
       alert("You are not allowed to view this page.");
       window.location.replace(data.defaultPage || "/index.html");
+      return;
     }
 
   } catch (err) {
@@ -34,11 +35,13 @@
 })();
 
 async function signOut() {
-  await fetch("https://overview.jenna-dorst.workers.dev/signout", {
-    method: "POST",
-    credentials: "include",
-    cache: "no-store"
-  });
+  try {
+    await fetch("https://overview.jenna-dorst.workers.dev/signout", {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store"
+    });
+  } catch {}
 
   window.location.replace("/index.html");
 }
