@@ -1,5 +1,57 @@
 import * as shapefile from "shapefile";
 
+const GOOGLE_CLIENT_ID = "653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.googleusercontent.com";
+
+const USERS = {
+  "sedorst17@gmail.com": {
+    defaultPage: "/SimonsAdminDash.html",
+    allow: ["*"]
+  },
+  "jenna.dorst@gmail.com": {
+    defaultPage: "/SimonsAdminDash.html",
+    allow: ["*"]
+  },
+  "gambling@arsports.org": {
+    defaultPage: "/Dashboard.html",
+    allow: [
+      "/Dashboard.html",
+      "/Transportation.html",
+      "/Pickup.html",
+      "/Deposit.html",
+      "/OfficeLocation.html",
+      "/LG844.html",
+      "/LG846.html"
+    ]
+  },
+  "chanticlear.tabs@gmail.com": {
+    defaultPage: "/ChanticlearSeller.html",
+    allow: ["/ChanticlearSeller.html"]
+  }
+};
+
+async function verifyGoogleCredential(credential) {
+  const r = await fetch(
+    "https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(credential)
+  );
+
+  if (!r.ok) throw new Error("Invalid Google token");
+
+  const data = await r.json();
+
+  if (data.aud !== GOOGLE_CLIENT_ID) {
+    throw new Error("Google client ID mismatch");
+  }
+
+  if (data.email_verified !== "true" && data.email_verified !== true) {
+    throw new Error("Google email not verified");
+  }
+
+  return {
+    email: String(data.email || "").toLowerCase().trim(),
+    name: data.name || data.email
+  };
+}
+
 /* =========================
    CORS + Response helpers
 ========================= */
@@ -182,6 +234,93 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
+    if (request.method === "POST" && path === "/signin") {
+  try {
+    const body = await request.json();
+    const credential = body.credential;
+
+    if (!credential) {
+      return json(request, { success:false, error:"Missing Google credential" }, 400);
+    }
+
+    const googleUser = await verifyGoogleCredential(credential);
+    const user = USERS[googleUser.email];
+
+    if (!user) {
+      return json(request, { success:false, error:"Not authorized" }, 403);
+    }
+
+    const sessionId = crypto.randomUUID();
+
+    await env.SIGNIN_LOGS.put(
+      `session:${sessionId}`,
+      JSON.stringify({
+        email: googleUser.email,
+        name: googleUser.name,
+        defaultPage: user.defaultPage,
+        allow: user.allow
+      }),
+      { expirationTtl: 60 * 60 * 12 }
+    );
+
+    return new Response(JSON.stringify({
+      success:true,
+      email: googleUser.email,
+      name: googleUser.name,
+      defaultPage: user.defaultPage
+    }), {
+      headers: {
+        ...corsHeaders(request),
+        "Content-Type":"application/json",
+        "Set-Cookie": `SESSION=${sessionId}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=43200`
+      }
+    });
+
+  } catch (e) {
+    return json(request, { success:false, error:String(e) }, 500);
+  }
+}
+
+if (request.method === "POST" && path === "/signout") {
+  const cookie = request.headers.get("cookie") || "";
+  const match = cookie.match(/SESSION=([^;]+)/);
+
+  if (match && env.SIGNIN_LOGS) {
+    await env.SIGNIN_LOGS.delete(`session:${match[1]}`);
+  }
+
+  return new Response(JSON.stringify({ ok:true }), {
+    headers: {
+      ...corsHeaders(request),
+      "Content-Type":"application/json",
+      "Set-Cookie":"SESSION=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0"
+    }
+  });
+}
+
+if (request.method === "GET" && path === "/api/auth/check") {
+  const cookie = request.headers.get("cookie") || "";
+  const match = cookie.match(/SESSION=([^;]+)/);
+
+  if (!match) {
+    return json(request, { ok:true, loggedIn:false });
+  }
+
+  const session = await env.SIGNIN_LOGS.get(`session:${match[1]}`, "json");
+
+  if (!session) {
+    return json(request, { ok:true, loggedIn:false });
+  }
+
+  return json(request, {
+    ok:true,
+    loggedIn:true,
+    email: session.email,
+    name: session.name,
+    defaultPage: session.defaultPage,
+    allow: session.allow
+  });
+}
 
     if (request.method === "OPTIONS") {
   return new Response(null, { status: 204, headers: corsHeaders(request) });

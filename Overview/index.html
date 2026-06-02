@@ -14,7 +14,6 @@
       padding-top: 100px;
       margin: 0;
     }
-
     .small {
       color: #666;
       font-size: 0.95rem;
@@ -42,124 +41,34 @@
 <div class="small" id="msg"></div>
 
 <script>
-const USERS = {
-  "sedorst17@gmail.com": {
-    defaultPage: "./SimonsAdminDash.html",
-    allow: ["*"],
-    deny: ["./AdminMainPage.html"]
-  },
+const apiBase = "https://overview.jenna-dorst.workers.dev";
 
-  "gambling@arsports.org": {
-    defaultPage: "./Dashboard.html",
-    allow: ["*"],
-    deny: ["./SimonsAdminDash.html"]
-  },
+async function handleCredentialResponse(response) {
+  const msg = document.getElementById("msg");
+  msg.textContent = "Signing in...";
 
-  "jenna.dorst@gmail.com": {
-    defaultPage: "./SimonsAdminDash.html",
-    allow: ["*"],
-    deny: []
-  },
+  try {
+    const r = await fetch(`${apiBase}/signin`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ credential: response.credential })
+    });
 
-  "chanticlear.tabs@gmail.com": {
-    defaultPage: "./ChanticlearSeller.html",
-    allow: [
-      "./ChanticlearSeller.html"
-    ],
-    deny: [
-      "./SimonsAdminDash.html",
-      "./Dashboard.html",
-      "./McDuffsSeller.html",
-      "./WilliesSeller.html",
-      "./NorthwoodsSeller.html",
-      "./Transportation.html",
-      "./Pickup.html",
-      "./Deposit.html",
-      "./OfficeLocation.html",
-      "./UploadDbf.html",
-      "./LG844.html",
-      "./LG846.html"
-    ]
+    const j = await r.json();
+
+    if (!j.success) {
+      msg.textContent = "";
+      alert(j.error || "Not authorized");
+      return;
+    }
+
+    window.location.replace(j.defaultPage);
+  } catch (e) {
+    msg.textContent = "";
+    alert("Sign-in failed: " + e.message);
   }
-};
-
-const UNAUTHORIZED_REDIRECT = "";
-
-function norm(p){
-  if (!p) return "";
-  return "/" + String(p).replace("./","").replace(/^\/+/,"");
 }
-
-function handleCredentialResponse(response) {
-  const tokenData = parseJwt(response.credential);
-  const email = (tokenData.email || "").toLowerCase().trim();
-  const name = tokenData.name || email;
-
-  const user = USERS[email];
-
-  if (!user) {
-    localStorage.clear();
-    alert("You are not authorized to access this site.");
-    if (UNAUTHORIZED_REDIRECT) window.location.href = UNAUTHORIZED_REDIRECT;
-    return;
-  }
-
-  const defaultPage = norm(user.defaultPage);
-
-  localStorage.setItem("userEmail", email);
-  localStorage.setItem("userName", name);
-  localStorage.setItem("defaultPage", defaultPage);
-  localStorage.setItem("allowedPages", JSON.stringify(user.allow || []));
-  localStorage.setItem("deniedPages", JSON.stringify(user.deny || []));
-  localStorage.setItem("loginTime", String(Date.now()));
-
-  window.location.replace(defaultPage);
-}
-
-function parseJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(
-    atob(base64).split('').map(c =>
-      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-    ).join('')
-  );
-  return JSON.parse(jsonPayload);
-}
-
-function canAccess(page) {
-  const allow = JSON.parse(localStorage.getItem("allowedPages") || "[]");
-  const deny = JSON.parse(localStorage.getItem("deniedPages") || "[]");
-
-  const target = norm(page);
-  const denied = deny.map(norm);
-  const allowed = allow.map(norm);
-
-  if (denied.includes(target)) return false;
-  if (allow.includes("*")) return true;
-
-  return allowed.includes(target);
-}
-
-window.go = function(page) {
-  const email = localStorage.getItem("userEmail");
-  const loginTime = Number(localStorage.getItem("loginTime") || 0);
-  const maxAge = 1000 * 60 * 60 * 12;
-
-  if (!email || !loginTime || Date.now() - loginTime > maxAge) {
-    localStorage.clear();
-    alert("Please sign in first.");
-    window.location.replace("/index.html");
-    return;
-  }
-
-  if (!canAccess(page)) {
-    alert("You are not allowed to view that page.");
-    return;
-  }
-
-  window.location.href = norm(page);
-};
 </script>
 </body>
 </html>
