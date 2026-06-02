@@ -4,19 +4,24 @@
   try {
     const res = await fetch(
       "https://overview.jenna-dorst.workers.dev/api/auth/check",
-      { credentials: "include" }
+      {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store"
+      }
     );
 
     const data = await res.json();
+
+    console.log("AUTH CHECK:", data, "CURRENT PAGE:", currentPage);
 
     if (!data.ok || !data.loggedIn) {
       window.location.replace("/index.html");
       return;
     }
 
-    const allowed = data.allow || [];
+    const allowed = Array.isArray(data.allow) ? data.allow : [data.allow];
 
-    // Admin / full access
     if (allowed.includes("*")) return;
 
     if (!allowed.includes(currentPage)) {
@@ -26,7 +31,7 @@
     }
 
   } catch (err) {
-    console.error(err);
+    console.error("AUTH ERROR:", err);
     window.location.replace("/index.html");
   }
 })();
@@ -35,7 +40,8 @@ async function signOut() {
   try {
     await fetch("https://overview.jenna-dorst.workers.dev/signout", {
       method: "POST",
-      credentials: "include"
+      credentials: "include",
+      cache: "no-store"
     });
   } catch {}
 
