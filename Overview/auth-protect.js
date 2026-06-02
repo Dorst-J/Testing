@@ -1,5 +1,10 @@
 (async function () {
-  const currentPage = "/" + window.location.pathname.split("/").pop();
+  function norm(p) {
+    if (!p) return "";
+    return "/" + String(p).replace("./", "").replace(/^\/+/, "").split("?")[0];
+  }
+
+  const currentPage = norm(window.location.pathname);
 
   try {
     const res = await fetch("https://overview.jenna-dorst.workers.dev/api/auth/check", {
@@ -9,18 +14,16 @@
     });
 
     const data = await res.json();
-    console.log("AUTH CHECK:", data);
+    console.log("AUTH CHECK:", data, "CURRENT:", currentPage);
 
     if (!data.ok || !data.loggedIn) {
       window.location.replace("/index.html");
       return;
     }
 
-    if (data.isAdmin === true) {
-      return;
-    }
+    if (data.isAdmin === true) return;
 
-    const allowed = Array.isArray(data.allow) ? data.allow : [];
+    const allowed = Array.isArray(data.allow) ? data.allow.map(norm) : [];
 
     if (!allowed.includes(currentPage)) {
       alert("You are not allowed to view this page.");
