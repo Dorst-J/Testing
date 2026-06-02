@@ -5,11 +5,11 @@ const GOOGLE_CLIENT_ID = "653779522470-ebl157omo84vrsc733eupggldqg1pugk.apps.goo
 const USERS = {
   "sedorst17@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
-    allow: ["*"]
+    allow: ["/SimonsAdminDash.html", "/Dashboard.html"]
   },
   "jenna.dorst@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
-    allow: ["/Dashboard.html"]
+    allow: ["/SimonsAdminDash.html", "/Dashboard.html"]
   },
   "gambling@arsports.org": {
     defaultPage: "/Dashboard.html",
