@@ -7,6 +7,7 @@ const USERS = {
     defaultPage: "/SimonsAdminDash.html",
     allow: ["/SimonsAdminDash.html", 
       "/Dashboard.html",
+      "/UploadDbf.html",
       "/Transportation.html",
       "/Pickup.html",
       "/Deposit.html",
@@ -22,6 +23,7 @@ const USERS = {
     defaultPage: "/Dashboard.html",
     allow: [
       "/Dashboard.html",
+      "/UploadDbf.html",
       "/Transportation.html",
       "/Pickup.html",
       "/Deposit.html",
