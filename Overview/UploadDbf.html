@@ -24,10 +24,11 @@
     .btnRow { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
   </style>
 </head>
+<script src="/js/auth-protect.js"></script>
 <body>
   <header>
     <div style="display:flex; gap:12px; align-items:center;">
-      <button class="smallBtn" onclick="localStorage.clear(); location.href='/index.html'">Sign out</button>
+      <button class="smallBtn" onclick="signOut()">Sign out</button>
       <h2 style="margin:0;">DBF Upload</h2>
     </div>
     
@@ -72,54 +73,6 @@
   </div>
 
 <script>
-(function protectPage(){
-  const loginTime = Number(localStorage.getItem("loginTime") || 0);
-  const now = Date.now();
-  const maxAge = 1000 * 60 * 60 * 12; // 12 hours
-
-  const email = localStorage.getItem("userEmail");
-  const defaultPage = localStorage.getItem("defaultPage") || "/index.html";
-  const allow = JSON.parse(localStorage.getItem("allowedPages") || "[]");
-  const deny = JSON.parse(localStorage.getItem("deniedPages") || "[]");
-
-  function logout(){
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("defaultPage");
-    localStorage.removeItem("allowedPages");
-    localStorage.removeItem("deniedPages");
-    localStorage.removeItem("loginTime");
-    window.location.replace("/index.html");
-  }
-
-  function norm(p){
-    if (!p) return "";
-    return "/" + String(p).replace("./","").replace(/^\/+/,"");
-  }
-
-  const current = norm(location.pathname);
-  const denied = deny.map(norm);
-  const allowed = allow.map(norm);
-
-  if (!email || !loginTime || now - loginTime > maxAge) {
-    alert("Please sign in first.");
-    logout();
-    return;
-  }
-
-  if (denied.includes(current)) {
-    alert("You are not allowed to view this page.");
-    window.location.replace(defaultPage);
-    return;
-  }
-
-  if (!allow.includes("*") && !allowed.includes(current)) {
-    alert("You are not allowed to view this page.");
-    window.location.replace(defaultPage);
-    return;
-  }
-})();
-
 const apiBase = "https://overview.jenna-dorst.workers.dev";
 
 async function api(path, options = {}) {
