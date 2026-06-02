@@ -35,6 +35,9 @@ const USERS = {
   "chanticlear.tabs@gmail.com": {
     defaultPage: "/ChanticlearSeller.html",
     allow: ["/ChanticlearSeller.html"]
+  },
+  "nne2395@gmail.com": {defaultPage: "/Dashboard.html",
+    allow: ["/Dashboard.html", "/OfficeLocation.html", "/Transportation.html"]
   }
 };
 
