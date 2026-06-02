@@ -80,55 +80,6 @@
   </div>
 
 <script>
-(function protectPage(){
-  const loginTime = Number(localStorage.getItem("loginTime") || 0);
-  const now = Date.now();
-  const maxAge = 1000 * 60 * 60 * 12; // 12 hours
-
-  const email = localStorage.getItem("userEmail");
-  const defaultPage = localStorage.getItem("defaultPage") || "./index.html";
-  const allow = JSON.parse(localStorage.getItem("allowedPages") || "[]");
-  const deny = JSON.parse(localStorage.getItem("deniedPages") || "[]");
-
-  function logout(){
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("defaultPage");
-    localStorage.removeItem("allowedPages");
-    localStorage.removeItem("deniedPages");
-    localStorage.removeItem("loginTime");
-    location.href = "./index.html";
-  }
-
-  const current = "./" + location.pathname.split("/").pop();
-
-  function norm(p){
-    if (!p) return "";
-    return "./" + p.split("/").pop();
-  }
-
-  const denied = deny.map(norm);
-  const allowed = allow.map(norm);
-
-  if (!email || !loginTime || now - loginTime > maxAge) {
-    alert("Please sign in first.");
-    logout();
-    return;
-  }
-
-  if (denied.includes(current)) {
-    alert("You are not allowed to view this page.");
-    location.href = defaultPage;
-    return;
-  }
-
-  if (!allow.includes("*") && !allowed.includes(current)) {
-    alert("You are not allowed to view this page.");
-    location.href = defaultPage;
-    return;
-  }
-})();
-
 const apiBase = "https://overview.jenna-dorst.workers.dev";
 
 async function api(path, options = {}) {
