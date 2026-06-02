@@ -303,22 +303,39 @@ if (request.method === "GET" && path === "/api/auth/check") {
   const match = cookie.match(/SESSION=([^;]+)/);
 
   if (!match) {
-    return json(request, { ok:true, loggedIn:false });
+    return json(request, {
+      ok: true,
+      loggedIn: false
+    });
   }
 
-  const session = await env.SIGNIN_LOGS.get(`session:${match[1]}`, "json");
+  const session = await env.SIGNIN_LOGS.get(
+    `session:${match[1]}`,
+    "json"
+  );
 
   if (!session) {
-    return json(request, { ok:true, loggedIn:false });
+    return json(request, {
+      ok: true,
+      loggedIn: false
+    });
   }
 
+  const allow = Array.isArray(session.allow)
+    ? session.allow
+    : [];
+
+  // FIX: properly recognize ["*"]
+  const isAdmin = allow.includes("*");
+
   return json(request, {
-    ok:true,
-    loggedIn:true,
+    ok: true,
+    loggedIn: true,
     email: session.email,
     name: session.name,
     defaultPage: session.defaultPage,
-    allow: session.allow
+    allow,
+    isAdmin
   });
 }
 
