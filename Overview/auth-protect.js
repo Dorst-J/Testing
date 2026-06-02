@@ -1,7 +1,19 @@
 (async function () {
   function norm(p) {
     if (!p) return "";
-    return "/" + String(p).replace("./", "").replace(/^\/+/, "").split("?")[0];
+
+    let clean = "/" + String(p)
+      .replace("./", "")
+      .replace(/^\/+/, "")
+      .split("?")[0]
+      .split("#")[0];
+
+    // If page was typed without .html, add it
+    if (!clean.includes(".") && clean !== "/") {
+      clean += ".html";
+    }
+
+    return clean;
   }
 
   const currentPage = norm(window.location.pathname);
@@ -23,7 +35,9 @@
 
     if (data.isAdmin === true) return;
 
-    const allowed = Array.isArray(data.allow) ? data.allow.map(norm) : [];
+    const allowed = Array.isArray(data.allow)
+      ? data.allow.map(norm)
+      : [];
 
     if (!allowed.includes(currentPage)) {
       alert("You are not allowed to view this page.");
