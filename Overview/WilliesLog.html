@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Seller Log</title>
+  <script src="/auth-protect.js"></script>
+  <style>
+    body{font-family:Arial;margin:0}
+    header{
+      display:grid;
+      grid-template-columns:180px 1fr 180px;
+      align-items:center;
+      padding:16px;
+      border-bottom:1px solid #ddd;
+    }
+    h1{text-align:center;margin:0;font-size:30px}
+    .smallBtn{padding:10px 14px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    .wrap{padding:18px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #ddd;padding:10px;text-align:left}
+    th{background:#f2f2f2}
+    .open{color:#15803d;font-weight:bold}
+    .close{color:#b91c1c;font-weight:bold}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+
+<header>
+  <button class="smallBtn" onclick="location.href='/Dashboard.html'">Back to Dashboard</button>
+  <h1 id="title">Willys Sellers Log</h1>
+  <div></div>
+</header>
+
+<div class="wrap">
+  <div id="status" class="muted">Loading...</div>
+
+  <table style="margin-top:12px">
+    <thead>
+      <tr>
+        <th>Date / Time</th>
+        <th>Action</th>
+        <th>Game Key</th>
+        <th>Game Name</th>
+        <th>Seller Name</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<script>
+const apiBase = "https://overview.jenna-dorst.workers.dev";
+
+/* CHANGE THIS FOR EACH LOCATION PAGE */
+const LOCATION = "Willies";
+
+document.title = `${LOCATION} Sellers Log`;
+document.getElementById("title").textContent = `${LOCATION} Sellers Log`;
+
+async function api(path){
+  const r = await fetch(`${apiBase}${path}`, { cache:"no-store" });
+  const txt = await r.text();
+  try { return JSON.parse(txt); }
+  catch { return { ok:false, error:txt || `HTTP ${r.status}` }; }
+}
+
+function niceDate(v){
+  if(!v) return "";
+  const d = new Date(v);
+  if(isNaN(d)) return v;
+  return d.toLocaleString();
+}
+
+function render(rows){
+  const body = document.getElementById("rows");
+
+  if(!rows.length){
+    body.innerHTML = `<tr><td colspan="5" class="muted">(no logs yet)</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td>${niceDate(r.created_at)}</td>
+      <td class="${r.action === "OPEN" ? "open" : "close"}">${r.action}</td>
+      <td>${r.MFCID_PARTNO_SERNO || ""}</td>
+      <td>${r.GNAME || ""}</td>
+      <td>${r.employeeName || ""}</td>
+    </tr>
+  `).join("");
+}
+
+async function loadLog(){
+  const status = document.getElementById("status");
+  const r = await api(`/api/location-log/${encodeURIComponent(LOCATION)}`);
+
+  if(!r.ok){
+    status.textContent = `Error: ${r.error || "Could not load log"}`;
+    return;
+  }
+
+  status.textContent = `Showing latest ${r.results.length} log entries. Updates every 5 seconds.`;
+  render(r.results || []);
+}
+
+loadLog();
+setInterval(loadLog, 5000);
+</script>
+</body>
+</html>

@@ -19,7 +19,9 @@ const USERS = {
       "WilliesSeller.html",
       "/McDuffsSeller.html",
       "/ChanticlearLog.html",
-      "/McDuffsLog.html"]
+      "/McDuffsLog.html",
+      "/NorthwoodsLog.html",
+      "/WilliesLog.html"]
   },
   "jenna.dorst@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
@@ -35,7 +37,11 @@ const USERS = {
       "/Deposit.html",
       "/OfficeLocation.html",
       "/LG844.html",
-      "/LG846.html"
+      "/LG846.html",
+      "/ChanticlearLog.html",
+      "/McDuffsLog.html",
+      "/NorthwoodsLog.html",
+      "/WilliesLog.html"
     ]
   },
   "chanticlear.tabs@gmail.com": {
