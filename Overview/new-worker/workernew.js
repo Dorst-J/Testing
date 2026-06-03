@@ -19,7 +19,7 @@ const USERS = {
       "WilliesSeller.html",
       "/McDuffsSeller.html",
       "/ChanticlearLog.html",
-      "/McduffsLog.html"]
+      "/McDuffsLog.html"]
   },
   "jenna.dorst@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
