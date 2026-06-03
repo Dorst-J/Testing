@@ -9,6 +9,7 @@
     body { font-family: Arial; margin:0; padding:0; }
     header { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #ddd; }
     .back {align-items: left; justify-content: left}
+    .out {align-items: left; justify-content: left}
     .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer;}
     .layout { display:grid; grid-template-columns: 1fr 1fr; gap:18px; padding:18px; }
     .card { border:1px solid #ddd; border-radius:14px; padding:16px; }
@@ -31,7 +32,7 @@
 <body>
   <header>
     <div style="display:flex; gap:12px; align-items:center; justify-content: right;">
-      <button class="smallBtn" onclick="localStorage.clear(); location.href='/index.html'">Sign out</button>
+      <button class="smallBtn out" onclick="localStorage.clear(); location.href='/index.html'">Sign out</button>
       <h2 style="margin:0;">DBF Upload</h2>
     </div>
     
