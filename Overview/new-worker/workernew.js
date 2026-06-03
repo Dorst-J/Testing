@@ -295,28 +295,6 @@ export default {
       { expirationTtl: 60 * 60 * 12 }
     );
 
-    if (request.method === "GET" && path.startsWith("/api/location-log/")) {
-  try {
-    const loc = requireLocation(decodeURIComponent(path.split("/").pop()));
-
-    const res = await env.DB.prepare(`
-      SELECT id, location, action, MFCID_PARTNO_SERNO, GNAME, employeeName, created_at
-      FROM SellerLog
-      WHERE location = ?
-      ORDER BY id DESC
-      LIMIT 500
-    `).bind(loc).all();
-
-    return json(request, {
-      ok: true,
-      location: loc,
-      results: res.results || []
-    });
-  } catch (e) {
-    return json(request, { ok:false, error:String(e) }, 500);
-  }
-}
-
     return new Response(JSON.stringify({
       success:true,
       email: googleUser.email,
@@ -391,6 +369,35 @@ if (request.method === "GET" && path === "/api/auth/check") {
     allow,
     isAdmin
   });
+}
+
+/* =========================
+   LOCATION SELLER LOG
+========================= */
+if (request.method === "GET" && path.startsWith("/api/location-log/")) {
+  try {
+    const loc = requireLocation(decodeURIComponent(path.split("/").pop()));
+
+    const res = await env.DB.prepare(`
+      SELECT id, location, action, MFCID_PARTNO_SERNO, GNAME, employeeName, created_at
+      FROM SellerLog
+      WHERE location = ?
+      ORDER BY id DESC
+      LIMIT 500
+    `).bind(loc).all();
+
+    return json(request, {
+      ok: true,
+      location: loc,
+      results: res.results || []
+    });
+  } catch (e) {
+    return json(request, { ok:false, error:String(e) }, 500);
+  }
+}
+
+if (request.method === "OPTIONS") {
+  return new Response(null, { status: 204, headers: corsHeaders(request) });
 }
 
     if (request.method === "OPTIONS") {
