@@ -14,10 +14,12 @@ const USERS = {
       "/OfficeLocation.html",
       "/LG844.html",
       "/LG846.html",
-    "/ChanticlearSeller.html",
-    "/NorthwoodsSeller.html",
-    "WilliesSeller.html",
-    "/McDuffsSeller.html"]
+      "/ChanticlearSeller.html",
+      "/NorthwoodsSeller.html",
+      "WilliesSeller.html",
+      "/McDuffsSeller.html",
+      "/ChanticlearLog.html",
+      "/McduffsLog.html"]
   },
   "jenna.dorst@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
