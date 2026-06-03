@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -14,12 +14,19 @@
       padding-top: 100px;
       margin: 0;
     }
+
+    .loginBtnWrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      width: 100%;
+    }
+
     .small {
       color: #666;
       font-size: 0.95rem;
       margin-top: 14px;
-      align-items: center;
-      justify-content: center;
     }
   </style>
 </head>
@@ -32,13 +39,15 @@
   data-callback="handleCredentialResponse"
   data-auto_prompt="false"></div>
 
-<div class="g_id_signin"
-  data-type="standard"
-  data-size="large"
-  data-theme="outline"
-  data-text="sign_in_with"
-  data-shape="rectangular"
-  data-logo_alignment="left"></div>
+<div class="loginBtnWrap">
+  <div class="g_id_signin"
+    data-type="standard"
+    data-size="large"
+    data-theme="outline"
+    data-text="sign_in_with"
+    data-shape="rectangular"
+    data-logo_alignment="left"></div>
+</div>
 
 <div class="small" id="msg"></div>
 
