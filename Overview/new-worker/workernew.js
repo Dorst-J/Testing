@@ -242,6 +242,20 @@ async function insertInventory(env, loc, row) {
   ).run();
 }
 
+async function addSellerLog(env, { location, action, key, gname, employeeName }) {
+  await env.DB.prepare(`
+    INSERT INTO SellerLog
+    (location, action, MFCID_PARTNO_SERNO, GNAME, employeeName, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).bind(
+    location,
+    action,
+    key,
+    gname || null,
+    employeeName || "",
+    nowIso()
+  ).run();
+}
 /* =========================
    Worker
 ========================= */
@@ -278,6 +292,28 @@ export default {
       }),
       { expirationTtl: 60 * 60 * 12 }
     );
+
+    if (request.method === "GET" && path.startsWith("/api/location-log/")) {
+  try {
+    const loc = requireLocation(decodeURIComponent(path.split("/").pop()));
+
+    const res = await env.DB.prepare(`
+      SELECT id, location, action, MFCID_PARTNO_SERNO, GNAME, employeeName, created_at
+      FROM SellerLog
+      WHERE location = ?
+      ORDER BY id DESC
+      LIMIT 500
+    `).bind(loc).all();
+
+    return json(request, {
+      ok: true,
+      location: loc,
+      results: res.results || []
+    });
+  } catch (e) {
+    return json(request, { ok:false, error:String(e) }, 500);
+  }
+}
 
     return new Response(JSON.stringify({
       success:true,
@@ -602,7 +638,13 @@ if (request.method === "GET" && path === "/api/auth/check") {
 
           row.DATE_OPEN = nowIso();
           await moveRow(env, tInv(loc), tOpen(loc), row);
-
+          await addSellerLog(env, {
+            location: loc,
+            action: "OPEN",
+            key,
+            gname: row.GNAME,
+            employeeName: body.employeeName || ""
+          });
           return json(request, { ok:true, moved:true });
         } catch (e) {
           return json(request, { ok:false, error:String(e) }, 500);
@@ -649,6 +691,13 @@ if (request.method === "GET" && path === "/api/auth/check") {
           row.DATE_CLOSED = nowIso();
 
           await moveRow(env, tOpen(loc), tClosed(loc), row);
+          await addSellerLog(env, {
+            location: loc,
+            action: "CLOSE",
+            key,
+            gname: row.GNAME,
+            employeeName: body.employeeName || ""
+          });
           return json(request, { ok:true, moved:true });
         } catch (e) {
           return json(request, { ok:false, error:String(e) }, 500);
