@@ -16,12 +16,12 @@ const USERS = {
       "/LG846.html",
       "/ChanticlearSeller.html",
       "/NorthwoodsSeller.html",
-      "WilliesSeller.html",
+      "WillysSeller.html",
       "/McDuffsSeller.html",
       "/ChanticlearLog.html",
       "/McDuffsLog.html",
       "/NorthwoodsLog.html",
-      "/WilliesLog.html"]
+      "/WillysLog.html"]
   },
   "jenna.dorst@gmail.com": {
     defaultPage: "/SimonsAdminDash.html",
@@ -41,7 +41,7 @@ const USERS = {
       "/ChanticlearLog.html",
       "/McDuffsLog.html",
       "/NorthwoodsLog.html",
-      "/WilliesLog.html"
+      "/WillysLog.html"
     ]
   },
   "chanticlear.tabs@gmail.com": {
@@ -111,13 +111,13 @@ function text(request, msg, status = 200) {
    CONFIG
 ========================= */
 
-const LOCATIONS = ["Chanticlear", "McDuffs", "Willies", "Northwoods"];
+const LOCATIONS = ["Chanticlear", "McDuffs", "Willys", "Northwoods"];
 
 // Update to match YOUR SITENO mapping
 const SITE_LAST3_TO_LOCATION = {
   "006": "McDuffs",
   "014": "Chanticlear",
-  "012": "Willies",
+  "012": "Willys",
   "009": "Northwoods",
 };
 
