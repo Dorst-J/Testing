@@ -32,6 +32,7 @@
   </header>
 
   <div class="wrap">
+    <button id="arrivalBtn" class="btn gray">Game Arrival</button>
     <button id="openBtn" class="btn open">OPEN</button>
     <button id="closeBtn" class="btn close">CLOSE</button>
   </div>
@@ -68,8 +69,108 @@ function openModal(title, html){
 }
 function closeModal(){ backdrop.style.display = "none"; }
 
+function setStatus(msg){
+  console.log(msg);
+}
+
 modalX.onclick = closeModal;
 backdrop.addEventListener("click", (e)=>{ if(e.target === backdrop) closeModal(); });
+
+document.getElementById("arrivalBtn").onclick = () => {
+  openModal("Game Arrival", `
+    <div class="field">
+      <label>MFCID_PARTNO_SERNO</label>
+      <input id="arrivalKey" placeholder="Scan or type MFCID_PARTNO_SERNO" autocomplete="off">
+    </div>
+
+    <div class="actions">
+      <button class="smallBtn" id="arrivalCancel">Cancel</button>
+      <button class="smallBtn" id="arrivalGo">arrived</button>
+    </div>
+
+    <div id="arrivalErr" class="err"></div>
+  `);
+
+  const input = document.getElementById("arrivalKey");
+  const err = document.getElementById("arrivalErr");
+
+  document.getElementById("arrivalCancel").onclick = closeModal;
+
+  async function checkArrival(){
+    err.textContent = "";
+
+    const key = String(input.value || "").trim();
+
+    if (!key) {
+      err.textContent = "Scan or type a game key.";
+      return;
+    }
+
+    const r = await api(`/api/location/${encodeURIComponent(LOCATION)}/arrival/check`, {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ key })
+    });
+
+    if (!r.ok) {
+      err.textContent = r.error || "Error checking game.";
+      return;
+    }
+
+    if (!r.found) {
+      err.textContent = "Game not found in inventory for this location.";
+      return;
+    }
+
+    const row = r.row || {};
+
+    openModal("Confirm Game Arrival", `
+      <div class="infoBox">
+        <div><b>MFCID_PARTNO_SERNO:</b> ${row.MFCID_PARTNO_SERNO || ""}</div>
+        <div><b>Game name:</b> ${row.GNAME || ""}</div>
+        <div><b>Date purchased:</b> ${row.DPURCH || ""}</div>
+      </div>
+
+      <div class="actions">
+        <button class="smallBtn" id="arrivalCancel2">Cancel</button>
+        <button class="smallBtn" id="arrivalConfirm">arrived</button>
+      </div>
+
+      <div id="arrivalErr2" class="err"></div>
+    `);
+
+    document.getElementById("arrivalCancel2").onclick = closeModal;
+
+    document.getElementById("arrivalConfirm").onclick = async () => {
+      const err2 = document.getElementById("arrivalErr2");
+
+      const r2 = await api(`/api/location/${encodeURIComponent(LOCATION)}/arrival/confirm`, {
+        method:"POST",
+        headers:{ "content-type":"application/json" },
+        body: JSON.stringify({ key })
+      });
+
+      if (!r2.ok) {
+        err2.textContent = r2.error || "Could not save arrival.";
+        return;
+      }
+
+      closeModal();
+      setStatus(`Game arrival saved: ${new Date(r2.receivedAt).toLocaleString()}`);
+    };
+  }
+
+  document.getElementById("arrivalGo").onclick = checkArrival;
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      checkArrival();
+    }
+  });
+
+  setTimeout(() => input.focus(), 50);
+};
 
 /* OPEN */
 document.getElementById("openBtn").onclick = () => {
