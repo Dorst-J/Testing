@@ -14,7 +14,7 @@ const USERS = {
       "/OfficeLocation.html",
       "/LG844.html",
       "/LG846.html",
-      "/Lg847.html",
+      "/LG847.html",
       "/ChanticlearSeller.html",
       "/NorthwoodsSeller.html",
       "/WillysSeller.html",
