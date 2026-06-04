@@ -115,11 +115,20 @@
 
     <div>
       <label for="barSelect"><b>Bar Location:</b></label>
+      <label>
+  From:
+  <input id="fromDate" type="date">
+</label>
+
+<label>
+  To:
+  <input id="toDate" type="date">
+</label>
       <select id="barSelect">
         <option value="">Choose location...</option>
         <option value="Chanticlear">Chanticlear</option>
         <option value="McDuffs">McDuffs</option>
-        <option value="Willies">Willys</option>
+        <option value="Willys">Willys</option>
         <option value="Northwoods">Northwoods</option>
       </select>
     </div>
@@ -273,8 +282,11 @@ function renderEmpty(){
   renderPages({ pulltabs:[], tipboards:[], paddletickets:[] });
 }
 
-document.getElementById("barSelect").addEventListener("change", async e => {
-  const loc = e.target.value;
+async function loadData(){
+  const loc = document.getElementById("barSelect").value;
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+
   currentSite = loc || "";
 
   if(!loc){
@@ -285,7 +297,12 @@ document.getElementById("barSelect").addEventListener("change", async e => {
 
   document.getElementById("status").textContent = "Loading...";
 
-  const r = await api(`/api/lg844/${encodeURIComponent(loc)}`);
+  const params = new URLSearchParams();
+
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+
+  const r = await api(`/api/lg844/${encodeURIComponent(loc)}?${params.toString()}`);
 
   if(!r.ok){
     document.getElementById("status").textContent = `Error: ${r.error}`;
@@ -298,7 +315,11 @@ document.getElementById("barSelect").addEventListener("change", async e => {
 
   document.getElementById("status").textContent =
     `${loc} loaded — Pull-Tabs: ${grouped.pulltabs.length}, Tipboards: ${grouped.tipboards.length}, Paddletickets: ${grouped.paddletickets.length}`;
-});
+}
+
+document.getElementById("barSelect").addEventListener("change", loadData);
+document.getElementById("fromDate").addEventListener("change", loadData);
+document.getElementById("toDate").addEventListener("change", loadData);
 
 renderEmpty();
 </script>

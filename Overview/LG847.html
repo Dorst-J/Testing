@@ -1,0 +1,298 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>LG847</title>
+  <script src="/auth-protect.js"></script>
+
+  <style>
+    body { font-family: Arial; margin:0; padding:0; color:#111; }
+
+    header {
+      display:grid;
+      grid-template-columns: 180px 1fr 180px;
+      align-items:center;
+      padding:16px;
+      border-bottom:1px solid #ddd;
+    }
+
+    .smallBtn {
+      padding:10px 14px;
+      border-radius:10px;
+      border:1px solid #bbb;
+      background:#fff;
+      cursor:pointer;
+    }
+
+    .left { display:flex; justify-content:flex-start; }
+    .right { display:flex; justify-content:flex-end; }
+
+    .controls {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      padding:16px;
+    }
+
+    select, input {
+      padding:10px 12px;
+      font-size:15px;
+      border:1px solid #bbb;
+      border-radius:8px;
+    }
+
+    .page {
+      padding:18px;
+    }
+
+    h1 {
+      text-align:center;
+      font-size:22px;
+      margin:14px 0 10px;
+    }
+
+    .orgLine {
+      font-size:15px;
+      margin-bottom:18px;
+      text-align:center;
+    }
+
+    .section {
+      margin-top:24px;
+      page-break-before: always;
+    }
+
+    .section:first-of-type {
+      page-break-before: auto;
+    }
+
+    h2 {
+      font-size:18px;
+      text-align:center;
+      margin:0 0 8px;
+    }
+
+    table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+
+    th, td {
+      border:1px solid #333;
+      padding:6px;
+      text-align:center;
+      vertical-align:top;
+    }
+
+    th {
+      background:#f2f2f2;
+      font-weight:bold;
+    }
+
+    .muted {
+      color:#666;
+      text-align:center;
+      padding:12px;
+    }
+
+    @media print {
+      header, .controls {
+        display:none;
+      }
+
+      .page {
+        padding:0;
+      }
+
+      .section {
+        page-break-before: always;
+      }
+
+      .section:first-of-type {
+        page-break-before: auto;
+      }
+
+      h1 {
+        margin-top:0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="left">
+    <button class="smallBtn" onclick="location.href='/Dashboard.html'">Return Home</button>
+  </div>
+
+  <div></div>
+
+  <div class="right">
+    <button class="smallBtn" onclick="window.print()">Print Page</button>
+  </div>
+</header>
+
+<div class="controls">
+  <label>
+    Bar Location:
+    <select id="locSelect">
+      <option value="">Select location...</option>
+      <option value="Chanticlear">Chanticlear</option>
+      <option value="McDuffs">McDuffs</option>
+      <option value="Willys">Willys</option>
+      <option value="Northwoods">Northwoods</option>
+    </select>
+  </label>
+
+  <label>
+    From:
+    <input id="fromDate" type="date">
+  </label>
+
+  <label>
+    To:
+    <input id="toDate" type="date">
+  </label>
+
+  <button class="smallBtn" id="loadBtn">Load</button>
+</div>
+
+<div class="page">
+  <div id="content">
+    <h1>LG847 Current Site Inventory List</h1>
+    <div class="orgLine">
+      Organization Name: Anoka Ramsey Athletic Association (ARAA)
+      &nbsp;&nbsp;&nbsp;&nbsp;
+      License/Premises Permit Number: 98049
+    </div>
+  </div>
+</div>
+
+<script>
+const apiBase = "https://overview.jenna-dorst.workers.dev";
+
+const columns = [
+  "Date received at site",
+  "Manufacture ID",
+  "Part Number",
+  "Game Name",
+  "Game Serial Number",
+  "Actual Game Cost",
+  "Date Put into Play",
+  "Date Game Closed"
+];
+
+function classify(row){
+  const p = String(row.partNumber || "").toUpperCase();
+
+  if (p.includes("XB100") || p.includes("TIP")) return "tipboard";
+  if (p.includes("PT1")) return "paddle";
+
+  return "pulltab";
+}
+
+function niceDate(v){
+  if(!v) return "";
+  const d = new Date(v);
+  if(isNaN(d)) return v;
+  return d.toLocaleDateString();
+}
+
+function renderTable(title, rows){
+  return `
+    <div class="section">
+      <h1>LG847 Current Site Inventory List</h1>
+      <div class="orgLine">
+        Organization Name: Anoka Ramsey Athletic Association (ARAA)
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        License/Premises Permit Number: 98049
+      </div>
+
+      <h2>${title}</h2>
+
+      <table>
+        <thead>
+          <tr>
+            ${columns.map(c => `<th>${c}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${
+            rows.length
+              ? rows.map(r => `
+                <tr>
+                  <td>${niceDate(r.dateReceived)}</td>
+                  <td>${r.manufactureId || ""}</td>
+                  <td>${r.partNumber || ""}</td>
+                  <td>${r.gameName || ""}</td>
+                  <td>${r.gameSerialNumber || ""}</td>
+                  <td>${r.actualGameCost || ""}</td>
+                  <td>${niceDate(r.datePutIntoPlay)}</td>
+                  <td>${niceDate(r.dateGameClosed)}</td>
+                </tr>
+              `).join("")
+              : `<tr><td colspan="8" class="muted">(none)</td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function loadData(){
+  const loc = document.getElementById("locSelect").value;
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  const content = document.getElementById("content");
+
+  if(!loc){
+    content.innerHTML = `
+      <h1>LG847 Current Site Inventory List</h1>
+      <div class="orgLine">
+        Organization Name: Anoka Ramsey Athletic Association (ARAA)
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        License/Premises Permit Number: 98049
+      </div>
+    `;
+    return;
+  }
+
+  content.innerHTML = `<div class="muted">Loading...</div>`;
+
+  const params = new URLSearchParams();
+  if(from) params.set("from", from);
+  if(to) params.set("to", to);
+
+  const r = await fetch(`${apiBase}/api/lg847/${encodeURIComponent(loc)}?${params.toString()}`, {
+    cache:"no-store"
+  });
+
+  const data = await r.json();
+
+  if(!data.ok){
+    content.innerHTML = `<div class="muted">Error: ${data.error || "Could not load data"}</div>`;
+    return;
+  }
+
+  const rows = data.rows || [];
+
+  const pulltabs = rows.filter(r => classify(r) === "pulltab");
+  const tipboards = rows.filter(r => classify(r) === "tipboard");
+  const paddles = rows.filter(r => classify(r) === "paddle");
+
+  content.innerHTML =
+    renderTable("Pull-Tabs", pulltabs) +
+    renderTable("Tipboards", tipboards) +
+    renderTable("Paddletickets", paddles);
+}
+
+document.getElementById("loadBtn").onclick = loadData;
+document.getElementById("locSelect").addEventListener("change", loadData);
+document.getElementById("fromDate").addEventListener("change", loadData);
+document.getElementById("toDate").addEventListener("change", loadData);
+</script>
+</body>
+</html>

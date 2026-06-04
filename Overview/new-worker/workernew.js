@@ -14,9 +14,10 @@ const USERS = {
       "/OfficeLocation.html",
       "/LG844.html",
       "/LG846.html",
+      "/Lg847.html",
       "/ChanticlearSeller.html",
       "/NorthwoodsSeller.html",
-      "WillysSeller.html",
+      "/WillysSeller.html",
       "/McDuffsSeller.html",
       "/ChanticlearLog.html",
       "/McDuffsLog.html",
@@ -183,10 +184,10 @@ async function findRow(env, table, key) {
 
 async function moveRow(env, fromTable, toTable, row) {
   const cols = [
-    "MFCID_PARTNO_SERNO","GNAME","DIST_ID","GTYPE","GCOST","SITENO","INV_NUM",
-    "PLCOST","PLNOS","IDLGRS","IDLPRZ","DPURCH",
-    "CASH_HAND","DATE_OPEN","DATE_CLOSED"
-  ];
+  "MFCID_PARTNO_SERNO","GNAME","DIST_ID","GTYPE","GCOST","SITENO","INV_NUM",
+  "PLCOST","PLNOS","IDLGRS","IDLPRZ","DPURCH",
+  "CASH_HAND","DATE_OPEN","DATE_CLOSED","Date_Received"
+];
   const values = cols.map(c => toSqlValue(row[c]));
 
   const insert = env.DB.prepare(`
@@ -228,12 +229,13 @@ async function gameExistsAnywhere(env, key) {
 
 async function insertInventory(env, loc, row) {
   const table = tInv(loc);
+
   await env.DB.prepare(`
     INSERT OR REPLACE INTO ${table} (
       MFCID_PARTNO_SERNO, GNAME, DIST_ID, GTYPE, GCOST, SITENO, INV_NUM,
       PLCOST, PLNOS, IDLGRS, IDLPRZ, DPURCH,
-      CASH_HAND, DATE_OPEN, DATE_CLOSED
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL)
+      CASH_HAND, DATE_OPEN, DATE_CLOSED, Date_Received
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL)
   `).bind(
     toSqlValue(row.MFCID_PARTNO_SERNO),
     toSqlValue(row.GNAME),
@@ -402,9 +404,7 @@ if (request.method === "GET" && path.startsWith("/api/location-log/")) {
   }
 }
 
-if (request.method === "OPTIONS") {
-  return new Response(null, { status: 204, headers: corsHeaders(request) });
-}
+
 
     if (request.method === "OPTIONS") {
   return new Response(null, { status: 204, headers: corsHeaders(request) });
@@ -648,11 +648,18 @@ if (request.method === "OPTIONS") {
           const key = String(body.key || "").trim();
           if (!key) return json(request, { ok:false, error:"Missing key" }, 400);
 
-          const row = await findRow(env, tInv(loc), key);
-          if (!row) return json(request, { ok:true, found:false });
+        const row = await findRow(env, tInv(loc), key);
+if (!row) return json(request, { ok:true, found:false });
 
-          row.DATE_OPEN = nowIso();
-          await moveRow(env, tInv(loc), tOpen(loc), row);
+if (!row.Date_Received) {
+  return json(request, {
+    ok:false,
+    error:"This game has not been marked as arrived yet. Use Game Arrival before opening."
+  }, 400);
+}
+
+row.DATE_OPEN = nowIso();
+await moveRow(env, tInv(loc), tOpen(loc), row);
           await addSellerLog(env, {
             location: loc,
             action: "OPEN",
@@ -784,9 +791,10 @@ if (request.method === "OPTIONS") {
             // Archive into Final_Closed
             batch.push(env.DB.prepare(`
               INSERT OR REPLACE INTO Final_Closed (
-                MFCID_PARTNO_SERNO, GNAME, DIST_ID, GTYPE, GCOST, SITENO, INV_NUM,
-                PLCOST, PLNOS, IDLGRS, IDLPRZ, DPURCH, CASH_HAND, DATE_OPEN, DATE_CLOSED
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  MFCID_PARTNO_SERNO, GNAME, DIST_ID, GTYPE, GCOST, SITENO, INV_NUM,
+  PLCOST, PLNOS, IDLGRS, IDLPRZ, DPURCH, CASH_HAND, DATE_OPEN, DATE_CLOSED,
+  Date_Received
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).bind(
               toSqlValue(row.MFCID_PARTNO_SERNO),
               toSqlValue(row.GNAME),
@@ -802,7 +810,8 @@ if (request.method === "OPTIONS") {
               toSqlValue(row.DPURCH),
               toSqlValue(row.CASH_HAND),
               toSqlValue(row.DATE_OPEN),
-              toSqlValue(row.DATE_CLOSED)
+              toSqlValue(row.DATE_CLOSED),
+              toSqlValue(row.Date_Received)
             ));
 
             // Delete from loc closed
@@ -1169,47 +1178,78 @@ if (request.method === "GET" && path.startsWith("/api/lg844/")) {
   try {
     const loc = requireLocation(decodeURIComponent(path.split("/").pop()));
 
-    const tables = [tInv(loc), tOpen(loc), tClosed(loc)];
-    const rows = [];
+    const from = url.searchParams.get("from") || "";
+    const to = url.searchParams.get("to") || "";
 
-    for (const table of tables) {
-      const res = await env.DB.prepare(`
-        SELECT 
-          MFCID_PARTNO_SERNO,
-          GNAME,
-          GCOST,
-          DPURCH,
-          INV_NUM,
-          DATE_OPEN,
-          DATE_CLOSED
-        FROM ${table}
-        ORDER BY DPURCH DESC
-      `).all();
+    const SITE_LAST3_BY_LOCATION = {
+      Chanticlear: "014",
+      McDuffs: "006",
+      Willys: "012",
+      Northwoods: "009"
+    };
 
-      for (const r of res.results || []) {
-        const parts = String(r.MFCID_PARTNO_SERNO || "").trim().split(/\s+/);
-        const mfcid = parts[0] || "";
-        const partno = parts[1] || "";
-        const serno = parts.slice(2).join(" ") || "";
+    const last3 = SITE_LAST3_BY_LOCATION[loc];
 
-        rows.push({
-          invoiceDate: r.DPURCH || "",
-          distributorName: loc,
-          invoiceNumber: r.INV_NUM || "",
-          manufactureId: mfcid,
-          partNumber: partno,
-          gameName: r.GNAME || "",
-          gameSerialNumber: serno,
-          actualGameCost: r.GCOST ?? "",
-          datePutIntoPlay: r.DATE_OPEN || "",
-          dateGameClosed: r.DATE_CLOSED || "",
-        });
-      }
+    let sql = `
+      SELECT 
+        MFCID_PARTNO_SERNO,
+        GNAME,
+        GCOST,
+        DPURCH,
+        INV_NUM,
+        DATE_OPEN,
+        DATE_CLOSED,
+        SITENO
+      FROM Final_Closed
+      WHERE substr(SITENO, -3) = ?
+    `;
+
+    const binds = [last3];
+
+    if (from) {
+      sql += ` AND DATE(DATE_CLOSED) >= DATE(?)`;
+      binds.push(from);
     }
 
-    return json(request, { ok: true, location: loc, rows });
+    if (to) {
+      sql += ` AND DATE(DATE_CLOSED) <= DATE(?)`;
+      binds.push(to);
+    }
+
+    sql += ` ORDER BY DATE_CLOSED DESC`;
+
+    const res = await env.DB.prepare(sql).bind(...binds).all();
+
+    const rows = [];
+
+    for (const r of res.results || []) {
+      const parts = String(r.MFCID_PARTNO_SERNO || "").trim().split(/\s+/);
+      const mfcid = parts[0] || "";
+      const partno = parts[1] || "";
+      const serno = parts.slice(2).join(" ") || "";
+
+      rows.push({
+        invoiceDate: r.DPURCH || "",
+        distributorName: loc,
+        invoiceNumber: r.INV_NUM || "",
+        manufactureId: mfcid,
+        partNumber: partno,
+        gameName: r.GNAME || "",
+        gameSerialNumber: serno,
+        actualGameCost: r.GCOST ?? "",
+        datePutIntoPlay: r.DATE_OPEN || "",
+        dateGameClosed: r.DATE_CLOSED || ""
+      });
+    }
+
+    return json(request, {
+      ok:true,
+      location: loc,
+      rows
+    });
+
   } catch (e) {
-    return json(request, { ok: false, error: String(e) }, 500);
+    return json(request, { ok:false, error:String(e) }, 500);
   }
 }
 
@@ -1251,6 +1291,167 @@ if (request.method === "GET" && path.startsWith("/api/lg846/")) {
     return json(request, { ok: false, error: String(e) }, 500);
   }
 }
+/* =========================
+   SELLER: Game Arrival check
+   body: { key }
+   Only checks Inventory table
+========================= */
+{
+  const m = path.match(/^\/api\/location\/([^/]+)\/arrival\/check$/);
+
+  if (request.method === "POST" && m) {
+    try {
+      const loc = requireLocation(decodeURIComponent(m[1]));
+      const body = await request.json();
+      const key = String(body.key || "").trim();
+
+      if (!key) {
+        return json(request, { ok:false, error:"Missing key" }, 400);
+      }
+
+      const row = await findRow(env, tInv(loc), key);
+
+      if (!row) {
+        return json(request, {
+          ok:true,
+          found:false
+        });
+      }
+
+      return json(request, {
+        ok:true,
+        found:true,
+        row
+      });
+
+    } catch (e) {
+      return json(request, { ok:false, error:String(e) }, 500);
+    }
+  }
+}
+
+/* =========================
+   SELLER: Game Arrival confirm
+   body: { key }
+   Writes Date_Received into Inventory
+========================= */
+{
+  const m = path.match(/^\/api\/location\/([^/]+)\/arrival\/confirm$/);
+
+  if (request.method === "POST" && m) {
+    try {
+      const loc = requireLocation(decodeURIComponent(m[1]));
+      const body = await request.json();
+      const key = String(body.key || "").trim();
+
+      if (!key) {
+        return json(request, { ok:false, error:"Missing key" }, 400);
+      }
+
+      const row = await findRow(env, tInv(loc), key);
+
+      if (!row) {
+        return json(request, {
+          ok:false,
+          error:"Game not found in inventory for this location"
+        }, 404);
+      }
+
+      const receivedAt = nowIso();
+
+      await env.DB.prepare(`
+        UPDATE ${tInv(loc)}
+        SET Date_Received = ?
+        WHERE MFCID_PARTNO_SERNO = ?
+      `).bind(receivedAt, key).run();
+
+      return json(request, {
+        ok:true,
+        receivedAt
+      });
+
+    } catch (e) {
+      return json(request, { ok:false, error:String(e) }, 500);
+    }
+  }
+}
+
+if (request.method === "GET" && path.startsWith("/api/lg847/")) {
+  try {
+    const loc = requireLocation(decodeURIComponent(path.split("/").pop()));
+
+    const from = url.searchParams.get("from") || "";
+    const to = url.searchParams.get("to") || "";
+
+    const SITE_LAST3_BY_LOCATION = {
+      Chanticlear: "014",
+      McDuffs: "006",
+      Willys: "012",
+      Northwoods: "009"
+    };
+
+    const last3 = SITE_LAST3_BY_LOCATION[loc];
+
+    let sql = `
+      SELECT
+        MFCID_PARTNO_SERNO,
+        GNAME,
+        GCOST,
+        SITENO,
+        DATE_OPEN,
+        DATE_CLOSED,
+        Date_Received
+      FROM Final_Closed
+      WHERE substr(SITENO, -3) = ?
+    `;
+
+    const binds = [last3];
+
+    if (from) {
+      sql += ` AND DATE(Date_Received) >= DATE(?)`;
+      binds.push(from);
+    }
+
+    if (to) {
+      sql += ` AND DATE(Date_Received) <= DATE(?)`;
+      binds.push(to);
+    }
+
+    sql += ` ORDER BY Date_Received ASC`;
+
+    const res = await env.DB.prepare(sql).bind(...binds).all();
+
+    const rows = [];
+
+    for (const r of res.results || []) {
+      const parts = String(r.MFCID_PARTNO_SERNO || "").trim().split(/\s+/);
+      const mfcid = parts[0] || "";
+      const partno = parts[1] || "";
+      const serno = parts.slice(2).join(" ") || "";
+
+      rows.push({
+        dateReceived: r.Date_Received || "",
+        manufactureId: mfcid,
+        partNumber: partno,
+        gameName: r.GNAME || "",
+        gameSerialNumber: serno,
+        actualGameCost: r.GCOST ?? "",
+        datePutIntoPlay: r.DATE_OPEN || "",
+        dateGameClosed: r.DATE_CLOSED || ""
+      });
+    }
+
+    return json(request, {
+      ok:true,
+      location: loc,
+      rows
+    });
+
+  } catch (e) {
+    return json(request, { ok:false, error:String(e) }, 500);
+  }
+}
+
     return text(request, "Not found", 404);
   }
 };
