@@ -955,20 +955,47 @@ if (request.method === "OPTIONS") {
     if (request.method === "POST" && path === "/api/office/find") {
   try {
     const body = await request.json();
+
     const key = String(body.key || "").trim();
-    if (!key) return json(request, { ok:false, error:"Missing key" }, 400);
+    const serno = String(body.serno || "").trim();
 
-    const res = await env.DB.prepare(`SELECT * FROM Office WHERE MFCID_PARTNO_SERNO = ?`)
-      .bind(key)
-      .all();
+    if (!key && !serno) {
+      return json(request, { ok:false, error:"Missing key or serno" }, 400);
+    }
 
-    const row = res.results?.[0] || null;
-    return json(request, { ok:true, found: !!row, row });
+    let row = null;
+
+    if (key) {
+      const res = await env.DB.prepare(`
+        SELECT *
+        FROM Office
+        WHERE MFCID_PARTNO_SERNO = ?
+        LIMIT 1
+      `).bind(key).all();
+
+      row = res.results?.[0] || null;
+    } else {
+      const res = await env.DB.prepare(`
+        SELECT *
+        FROM Office
+        WHERE MFCID_PARTNO_SERNO LIKE ?
+        ORDER BY rowid DESC
+        LIMIT 1
+      `).bind(`%${serno}`).all();
+
+      row = res.results?.[0] || null;
+    }
+
+    return json(request, {
+      ok:true,
+      found: !!row,
+      row
+    });
+
   } catch (e) {
     return json(request, { ok:false, error:String(e) }, 500);
   }
 }
-
 
     if (request.method === "POST" && path === "/api/office/scan") {
   try {

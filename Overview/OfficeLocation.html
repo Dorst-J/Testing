@@ -221,75 +221,93 @@
     sync();
   };
 
-  // =========================
-  // Search Modal
-  // =========================
-  document.getElementById("searchBtn").onclick = () => {
-    openModal("Search Office", `
-      <div class="field">
-        <label>MFCID_PARTNO_SERNO</label>
-        <input id="findKey" placeholder="Scan or type key" autocomplete="off">
-      </div>
-      <div class="actions">
-        <button class="smallBtn" id="findCancel">Cancel</button>
-        <button class="smallBtn" id="findBtn">find</button>
-      </div>
-      <div id="findResult"></div>
-    `);
+// =========================
+// Search Modal
+// Search by SERNO only
+// =========================
+document.getElementById("searchBtn").onclick = () => {
+  openModal("Search Office", `
+    <div class="field">
+      <label>Game Serial Number / SERNO</label>
+      <input id="findSerno" placeholder="Scan or type SERNO only" autocomplete="off">
+    </div>
+    <div class="actions">
+      <button class="smallBtn" id="findCancel">Cancel</button>
+      <button class="smallBtn" id="findBtn">find</button>
+    </div>
+    <div id="findResult"></div>
+  `);
 
-    const input = document.getElementById("findKey");
-    const out = document.getElementById("findResult");
+  const input = document.getElementById("findSerno");
+  const out = document.getElementById("findResult");
 
-    document.getElementById("findCancel").onclick = closeModal;
+  document.getElementById("findCancel").onclick = closeModal;
 
-    async function runFind(){
-      out.innerHTML = "";
-      const key = cleanKey(input.value);
-      if (!key) return;
+  function cleanSerno(v){
+    return String(v || "")
+      .trim()
+      .replace(/[^\w\-]/g, "");
+  }
 
-      const r = await api("/api/office/find", {
-        method:"POST",
-        headers:{ "content-type":"application/json" },
-        body: JSON.stringify({ key })
-      });
+  async function runFind(){
+    out.innerHTML = "";
 
-      if (!r.ok){
-        beep();
-        out.innerHTML = `<div class="err">${r.error || "Error"}</div>`;
-        return;
-      }
+    const serno = cleanSerno(input.value);
 
-      if (!r.found){
-        beep();
-        out.innerHTML = `<div class="infoBox">The game can not be found.</div>`;
-        return;
-      }
-
-      const row = r.row || {};
-      const keys = Object.keys(row);
-
-      out.innerHTML = `
-        <div class="infoBox">
-          <div class="k">${row.MFCID_PARTNO_SERNO || ""}</div>
-          <div class="note">${row.GNAME || ""}</div>
-          <div class="note">Cash: ${row.CASH_HAND ?? ""}</div>
-        </div>
-        <table class="miniTable">
-          ${keys.map(k=>`
-            <tr>
-              <td>${k}</td>
-              <td>${row[k] ?? ""}</td>
-            </tr>
-          `).join("")}
-        </table>
-      `;
+    if (!serno) {
+      beep();
+      out.innerHTML = `<div class="err">Please enter a SERNO.</div>`;
+      return;
     }
 
-    document.getElementById("findBtn").onclick = runFind;
-    input.addEventListener("keydown", e => { if(e.key==="Enter") runFind(); });
+    const r = await api("/api/office/find", {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ serno })
+    });
 
-    setTimeout(()=>input.focus(), 50);
-  };
+    if (!r.ok){
+      beep();
+      out.innerHTML = `<div class="err">${r.error || "Error"}</div>`;
+      return;
+    }
+
+    if (!r.found){
+      beep();
+      out.innerHTML = `<div class="infoBox">The game can not be found.</div>`;
+      return;
+    }
+
+    const row = r.row || {};
+    const keys = Object.keys(row);
+
+    out.innerHTML = `
+      <div class="infoBox">
+        <div class="k">${row.MFCID_PARTNO_SERNO || ""}</div>
+        <div class="note">${row.GNAME || ""}</div>
+        <div class="note">Cash: ${row.CASH_HAND ?? ""}</div>
+      </div>
+      <table class="miniTable">
+        ${keys.map(k=>`
+          <tr>
+            <td>${k}</td>
+            <td>${row[k] ?? ""}</td>
+          </tr>
+        `).join("")}
+      </table>
+    `;
+  }
+
+  document.getElementById("findBtn").onclick = runFind;
+  input.addEventListener("keydown", e => {
+    if(e.key === "Enter") {
+      e.preventDefault();
+      runFind();
+    }
+  });
+
+  setTimeout(() => input.focus(), 50);
+};
 
   // =========================
   // Main scan flow
