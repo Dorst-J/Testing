@@ -80,7 +80,7 @@ document.getElementById("arrivalBtn").onclick = () => {
   openModal("Game Arrival", `
     <div class="field">
       <label>MFCID_PARTNO_SERNO</label>
-      <input id="arrivalKey" placeholder="Scan or type MFCID_PARTNO_SERNO" autocomplete="off">
+      <input id="arrivalKey" placeholder="Scan or type MFCID_PARTNO_SERNO" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
 
     <div class="actions">
@@ -175,7 +175,7 @@ document.getElementById("arrivalBtn").onclick = () => {
 /* OPEN */
 document.getElementById("openBtn").onclick = () => {
   openModal("Open Game", `
-    <div class="row"><input id="key" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off"></div>
+    <div class="row"><input id="key" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
     <div class="row"><input id="name" placeholder="Type your name" autocomplete="off"></div>
     <div class="row" style="justify-content:flex-end;">
       <button class="smallBtn" id="cancel">Cancel</button>
@@ -232,6 +232,7 @@ document.getElementById("openBtn").onclick = () => {
       });
 
       if (!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+      if (r2.found === false) return openModal("Not Found", `<p>can’t find the game, please enter a new game.</p>`);
       closeModal();
     };
   };
@@ -242,7 +243,7 @@ document.getElementById("openBtn").onclick = () => {
 /* CLOSE */
 document.getElementById("closeBtn").onclick = () => {
   openModal("Close Game", `
-    <div class="row"><input id="key" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off"></div>
+    <div class="row"><input id="key" placeholder="Scan MFCID PARTNO SERNO" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
     <div class="row"><input id="cash" type="number" step="0.01" placeholder="Money on hand" autocomplete="off"></div>
     <div class="row"><input id="name" placeholder="Type your name" autocomplete="off"></div>
     <div class="row" style="justify-content:flex-end;">
@@ -303,6 +304,7 @@ document.getElementById("closeBtn").onclick = () => {
       });
 
       if (!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
+      if (r2.found === false) return openModal("Not Found", `<p>can’t find the game, please enter a new game.</p>`);
       closeModal();
     };
   };

@@ -183,7 +183,7 @@ async function doUpload(file){
 document.getElementById("emergencyBtn").onclick = () => {
   showPopup("Emergency move", `
     <div class="muted">Enter a MFCID_PARTNO_SERNO to search ALL inventory tables.</div>
-    <input id="eKey" placeholder="IG FLMG01 3144629">
+    <input id="eKey" placeholder="IG FLMG01 3144629" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     <div class="btnRow">
       <button class="smallBtn" id="eCancel">Cancel</button>
       <button class="smallBtn ok" id="eGo" disabled>Move</button>

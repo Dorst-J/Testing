@@ -63,7 +63,7 @@
 
   <div class="wrap">
     <div class="row">
-      <input id="scanKey" class="scanInput" placeholder="Scan MFCID_PARTNO_SERNO" autocomplete="off" />
+      <input id="scanKey" class="scanInput" placeholder="Scan MFCID_PARTNO_SERNO" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
       <button id="issuesBtn" class="btn gray">Issues</button>
       <button id="searchBtn" class="btn gray">Search</button>
     </div>
@@ -161,7 +161,7 @@
     openModal("Place Issue", `
       <div class="field">
         <label>MFCID_PARTNO_SERNO</label>
-        <input id="issueKey" placeholder="Scan or type key" autocomplete="off">
+        <input id="issueKey" placeholder="Scan or type key" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       </div>
       <div class="field">
         <label>Issue (max 500 characters)</label>
@@ -229,7 +229,7 @@ document.getElementById("searchBtn").onclick = () => {
   openModal("Search Office", `
     <div class="field">
       <label>Game Serial Number / SERNO</label>
-      <input id="findSerno" placeholder="Scan or type SERNO only" autocomplete="off">
+      <input id="findSerno" placeholder="Scan or type SERNO only" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <div class="actions">
       <button class="smallBtn" id="findCancel">Cancel</button>
@@ -413,7 +413,7 @@ document.getElementById("searchBtn").onclick = () => {
 
       <div class="field">
         <label>Scan field</label>
-        <input id="scanValue" placeholder="${prompt.replace(/<[^>]+>/g,'')}" autocomplete="off">
+        <input id="scanValue" placeholder="${prompt.replace(/<[^>]+>/g,'')}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         <div class="note">${prompt}</div>
         <div class="err" id="scanErr"></div>
       </div>
