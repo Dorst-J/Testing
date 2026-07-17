@@ -291,17 +291,19 @@ export default {
     }
 
     const sessionId = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 12 * 1000).toISOString();
 
-    await env.SIGNIN_LOGS.put(
-      `session:${sessionId}`,
-      JSON.stringify({
-        email: googleUser.email,
-        name: googleUser.name,
-        defaultPage: user.defaultPage,
-        allow: user.allow
-      }),
-      { expirationTtl: 60 * 60 * 12 }
-    );
+    await env.DB.prepare(`
+      INSERT INTO Sessions (id, email, name, defaultPage, allow, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      sessionId,
+      googleUser.email,
+      googleUser.name,
+      user.defaultPage,
+      JSON.stringify(user.allow),
+      expiresAt
+    ).run();
 
     return new Response(JSON.stringify({
       success:true,
@@ -325,8 +327,8 @@ if (request.method === "POST" && path === "/signout") {
   const cookie = request.headers.get("cookie") || "";
   const match = cookie.match(/SESSION=([^;]+)/);
 
-  if (match && env.SIGNIN_LOGS) {
-    await env.SIGNIN_LOGS.delete(`session:${match[1]}`);
+  if (match) {
+    await env.DB.prepare(`DELETE FROM Sessions WHERE id = ?`).bind(match[1]).run();
   }
 
   return new Response(JSON.stringify({ ok:true }), {
@@ -349,21 +351,21 @@ if (request.method === "GET" && path === "/api/auth/check") {
     });
   }
 
-  const session = await env.SIGNIN_LOGS.get(
-    `session:${match[1]}`,
-    "json"
-  );
+  const session = await env.DB.prepare(`SELECT * FROM Sessions WHERE id = ?`)
+    .bind(match[1])
+    .first();
 
-  if (!session) {
+  if (!session || new Date(session.expires_at) < new Date()) {
+    if (session) {
+      await env.DB.prepare(`DELETE FROM Sessions WHERE id = ?`).bind(match[1]).run();
+    }
     return json(request, {
       ok: true,
       loggedIn: false
     });
   }
 
-  const allow = Array.isArray(session.allow)
-    ? session.allow
-    : [];
+  const allow = JSON.parse(session.allow || "[]");
 
   // FIX: properly recognize ["*"]
   const isAdmin = allow.includes("*");
