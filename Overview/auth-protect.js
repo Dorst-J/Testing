@@ -19,7 +19,7 @@
   const currentPage = norm(window.location.pathname);
 
   try {
-    const res = await fetch("https://overview.jenna-dorst.workers.dev/api/auth/check", {
+    const res = await fetch("https://api.thedatatab.com/api/auth/check", {
       method: "GET",
       credentials: "include",
       cache: "no-store"
@@ -53,7 +53,7 @@
 
 async function signOut() {
   try {
-    await fetch("https://overview.jenna-dorst.workers.dev/signout", {
+    await fetch("https://api.thedatatab.com/signout", {
       method: "POST",
       credentials: "include",
       cache: "no-store"
