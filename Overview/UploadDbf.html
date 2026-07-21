@@ -91,6 +91,17 @@ async function api(path, options = {}) {
   try { return JSON.parse(txt); } catch { return { ok:false, error: txt || `HTTP ${resp.status}` }; }
 }
 
+// Some barcodes encode extra whitespace between MFCID/PARTNO/SERNO, and iOS's
+// "double-space becomes a period" keyboard shortcut can turn that into a stray
+// "." during a fast barcode scan. Undo both before matching against the DB,
+// which always stores exactly one space between segments.
+function normalizeKey(v) {
+  return String(v || "")
+    .replace(/\s*\.\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const liveEl = document.getElementById("live");
 const drop = document.getElementById("drop");
 const filePick = document.getElementById("filePick");
@@ -203,7 +214,7 @@ document.getElementById("emergencyBtn").onclick = () => {
   document.getElementById("eCancel").onclick = hidePopup;
 
   eGo.onclick = async () => {
-    const key = eKey.value.trim();
+    const key = normalizeKey(eKey.value);
     const r = await api("/api/emergency/lookup", {
       method:"POST",
       headers:{ "content-type":"application/json" },

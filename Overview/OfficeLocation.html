@@ -126,8 +126,19 @@
 
   function closeModal(){ backdrop.style.display="none"; }
 
+  // Some barcodes encode extra whitespace between MFCID/PARTNO/SERNO, and iOS's
+  // "double-space becomes a period" keyboard shortcut can turn that into a stray
+  // "." during a fast barcode scan. Undo both before matching against the DB,
+  // which always stores exactly one space between segments.
+  function normalizeKey(v) {
+    return String(v || "")
+      .replace(/\s*\.\s*/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function cleanKey(v){
-    v = String(v||"").trim();
+    v = normalizeKey(v);
     // Only allow typical key characters (letters/numbers/spaces/dashes/underscores/slashes)
     v = v.replace(/[^\w\s\-\/]/g, "");
     return v.trim();
@@ -430,7 +441,7 @@ document.getElementById("searchBtn").onclick = () => {
 
     async function submitScan(){
       err.textContent = "";
-      const v = String(val.value||"").trim();
+      const v = normalizeKey(val.value);
       if (!v) return;
 
       const r2 = await api("/api/office/scan", {
