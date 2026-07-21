@@ -730,6 +730,27 @@ await moveRow(env, tInv(loc), tOpen(loc), row);
     }
 
     /* =========================
+       SELLER: live list of games currently in the Open table
+    ========================= */
+    {
+      const m = path.match(/^\/api\/location\/([^/]+)\/open\/live$/);
+      if (request.method === "GET" && m) {
+        try {
+          const loc = requireLocation(decodeURIComponent(m[1]));
+          const res = await env.DB.prepare(`
+            SELECT MFCID_PARTNO_SERNO, GNAME
+            FROM ${tOpen(loc)}
+            ORDER BY rowid DESC
+            LIMIT 1000
+          `).all();
+          return json(request, { ok:true, results: res.results || [] });
+        } catch (e) {
+          return json(request, { ok:false, error:String(e) }, 500);
+        }
+      }
+    }
+
+    /* =========================
        PICKUP: list closed games
        (no auth)
     ========================= */
