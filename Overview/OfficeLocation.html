@@ -132,6 +132,7 @@
   // which always stores exactly one space between segments.
   function normalizeKey(v) {
     return String(v || "")
+      .replace(/\^/g, "%")
       .replace(/\s*\.\s*/g, " ")
       .replace(/\s+/g, " ")
       .trim();
