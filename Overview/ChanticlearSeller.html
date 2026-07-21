@@ -10,7 +10,13 @@
     .btn { padding:18px 28px; font-size:22px; border:none; border-radius:10px; cursor:pointer; }
     .open { background:#1f9d55; color:white; }
     .close { background:#d64545; color:white; }
-    .wrap { padding:24px; display:flex; gap:20px; justify-content:center; }
+    .wrap { flex:2; padding:24px; display:flex; gap:20px; justify-content:center; }
+    .pageLayout { display:flex; gap:24px; align-items:flex-start; }
+    .rightPane { flex:1; padding:24px; border-left:1px solid #ddd; }
+    .rightPane h3 { margin:0 0 8px; }
+    .muted { color:#666; font-size:13px; }
+    .openTable { border-collapse:collapse; margin-top:10px; }
+    .openTable th, .openTable td { text-align:left; padding:6px 16px 6px 0; border-bottom:1px solid #eee; font-size:14px; }
     .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
     .modalBackdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; }
     .modal { background:#fff; width:min(720px, 92vw); border-radius:14px; padding:18px; }
@@ -31,10 +37,23 @@
     <button class="smallBtn" onclick="localStorage.clear(); location.href='/index.html'">Sign out</button>
   </header>
 
-  <div class="wrap">
-    <button id="arrivalBtn" class="btn gray">Game Arrival</button>
-    <button id="openBtn" class="btn open">OPEN</button>
-    <button id="closeBtn" class="btn close">CLOSE</button>
+  <div class="pageLayout">
+    <div class="wrap">
+      <button id="arrivalBtn" class="btn gray">Game Arrival</button>
+      <button id="openBtn" class="btn open">OPEN</button>
+      <button id="closeBtn" class="btn close">CLOSE</button>
+    </div>
+
+    <div class="rightPane">
+      <h3>Open Games</h3>
+      <div class="muted">Live &mdash; updates about every minute.</div>
+      <table class="openTable">
+        <thead>
+          <tr><th>MFCID_PARTNO_SERNO</th><th>Game Name</th></tr>
+        </thead>
+        <tbody id="openTableBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <div id="backdrop" class="modalBackdrop">
@@ -87,6 +106,30 @@ function setStatus(msg){
 
 modalX.onclick = closeModal;
 backdrop.addEventListener("click", (e)=>{ if(e.target === backdrop) closeModal(); });
+
+async function refreshOpenTable(){
+  const tbody = document.getElementById("openTableBody");
+  const r = await api(`/api/location/${encodeURIComponent(LOCATION)}/open/live`);
+
+  if (!r.ok) {
+    tbody.innerHTML = `<tr><td colspan="2">Error loading.</td></tr>`;
+    return;
+  }
+
+  const rows = r.results || [];
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="2">(no open games)</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(g => `
+    <tr><td>${g.MFCID_PARTNO_SERNO || ""}</td><td>${g.GNAME || ""}</td></tr>
+  `).join("");
+}
+
+refreshOpenTable();
+setInterval(refreshOpenTable, 60000);
 
 document.getElementById("arrivalBtn").onclick = () => {
   openModal("Game Arrival", `
@@ -246,6 +289,7 @@ document.getElementById("openBtn").onclick = () => {
       if (!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
       if (r2.found === false) return openModal("Not Found", `<p>can’t find the game, please enter a new game.</p>`);
       closeModal();
+      refreshOpenTable();
     };
   };
 
@@ -318,6 +362,7 @@ document.getElementById("closeBtn").onclick = () => {
       if (!r2.ok) return openModal("Error", `<p>${r2.error||"Error"}</p>`);
       if (r2.found === false) return openModal("Not Found", `<p>can’t find the game, please enter a new game.</p>`);
       closeModal();
+      refreshOpenTable();
     };
   };
 
