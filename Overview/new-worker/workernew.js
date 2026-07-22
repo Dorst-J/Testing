@@ -46,7 +46,7 @@ const USERS = {
       "/WillysLog.html"
     ]
   },
-  "Swh213364@gmail.com": {
+  "swh213364@gmail.com": {
     defaultPage: "/Dashboard.html",
     allow: [
       "/Dashboard.html",
