@@ -45,6 +45,24 @@ const USERS = {
       "/WillysLog.html"
     ]
   },
+  "Swh213364@gmail.com": {
+    defaultPage: "/Dashboard.html",
+    allow: [
+      "/Dashboard.html",
+      "/UploadDbf.html",
+      "/Transportation.html",
+      "/Pickup.html",
+      "/Deposit.html",
+      "/OfficeLocation.html",
+      "/LG844.html",
+      "/LG846.html",
+      "/ChanticlearLog.html",
+      "/McDuffsLog.html",
+      "/NorthwoodsLog.html",
+      "/WillysLog.html"
+    ]
+  },
+
   "chanticlear.tabs@gmail.com": {
     defaultPage: "/ChanticlearSeller.html",
     allow: ["/ChanticlearSeller.html"]
