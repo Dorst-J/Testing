@@ -1234,32 +1234,44 @@ if (request.method === "GET" && path.startsWith("/api/lg844/")) {
     const last3 = SITE_LAST3_BY_LOCATION[loc];
 
     let sql = `
-      SELECT 
-        MFCID_PARTNO_SERNO,
-        GNAME,
-        GCOST,
-        DPURCH,
-        INV_NUM,
-        DATE_OPEN,
-        DATE_CLOSED,
-        SITENO
-      FROM Final_Closed
-      WHERE substr(SITENO, -3) = ?
+      SELECT * FROM (
+        SELECT
+          MFCID_PARTNO_SERNO, GNAME, GCOST, DPURCH, INV_NUM,
+          DATE_OPEN, DATE_CLOSED, SITENO, Date_Received
+        FROM Final_Closed
+        WHERE substr(SITENO, -3) = ?
+
+        UNION ALL
+
+        SELECT
+          MFCID_PARTNO_SERNO, GNAME, GCOST, DPURCH, INV_NUM,
+          DATE_OPEN, DATE_CLOSED, SITENO, Date_Received
+        FROM ${tOpen(loc)}
+
+        UNION ALL
+
+        SELECT
+          MFCID_PARTNO_SERNO, GNAME, GCOST, DPURCH, INV_NUM,
+          DATE_OPEN, DATE_CLOSED, SITENO, Date_Received
+        FROM ${tInv(loc)}
+        WHERE Date_Received IS NOT NULL
+      )
+      WHERE 1=1
     `;
 
     const binds = [last3];
 
     if (from) {
-      sql += ` AND DATE(DATE_CLOSED) >= DATE(?)`;
+      sql += ` AND DATE(Date_Received) >= DATE(?)`;
       binds.push(from);
     }
 
     if (to) {
-      sql += ` AND DATE(DATE_CLOSED) <= DATE(?)`;
+      sql += ` AND DATE(Date_Received) <= DATE(?)`;
       binds.push(to);
     }
 
-    sql += ` ORDER BY DATE_CLOSED DESC`;
+    sql += ` ORDER BY Date_Received DESC`;
 
     const res = await env.DB.prepare(sql).bind(...binds).all();
 
@@ -1426,29 +1438,25 @@ if (request.method === "GET" && path.startsWith("/api/lg847/")) {
     const from = url.searchParams.get("from") || "";
     const to = url.searchParams.get("to") || "";
 
-    const SITE_LAST3_BY_LOCATION = {
-      Chanticlear: "014",
-      McDuffs: "006",
-      Willys: "012",
-      Northwoods: "009"
-    };
-
-    const last3 = SITE_LAST3_BY_LOCATION[loc];
-
     let sql = `
-      SELECT
-        MFCID_PARTNO_SERNO,
-        GNAME,
-        GCOST,
-        SITENO,
-        DATE_OPEN,
-        DATE_CLOSED,
-        Date_Received
-      FROM Final_Closed
-      WHERE substr(SITENO, -3) = ?
+      SELECT * FROM (
+        SELECT
+          MFCID_PARTNO_SERNO, GNAME, GCOST, SITENO,
+          DATE_OPEN, DATE_CLOSED, Date_Received
+        FROM ${tInv(loc)}
+        WHERE Date_Received IS NOT NULL
+
+        UNION ALL
+
+        SELECT
+          MFCID_PARTNO_SERNO, GNAME, GCOST, SITENO,
+          DATE_OPEN, DATE_CLOSED, Date_Received
+        FROM ${tOpen(loc)}
+      )
+      WHERE 1=1
     `;
 
-    const binds = [last3];
+    const binds = [];
 
     if (from) {
       sql += ` AND DATE(Date_Received) >= DATE(?)`;
