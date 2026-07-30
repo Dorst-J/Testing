@@ -69,6 +69,21 @@ const USERS = {
     defaultPage: "/ChanticlearSeller.html",
     allow: ["/ChanticlearSeller.html"]
   },
+
+  "willys.tabs@gmail.com": {
+    defaultPage: "/WillysSeller.html",
+    allow: ["/WillysSeller.html"]
+  },
+
+  "northwoods.tabs@gmail.com": {
+    defaultPage: "/NorthwoodsSeller.html",
+    allow: ["/NorthwoodsSeller.html"]
+  },
+
+  "mcduffs.tabs@gmail.com": {
+    defaultPage: "/McDuffsSeller.html",
+    allow: ["/McDuffsSeller.html"]
+  },
   "nne2395@gmail.com": {defaultPage: "/Dashboard.html",
     allow: ["/Dashboard.html", "/OfficeLocation.html", "/Transportation.html"]
   }
