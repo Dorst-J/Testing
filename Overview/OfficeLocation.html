@@ -140,8 +140,8 @@
 
   function cleanKey(v){
     v = normalizeKey(v);
-    // Only allow typical key characters (letters/numbers/spaces/dashes/underscores/slashes)
-    v = v.replace(/[^\w\s\-\/]/g, "");
+    // Only allow typical key characters (letters/numbers/spaces/dashes/underscores/slashes/percent)
+    v = v.replace(/[^\w\s\-\/%]/g, "");
     return v.trim();
   }
 
