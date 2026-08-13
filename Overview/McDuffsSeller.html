@@ -210,7 +210,7 @@ document.getElementById("arrivalBtn").onclick = () => {
         return;
       }
 
-      closeModal();
+      openModal("Game Arrived", `<p>This game has been entered into the system.</p>`);
       setStatus(`Game arrival saved: ${new Date(r2.receivedAt).toLocaleString()}`);
     };
   }
