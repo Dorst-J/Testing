@@ -86,6 +86,10 @@ const USERS = {
   },
   "nne2395@gmail.com": {defaultPage: "/Dashboard.html",
     allow: ["/Dashboard.html", "/OfficeLocation.html", "/Transportation.html"]
+  },
+
+  "sara.stawski02@gmail.com": {defaultPage: "/Dashboard.html",
+    allow: ["/Dashboard.html", "/OfficeLocation.html", "/Transportation.html"]
   }
 };
 
