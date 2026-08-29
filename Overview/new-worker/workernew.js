@@ -244,7 +244,7 @@ async function gameExistsAnywhere(env, key) {
   const tables = [
     "Chanticlear_Inventory","Chanticlear_Open","Chanticlear_Closed",
     "McDuffs_Inventory","McDuffs_Open","McDuffs_Closed",
-    "Willies_Inventory","Willies_Open","Willies_Closed",
+    "Willys_Inventory","Willys_Open","Willys_Closed",
     "Northwoods_Inventory","Northwoods_Open","Northwoods_Closed",
     "Transportation",
     "Office",
