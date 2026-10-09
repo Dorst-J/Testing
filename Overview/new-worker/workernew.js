@@ -89,7 +89,7 @@ const USERS = {
   },
 
   "sara.stawski02@gmail.com": {defaultPage: "/Dashboard.html",
-    allow: ["/Dashboard.html", "/OfficeLocation.html", "/Transportation.html", "/Deposit.html"]
+    allow: ["/Dashboard.html", "/OfficeLocation.html", "/Transportation.html", "/Deposit.html", "/Pickup.html"]
   }
 };
 
