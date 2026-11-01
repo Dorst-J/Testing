@@ -1433,11 +1433,18 @@ if (request.method === "GET" && path.startsWith("/api/lg846/")) {
 
       const receivedAt = nowIso();
 
-      await env.DB.prepare(`
+      const updateResult = await env.DB.prepare(`
         UPDATE ${tInv(loc)}
         SET Date_Received = ?
         WHERE MFCID_PARTNO_SERNO = ?
       `).bind(receivedAt, key).run();
+
+      if (!updateResult.meta || updateResult.meta.changes === 0) {
+        return json(request, {
+          ok:false,
+          error:"Could not save arrival — this game may have just been moved. Please scan it again."
+        }, 409);
+      }
 
       return json(request, {
         ok:true,
