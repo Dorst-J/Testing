@@ -170,12 +170,17 @@ document.getElementById("arrivalBtn").onclick = () => {
     });
 
     if (!r.ok) {
-      err.textContent = r.error || "Error checking game.";
+      openModal("Error", `<p>There was a problem, try again.</p>`);
       return;
     }
 
     if (!r.found) {
-      err.textContent = "Game not found in inventory for this location.";
+      openModal("Not Found", `<p>Game not found in inventory for this location.</p>`);
+      return;
+    }
+
+    if (r.alreadyArrived) {
+      openModal("Already Arrived", `<p>This game has already been scanned in as arrived.</p>`);
       return;
     }
 
@@ -192,15 +197,11 @@ document.getElementById("arrivalBtn").onclick = () => {
         <button class="bigBtn" id="arrivalCancel2">Cancel</button>
         <button class="bigBtn confirm" id="arrivalConfirm">arrived</button>
       </div>
-
-      <div id="arrivalErr2" class="err"></div>
     `);
 
     document.getElementById("arrivalCancel2").onclick = closeModal;
 
     document.getElementById("arrivalConfirm").onclick = async () => {
-      const err2 = document.getElementById("arrivalErr2");
-
       const r2 = await api(`/api/location/${encodeURIComponent(LOCATION)}/arrival/confirm`, {
         method:"POST",
         headers:{ "content-type":"application/json" },
@@ -208,7 +209,11 @@ document.getElementById("arrivalBtn").onclick = () => {
       });
 
       if (!r2.ok) {
-        err2.textContent = r2.error || "Could not save arrival.";
+        if (r2.alreadyArrived) {
+          openModal("Already Arrived", `<p>This game has already been scanned in as arrived.</p>`);
+        } else {
+          openModal("Error", `<p>There was a problem, try again.</p>`);
+        }
         return;
       }
 

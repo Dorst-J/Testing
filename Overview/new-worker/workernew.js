@@ -1392,9 +1392,19 @@ if (request.method === "GET" && path.startsWith("/api/lg846/")) {
         });
       }
 
+      if (row.Date_Received) {
+        return json(request, {
+          ok:true,
+          found:true,
+          alreadyArrived:true,
+          row
+        });
+      }
+
       return json(request, {
         ok:true,
         found:true,
+        alreadyArrived:false,
         row
       });
 
@@ -1431,18 +1441,26 @@ if (request.method === "GET" && path.startsWith("/api/lg846/")) {
         }, 404);
       }
 
+      if (row.Date_Received) {
+        return json(request, {
+          ok:false,
+          alreadyArrived:true,
+          error:"This game has already been scanned in as arrived."
+        }, 409);
+      }
+
       const receivedAt = nowIso();
 
       const updateResult = await env.DB.prepare(`
         UPDATE ${tInv(loc)}
         SET Date_Received = ?
-        WHERE MFCID_PARTNO_SERNO = ?
+        WHERE MFCID_PARTNO_SERNO = ? AND Date_Received IS NULL
       `).bind(receivedAt, key).run();
 
       if (!updateResult.meta || updateResult.meta.changes === 0) {
         return json(request, {
           ok:false,
-          error:"Could not save arrival — this game may have just been moved. Please scan it again."
+          error:"There was a problem, try again."
         }, 409);
       }
 
