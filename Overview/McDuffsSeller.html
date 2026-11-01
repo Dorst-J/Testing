@@ -18,6 +18,8 @@
     .openTable { border-collapse:collapse; margin-top:10px; }
     .openTable th, .openTable td { text-align:left; padding:6px 16px 6px 0; border-bottom:1px solid #eee; font-size:14px; }
     .smallBtn { padding:10px 14px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
+    .bigBtn { padding:16px 26px; font-size:18px; border-radius:10px; border:1px solid #bbb; background:#fff; cursor:pointer; }
+    .bigBtn.confirm { border:none; background:#1f9d55; color:white; }
     .modalBackdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; }
     .modal { background:#fff; width:min(720px, 92vw); border-radius:14px; padding:18px; }
     .row { display:flex; gap:12px; margin-top:12px; }
@@ -139,8 +141,8 @@ document.getElementById("arrivalBtn").onclick = () => {
     </div>
 
     <div class="actions">
-      <button class="smallBtn" id="arrivalCancel">Cancel</button>
-      <button class="smallBtn" id="arrivalGo">arrived</button>
+      <button class="bigBtn" id="arrivalCancel">Cancel</button>
+      <button class="bigBtn confirm" id="arrivalGo">arrived</button>
     </div>
 
     <div id="arrivalErr" class="err"></div>
@@ -187,8 +189,8 @@ document.getElementById("arrivalBtn").onclick = () => {
       </div>
 
       <div class="actions">
-        <button class="smallBtn" id="arrivalCancel2">Cancel</button>
-        <button class="smallBtn" id="arrivalConfirm">arrived</button>
+        <button class="bigBtn" id="arrivalCancel2">Cancel</button>
+        <button class="bigBtn confirm" id="arrivalConfirm">arrived</button>
       </div>
 
       <div id="arrivalErr2" class="err"></div>
